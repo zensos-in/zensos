@@ -1,0 +1,2011 @@
+import React, { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { api } from "../api/client";
+import { ZensosLogo } from "../components/ZensosLogo";
+import { AppIcon } from "../components/ui/AppIcon";
+import { ProductImageGallery } from "../components/ui/ProductImageGallery";
+import {
+  CheckoutAddressSection,
+  EMPTY_CHECKOUT_CONTACT,
+  type CheckoutContactAddress,
+} from "../components/forms/CheckoutAddressSection";
+import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
+import { useI18n } from "../context/I18nContext";
+import { usePublicStoreHeader } from "../context/PublicStoreHeaderContext";
+import { useToast } from "../context/ToastContext";
+import { formatPhone } from "../utils/contactFields";
+import {
+  formatCheckoutContactAddress,
+  validateCheckoutContact,
+} from "../utils/orderAddresses";
+import type { PaymentMethod, Product, Seller, VariantItem } from "../types";
+import {
+  collectCategoryTabs,
+  getProductCategories,
+  groupProductsByCategory,
+  productMatchesCategory,
+} from "../utils/productCategories";
+
+type CartItem = {
+  productId: string;
+  variantId: string;
+  variantTitle: string;
+  quantity: number;
+  variants: Record<string, string>;
+  unitPrice: number;
+};
+type CartMap = Record<string, CartItem>;
+type PolicyKey = "privacyPolicy" | "returnRefundPolicy" | "termsAndConditions";
+
+
+const SOCIAL_ICONS: Record<string, Parameters<typeof AppIcon>[0]["name"]> = {
+  Instagram: "instagram",
+  Facebook: "facebook",
+  "Twitter/X": "twitter",
+  YouTube: "youtube",
+  LinkedIn: "linkedin",
+  Website: "website",
+  "Google Location": "location",
+  Other: "link",
+};
+
+const DEFAULT_APP_FAVICON = "/zensos.png";
+const ADMIN_TOKEN_KEY = "zensos_admin_token";
+
+
+
+function normalizeImageUrl(url: string) {
+  const trimmed = String(url || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function expandImageSource(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(expandImageSource);
+  }
+
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.flatMap(expandImageSource);
+      }
+    } catch (_error) {
+      // Fall through to string parsing below.
+    }
+  }
+
+  if (raw.includes("\n")) {
+    return raw.split(/\r?\n/).flatMap(expandImageSource);
+  }
+
+  if ((raw.match(/https?:\/\//gi) || []).length > 1) {
+    return raw.split(/,(?=https?:\/\/)/i).flatMap(expandImageSource);
+  }
+
+  return [raw];
+}
+
+function getProductImages(product: Product) {
+  const images = Array.isArray(product.imageUrls) ? product.imageUrls : expandImageSource(product.imageUrls);
+  const normalized = images.flatMap(expandImageSource).map(normalizeImageUrl).filter(Boolean);
+  if (normalized.length > 0) return normalized;
+  const fallback = expandImageSource(product.imageUrl || "").map(normalizeImageUrl).filter(Boolean);
+  return fallback;
+}
+
+
+
+function getVariantPriceKey(label: string, option: string) {
+  return `${label}::${option}`;
+}
+
+function getVariantOptionPricing(product: Product, label: string, option: string) {
+  const priceKey = getVariantPriceKey(label, option);
+  const matchedItem = product.variantItems?.find(
+    (item) => item.variantId === `legacy:${priceKey}` || item.attributes?.[label] === option,
+  );
+  if (matchedItem) {
+    return {
+      price: matchedItem.price,
+      mrp: matchedItem.mrp || product.variantMrps?.[priceKey] || product.mrp,
+    };
+  }
+  return {
+    price: product.variantPrices?.[priceKey] ?? product.price,
+    mrp: product.variantMrps?.[priceKey] ?? product.mrp,
+  };
+}
+
+function VariantPriceLabel({ price, mrp, className = "" }: { price?: number; mrp?: number; className?: string }) {
+  if (!price || price <= 0) return null;
+  const showMrp = typeof mrp === "number" && mrp > 0 && mrp > price;
+  return (
+    <span className={`inline-flex items-baseline gap-1 ${className}`.trim()}>
+      <span>₹{price}</span>
+      {showMrp ? <span className="text-xs text-slate-400 line-through">₹{mrp}</span> : null}
+    </span>
+  );
+}
+
+function buildLegacyVariantItems(product: Product): VariantItem[] {
+  const items: VariantItem[] = [];
+
+  for (const variant of product.variants || []) {
+    const label = String(variant?.label || "").trim();
+    for (const optionValue of variant.options || []) {
+      const option = String(optionValue || "").trim();
+      if (!label || !option) continue;
+      const priceKey = getVariantPriceKey(label, option);
+      items.push({
+        variantId: `legacy:${priceKey}`,
+        title: option,
+        attributes: { [label]: option },
+        price: product.variantPrices?.[priceKey] ?? product.price,
+        mrp: product.variantMrps?.[priceKey] ?? product.mrp,
+        isActive: true,
+      });
+    }
+  }
+
+  return items;
+}
+
+function getNormalizedVariantItems(product: Product): VariantItem[] {
+  if (Array.isArray(product.variantItems) && product.variantItems.length > 0) {
+    return product.variantItems.filter((item) => item.isActive !== false);
+  }
+  return buildLegacyVariantItems(product);
+}
+
+function findMatchingVariant(
+  product: Product,
+  selectedVariants: Record<string, string>,
+  variantId = "",
+) {
+  const normalizedVariantItems = getNormalizedVariantItems(product);
+  if (variantId) {
+    return normalizedVariantItems.find((item) => item.variantId === variantId) || null;
+  }
+  const entries = Object.entries(selectedVariants).filter(([, value]) => String(value || "").trim());
+  if (entries.length === 0) return null;
+  return (
+    normalizedVariantItems.find((item) =>
+      entries.every(([key, value]) => item.attributes?.[key] === value)
+    ) || null
+  );
+}
+
+function buildCartItemKey(productId: string, variantId = "") {
+  return `${productId}::${variantId || "base"}`;
+}
+
+function getVariantDisplayTitle(
+  product: Product,
+  variantId: string,
+  selectedVariants: Record<string, string>,
+) {
+  const matchedVariant = findMatchingVariant(product, selectedVariants, variantId);
+  if (matchedVariant?.title) return matchedVariant.title;
+  const values = Object.values(selectedVariants).filter(Boolean);
+  if (values.length > 0) return values.join(" / ");
+  return product.title;
+}
+
+function getNormalizedVariantGroups(product: Product) {
+  const grouped = new Map<string, Set<string>>();
+  for (const variant of product.variants || []) {
+    const label = String(variant.label || "").trim();
+    if (!label) continue;
+    if (!grouped.has(label)) grouped.set(label, new Set<string>());
+    for (const option of variant.options || []) {
+      const cleanOption = String(option || "").trim();
+      if (cleanOption) grouped.get(label)?.add(cleanOption);
+    }
+  }
+
+  return Array.from(grouped.entries()).map(([label, options]) => ({
+    label,
+    options: Array.from(options),
+  }));
+}
+
+function getFirstAvailableVariant(product: Product) {
+  return getNormalizedVariantItems(product)[0] || null;
+}
+
+function splitPackAndUom(value: string) {
+  const match = String(value || "").trim().match(/^([\d.]+)\s*([a-zA-Z]+.*)?$/);
+  if (!match) {
+    return { packSize: String(value || "").trim(), uom: "" };
+  }
+  return {
+    packSize: (match[1] || "").trim(),
+    uom: (match[2] || "").trim(),
+  };
+}
+
+function getProductDisplayMeasure(product: Product) {
+  const packSize = String(product.packSize || "").trim();
+  const uom = String(product.uom || "").trim();
+  if (packSize || uom) {
+    return [packSize, uom].filter(Boolean).join(" ");
+  }
+
+  const firstVariant = getFirstAvailableVariant(product);
+  if (!firstVariant?.title) return "";
+  const parsed = splitPackAndUom(firstVariant.title);
+  return [parsed.packSize, parsed.uom].filter(Boolean).join(" ");
+}
+
+function getProductUnitPricing(product: Product, selectedVariants: Record<string, string>) {
+  const matchedVariant = findMatchingVariant(product, selectedVariants);
+  if (matchedVariant) {
+    return {
+      price: matchedVariant.price,
+      mrp: matchedVariant.mrp || product.mrp,
+    };
+  }
+
+  let selectedVariantMrp: number | undefined;
+  for (const variant of getNormalizedVariantGroups(product)) {
+    const option = selectedVariants[variant.label];
+    if (!option) continue;
+    const variantPrice = product.variantPrices?.[getVariantPriceKey(variant.label, option)];
+    const variantMrp = product.variantMrps?.[getVariantPriceKey(variant.label, option)];
+    if (typeof variantPrice === "number" && variantPrice > 0) {
+      if (typeof variantMrp === "number" && variantMrp > 0) {
+        selectedVariantMrp = variantMrp;
+      }
+      return {
+        price: variantPrice,
+        mrp: selectedVariantMrp || product.mrp,
+      };
+    }
+  }
+
+  const firstVariant = getFirstAvailableVariant(product);
+  if ((Number(product.price) || 0) <= 0 && firstVariant) {
+    return {
+      price: firstVariant.price,
+      mrp: firstVariant.mrp || product.mrp,
+    };
+  }
+
+  return {
+    price: product.price,
+    mrp: product.mrp,
+  };
+}
+
+function withAutoSelectedSingleVariants(product: Product, selectedVariants: Record<string, string>) {
+  const next = { ...selectedVariants };
+  for (const variant of getNormalizedVariantGroups(product)) {
+    if (!variant.options?.length) continue;
+    if (!next[variant.label] && variant.options.length === 1) {
+      next[variant.label] = variant.options[0];
+    }
+  }
+  return next;
+}
+
+function hasCompleteVariantSelection(product: Product, selectedVariants: Record<string, string>) {
+  for (const variant of getNormalizedVariantGroups(product)) {
+    if (!variant.options?.length) continue;
+    const selected = selectedVariants[variant.label];
+    if (!selected || !variant.options.includes(selected)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Simple auto-play banner carousel
+function BannerCarousel({ banners }: { banners: { imageUrl: string; title?: string }[] }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % banners.length), 4000);
+    return () => clearInterval(t);
+  }, [banners.length]);
+  if (!banners.length) return null;
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/60 shadow-md ring-1 ring-slate-200/50 dark:border-slate-700 dark:ring-slate-700/50">
+      <img src={normalizeImageUrl(banners[idx].imageUrl)} alt={banners[idx].title || "Banner"} className="h-48 w-full object-cover sm:h-64" />
+      {banners.length > 1 && (
+        <div className="absolute bottom-2 right-3 flex gap-1">
+          {banners.map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)}
+              className={`h-2 w-2 rounded-full transition ${i === idx ? "bg-white" : "bg-white/40"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// -- Horizontal scroll row per category ---------------------------------------
+function CategoryScrollRow({
+  title, onSeeAll, children,
+}: { title: string; onSeeAll: () => void; children: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  function scroll(dir: number) {
+    scrollRef.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
+  }
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">{title}</h3>
+        <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+        <button type="button" onClick={() => scroll(-1)}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
+          <AppIcon name="chevronLeft" className="text-[10px]" />
+        </button>
+        <button type="button" onClick={() => scroll(1)}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
+          <AppIcon name="chevronRight" className="text-[10px]" />
+        </button>
+        <button type="button" onClick={onSeeAll}
+          className="shrink-0 text-xs font-semibold text-teal-600 hover:underline">
+          See all →
+        </button>
+      </div>
+      <div ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function PublicStorePage() {
+  const { t } = useI18n();
+  const { showError, showSuccess } = useToast();
+  const { setPublicStoreHeader } = usePublicStoreHeader();
+  const navigate = useNavigate();
+  const { sellerSlug } = useParams<{ sellerSlug: string }>();
+  const [searchParams] = useSearchParams();
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartMap>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"latest" | "price_low" | "price_high" | "discount">("latest");
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [filterDropdownStyle, setFilterDropdownStyle] = useState<{ top: number; left: number } | null>(null);
+  const searchBarRef = useRef<HTMLDivElement | null>(null);
+  const filterDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [cartFeedback, setCartFeedback] = useState("");
+  const [, setVariantErrorProductId] = useState<string | null>(null);
+  const [showCart, setShowCart] = useState(false);
+  const cartRef = useRef<HTMLDivElement | null>(null);
+  const drawerInnerRef = useRef<HTMLDivElement | null>(null);
+  const checkoutAnchorRef = useRef<HTMLDivElement | null>(null);
+  const prevBodyOverflow = useRef<string | undefined>(undefined);
+  const [variantPopupProductId, setVariantPopupProductId] = useState<string | null>(null);
+  const [popupVariants, setPopupVariants] = useState<Record<string, string>>({});
+  const [popupVariantQuantities, setPopupVariantQuantities] = useState<Record<string, {
+    quantity: number;
+    selections: Record<string, string>;
+    variantTitle: string;
+    unitPrice: number;
+  }>>({});
+  const [popupVariantError, setPopupVariantError] = useState("");
+
+  // Checkout fields
+  const [billingContact, setBillingContact] = useState<CheckoutContactAddress>(EMPTY_CHECKOUT_CONTACT);
+  const [shippingContact, setShippingContact] = useState<CheckoutContactAddress>(EMPTY_CHECKOUT_CONTACT);
+  const [shippingSameAsBilling, setShippingSameAsBilling] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("prepaid");
+  const [note, setNote] = useState("");
+  const [platformCommissionPercentage, setPlatformCommissionPercentage] = useState(1);
+
+  const checkoutInputClassName =
+    "w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100";
+
+  useEffect(() => {
+    if (!shippingSameAsBilling) return;
+    setShippingContact({
+      fullName: billingContact.fullName,
+      email: billingContact.email,
+      phone: { ...billingContact.phone },
+      address: { ...billingContact.address },
+    });
+  }, [shippingSameAsBilling, billingContact]);
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [proofSuccess, setProofSuccess] = useState("");
+  const [activePolicy, setActivePolicy] = useState<PolicyKey | null>(null);
+  useEffect(() => {
+    async function fetchCommission() {
+      try {
+        const response = await api.get<{ commissionPercentage: number; commissionMode: "added" }>("/orders/commission");
+        setPlatformCommissionPercentage(Number(response.data.commissionPercentage) || 1);
+      } catch {
+        setPlatformCommissionPercentage(1);
+      }
+    }
+    void fetchCommission();
+  }, []);
+
+  useEffect(() => {
+    async function fetchStore() {
+      if (!sellerSlug) { setError("Invalid store link."); setLoading(false); return; }
+      try {
+        const isAdminPreview = searchParams.get("preview") === "admin";
+        const adminToken = typeof window !== "undefined" ? localStorage.getItem(ADMIN_TOKEN_KEY) : null;
+        const r = await api.get<{ seller: Seller; products: Product[] }>(`/products/public/${sellerSlug}`, {
+          params: isAdminPreview ? { preview: "admin" } : undefined,
+          headers: isAdminPreview && adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined,
+        });
+        setSeller(r.data.seller);
+        setProducts(r.data.products);
+      } catch { setError("Seller store unavailable."); }
+      finally { setLoading(false); }
+    }
+    void fetchStore();
+  }, [searchParams, sellerSlug]);
+
+  const updateFilterDropdownStyle = () => {
+    if (typeof window === "undefined") return;
+    const rect = searchBarRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const width = 240;
+    const minLeft = 16;
+    const maxLeft = window.innerWidth - 16 - width;
+    const left = Math.min(Math.max(minLeft, rect.right - width), maxLeft);
+
+    setFilterDropdownStyle({
+      top: rect.bottom + 8,
+      left,
+    });
+  };
+
+  useEffect(() => {
+    if (!showFilterDropdown) return;
+    updateFilterDropdownStyle();
+    const handleResize = () => updateFilterDropdownStyle();
+    const handleScroll = () => updateFilterDropdownStyle();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (filterDropdownRef.current?.contains(target)) return;
+      if (searchBarRef.current?.contains(target)) return;
+      setShowFilterDropdown(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFilterDropdown]);
+
+  // Derived: category list
+  const categoryTabs = useMemo(() => {
+    const cats = collectCategoryTabs(products);
+    return ["All", ...cats];
+  }, [products]);
+
+  // Filtered + sorted products for discovery UX
+  const visibleProducts = useMemo(() => {
+    const filtered = products.filter((p) => {
+      if (activeCategory !== "All" && !productMatchesCategory(p, activeCategory)) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const categoryText = getProductCategories(p).join(" ");
+        const text = `${p.title} ${p.description || ""} ${p.category || ""} ${categoryText}`.toLowerCase();
+        if (!text.includes(q)) return false;
+      }
+      if (maxPriceFilter !== null) {
+        const unit = getProductUnitPricing(p, {});
+        if (unit.price > maxPriceFilter) return false;
+      }
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const unitA = getProductUnitPricing(a, {});
+      const unitB = getProductUnitPricing(b, {});
+      if (sortBy === "price_low") return unitA.price - unitB.price;
+      if (sortBy === "price_high") return unitB.price - unitA.price;
+      if (sortBy === "discount") {
+        const dA = unitA.mrp > unitA.price ? ((unitA.mrp - unitA.price) / unitA.mrp) * 100 : 0;
+        const dB = unitB.mrp > unitB.price ? ((unitB.mrp - unitB.price) / unitB.mrp) * 100 : 0;
+        return dB - dA;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [activeCategory, maxPriceFilter, products, searchQuery, sortBy]);
+
+  const cartEntries = useMemo(
+    () =>
+      Object.entries(cart)
+        .map(([cartItemId, item]) => {
+          const product = products.find((candidate) => candidate._id === item.productId);
+          if (!product) return null;
+          const matchedVariant =
+            findMatchingVariant(product, item.variants, item.variantId) || null;
+          const unitPrice = matchedVariant?.price ?? item.unitPrice ?? product.price;
+          const variantTitle = getVariantDisplayTitle(product, item.variantId, item.variants);
+
+          return {
+            cartItemId,
+            product,
+            item: {
+              ...item,
+              unitPrice,
+              variantTitle,
+            },
+          };
+        })
+        .filter(
+          (entry): entry is {
+            cartItemId: string;
+            product: Product;
+            item: CartItem;
+          } => Boolean(entry)
+        ),
+    [cart, products]
+  );
+
+  const itemsTotal = useMemo(
+    () =>
+      cartEntries.reduce(
+        (sum, entry) => sum + entry!.item.unitPrice * entry!.item.quantity,
+        0
+      ),
+    [cartEntries]
+  );
+
+  const selectedItems = useMemo(
+    () =>
+      cartEntries.map((entry) => ({
+        ...entry!.product,
+        _id: entry!.cartItemId,
+        title: entry!.item.variantId
+          ? `${entry!.product.title} (${entry!.item.variantTitle})`
+          : entry!.product.title,
+      })),
+    [cartEntries]
+  );
+
+  const deliveryCharge = useMemo(() => {
+    if (!seller) return 0;
+    if (seller.deliveryMode !== "flat_rate") return 0;
+
+    const threshold = seller.freeDeliveryThreshold ?? 500;
+    if (threshold > 0 && itemsTotal >= threshold) return 0;
+
+    return seller.defaultDeliveryCharge ?? 0;
+  }, [itemsTotal, seller]);
+
+  const platformFee = Math.round(itemsTotal * 100 * platformCommissionPercentage / 100) / 100;
+  const grandTotal = itemsTotal + deliveryCharge + platformFee;
+  const cartCount = Object.values(cart).reduce((s, i) => s + i.quantity, 0);
+  const allowsPrepaid = seller?.paymentMode !== "cod_only";
+  const allowsCod = seller?.paymentMode === "cod_only" || seller?.paymentMode === "both";
+
+  useEffect(() => {
+    if (!seller) return;
+    if (seller.paymentMode === "cod_only") {
+      setPaymentMethod("cod");
+    } else {
+      setPaymentMethod("prepaid");
+    }
+  }, [seller?.paymentMode]);
+
+  const policyMeta: Record<PolicyKey, { title: string; content: string }> = useMemo(() => ({
+    privacyPolicy: {
+      title: "Privacy Policy",
+      content: seller?.privacyPolicy || DEFAULT_POLICY_CONTENT.privacyPolicy,
+    },
+    returnRefundPolicy: {
+      title: "Return & Refund Policy",
+      content: seller?.returnRefundPolicy || DEFAULT_POLICY_CONTENT.returnRefundPolicy,
+    },
+    termsAndConditions: {
+      title: "Terms & Conditions",
+      content: seller?.termsAndConditions || DEFAULT_POLICY_CONTENT.termsAndConditions,
+    },
+  }), [seller]);
+
+
+
+
+  useEffect(() => {
+    if (!seller) {
+      setPublicStoreHeader(null);
+      return;
+    }
+
+    setPublicStoreHeader({
+      name: seller.businessName,
+      logo: seller.businessLogo ? normalizeImageUrl(seller.businessLogo) : "",
+    });
+
+    return () => setPublicStoreHeader(null);
+  }, [seller, setPublicStoreHeader]);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = seller?.businessName ? `${seller.businessName}` : "Zensos";
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [seller?.businessName]);
+
+  useEffect(() => {
+    const faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (!faviconElement) return;
+
+    const previousHref = faviconElement.getAttribute("href") || DEFAULT_APP_FAVICON;
+    const nextHref = seller?.favicon ? normalizeImageUrl(seller.favicon) : DEFAULT_APP_FAVICON;
+
+    faviconElement.setAttribute("href", nextHref);
+
+    return () => {
+      faviconElement.setAttribute("href", previousHref);
+    };
+  }, [seller?.favicon]);
+
+  useEffect(() => {
+    if (error) showError(error);
+  }, [error, showError]);
+
+  useEffect(() => {
+    if (successMessage) showSuccess(successMessage);
+  }, [showSuccess, successMessage]);
+
+  useEffect(() => {
+    if (proofSuccess) showSuccess(proofSuccess);
+  }, [proofSuccess, showSuccess]);
+
+  useEffect(() => {
+    if (cartFeedback) showSuccess(cartFeedback);
+  }, [cartFeedback, showSuccess]);
+
+  function getBaseCartItem(productId: string): CartItem {
+    return (
+      cart[buildCartItemKey(productId)] || {
+        productId,
+        variantId: "",
+        variantTitle: "",
+        quantity: 0,
+        variants: {},
+        unitPrice: 0,
+      }
+    );
+  }
+
+  function addProduct(productId: string) {
+    resetSavedProgress();
+    setCart(prev => {
+      const product = products.find((p) => p._id === productId);
+      if (!product) return prev;
+
+      const currentItem = getBaseCartItem(productId);
+      const variants = withAutoSelectedSingleVariants(product, currentItem.variants);
+      const requiresVariantSelection = (product.variants || []).some(v => (v.options || []).length > 0);
+      const hasSelection = hasCompleteVariantSelection(product, variants);
+
+      if (requiresVariantSelection && !hasSelection) {
+        setVariantErrorProductId(productId);
+        setCartFeedback("Please select a variant");
+        window.setTimeout(() => setCartFeedback(""), 1800);
+        return prev;
+      }
+
+      setVariantErrorProductId(null);
+      if (product) {
+        setCartFeedback(`${product.title} added to cart`);
+        window.setTimeout(() => setCartFeedback(""), 1800);
+      }
+      const cartItemKey = buildCartItemKey(productId);
+      const existingItem = prev[cartItemKey];
+      const nextQuantity = (existingItem?.quantity || 0) + 1;
+      return {
+        ...prev,
+        [cartItemKey]: {
+          productId,
+          variantId: "",
+          variantTitle: product.title,
+          quantity: nextQuantity,
+          variants,
+          unitPrice: product.price,
+        },
+      };
+    });
+  }
+
+  function removeProduct(cartItemId: string) {
+    resetSavedProgress();
+    setCart(prev => { const n = { ...prev }; delete n[cartItemId]; return n; });
+  }
+
+  function setQty(cartItemId: string, q: number) {
+    if (q <= 0) { removeProduct(cartItemId); return; }
+    const currentItem = cart[cartItemId];
+    if (!currentItem) return;
+    resetSavedProgress();
+    setCart(prev => ({
+      ...prev,
+      [cartItemId]: {
+        ...currentItem,
+        quantity: Math.max(1, q),
+      },
+    }));
+  }
+
+
+  function openCartAndScroll() {
+    // If drawer is already open, don't trigger auto-scroll
+    if (showCart) return;
+    
+    setShowCart(true);
+    // Delay slightly to allow the drawer to become visible, then scroll the drawer's internal content only
+    setTimeout(() => {
+      try {
+        if (drawerInnerRef.current && checkoutAnchorRef.current) {
+          drawerInnerRef.current.scrollTo({ top: Math.max(0, 0), behavior: "smooth" });
+        }
+      } catch (err) {
+        // ignore
+      }
+    }, 120);
+  }
+
+  // Prevent background/body scrolling when the drawer is open (mobile)
+  useEffect(() => {
+    try {
+      if (typeof document !== "undefined") {
+        if (showCart) {
+          // store exact previous overflow (can be empty string)
+          prevBodyOverflow.current = document.body.style.overflow;
+          document.body.style.overflow = "hidden";
+        } else {
+          // restore previous overflow even if it was an empty string
+          document.body.style.overflow = prevBodyOverflow.current ?? "";
+          prevBodyOverflow.current = undefined;
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+    return () => {
+      try {
+        if (typeof document !== "undefined") {
+          document.body.style.overflow = prevBodyOverflow.current ?? "";
+          prevBodyOverflow.current = undefined;
+        }
+      } catch (_) {
+        // ignore
+      }
+    };
+  }, [showCart]);
+
+  function resetSavedProgress() {
+    setProofSuccess("");
+  }
+
+  function loadRazorpayScript(): Promise<boolean> {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) { resolve(true); return; }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  // -- Place order
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSuccessMessage("");
+
+    // Validate form before proceeding
+    if (cartEntries.length === 0) { setError("Select at least one product."); return; }
+    if (!sellerSlug) { setError("Store link is invalid."); return; }
+    if (!seller) { setError("Seller store unavailable."); return; }
+    const billingError = validateCheckoutContact(billingContact, "billing address", { requireEmail: true });
+    if (billingError) { setError(billingError); return; }
+    if (!shippingSameAsBilling) {
+      const shippingError = validateCheckoutContact(shippingContact, "shipping address");
+      if (shippingError) { setError(shippingError); return; }
+    }
+    for (const { product, item } of cartEntries) {
+      for (const variant of getNormalizedVariantGroups(product)) {
+        if (!variant.options?.length) continue;
+        if (!item?.variants?.[variant.label]) {
+          setError(`Please select ${variant.label} for ${product.title}.`);
+          return;
+        }
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      // 1. Build multi-vendor delivery charges mapping
+      const deliveryChargesMap: Record<string, number> = {};
+      if (seller) {
+        deliveryChargesMap[seller._id] = deliveryCharge;
+      }
+
+      // 2. Post to backend to generate order
+    const response = await api.post<{
+  parentOrderId: string;
+  razorpayOrderId?: string;
+  amount: number;
+  currency: string;
+  keyId?: string;
+  paymentMethod: PaymentMethod;
+  subOrders: Array<{ _id: string }>;
+}>("/orders", {
+  items: cartEntries.map(({ item }) => ({
+    productId: item.productId,
+    variantId: item.variantId,
+    quantity: item.quantity,
+    selectedVariants: item.variants,
+  })),
+
+  customerName: billingContact.fullName.trim(),
+  customerEmail: String(billingContact.email || "").trim(),
+  customerPhone: formatPhone(billingContact.phone),
+  paymentMethod,
+
+  billingAddress: formatCheckoutContactAddress(billingContact),
+  billingAddressParts: billingContact.address,
+
+  shippingAddress: formatCheckoutContactAddress(
+    shippingSameAsBilling ? billingContact : shippingContact
+  ),
+
+  shippingAddressParts: shippingSameAsBilling
+    ? billingContact.address
+    : shippingContact.address,
+
+  shippingSameAsBilling,
+
+  shippingCustomerName: shippingSameAsBilling
+    ? ""
+    : shippingContact.fullName.trim(),
+
+  shippingCustomerPhone: shippingSameAsBilling
+    ? ""
+    : formatPhone(shippingContact.phone),
+
+  deliveryAddress: formatCheckoutContactAddress(
+    shippingSameAsBilling ? billingContact : shippingContact
+  ),
+
+  deliveryAddressParts: shippingSameAsBilling
+    ? billingContact.address
+    : shippingContact.address,
+
+  deliveryCharges: deliveryChargesMap,
+
+  note: note.trim(),
+});
+
+const {
+  razorpayOrderId,
+  keyId,
+  amount,
+  currency,
+  subOrders,
+} = response.data;
+const orderIds = subOrders.map((o) => o._id);
+
+if (paymentMethod === "cod") {
+  setBillingContact(EMPTY_CHECKOUT_CONTACT);
+  setShippingContact(EMPTY_CHECKOUT_CONTACT);
+  setShippingSameAsBilling(true);
+  setPaymentMethod(seller.paymentMode === "cod_only" ? "cod" : "prepaid");
+  setNote("");
+  setCart({});
+  resetSavedProgress();
+
+  const params = new URLSearchParams();
+  if (sellerSlug) {
+    params.set("sellerSlug", sellerSlug);
+  }
+  params.set("orderIds", orderIds.join(","));
+  params.set("paymentMethod", "cod");
+
+  navigate(`/thank-you?${params.toString()}`, {
+    replace: true,
+  });
+  setSubmitting(false);
+  return;
+}
+
+if (!razorpayOrderId || !keyId) {
+  setError("Could not generate payment order.");
+  setSubmitting(false);
+  return;
+}
+
+const scriptLoaded = await loadRazorpayScript();
+if (!scriptLoaded) {
+  setError("Failed to load Razorpay payment gateway. Please check your internet connection.");
+  setSubmitting(false);
+  return;
+}
+
+// Razorpay checkout
+const options = {
+  key: keyId,
+  amount: amount * 100, // paise
+  currency,
+
+  name: seller?.businessName || "Zensos Marketplace",
+
+  description: `Unified Checkout - ${subOrders.length} Shop(s)`,
+
+  image: seller?.businessLogo || "",
+
+  order_id: razorpayOrderId,
+
+  prefill: {
+    name: billingContact.fullName.trim(),
+    email: String(billingContact.email || "").trim(),
+    contact: formatPhone(billingContact.phone),
+  },
+
+  theme: {
+    color: "#0f766e",
+  },
+
+  handler: async function (paymentRes: any) {
+    try {
+      // Verify on backend so payment status becomes "paid" immediately.
+      // This avoids relying solely on Razorpay webhooks for the UI.
+      try {
+        await api.post("/orders/verify-payment", {
+          razorpay_order_id: paymentRes?.razorpay_order_id,
+          razorpay_payment_id: paymentRes?.razorpay_payment_id,
+          razorpay_signature: paymentRes?.razorpay_signature,
+          orderIds,
+        });
+      } catch (verifyErr) {
+        // If verification fails, we still navigate; ThankYouPage will continue polling.
+        console.error("[verify-payment] failed:", verifyErr);
+      }
+
+      // success flow
+      setBillingContact(EMPTY_CHECKOUT_CONTACT);
+      setShippingContact(EMPTY_CHECKOUT_CONTACT);
+      setShippingSameAsBilling(true);
+      setPaymentMethod(seller.paymentMode === "cod_only" ? "cod" : "prepaid");
+      setNote("");
+      setCart({});
+      resetSavedProgress();
+
+      const params = new URLSearchParams();
+      if (sellerSlug) {
+        params.set("sellerSlug", sellerSlug);
+      }
+      params.set("orderIds", orderIds.join(","));
+      params.set("paymentMethod", "prepaid");
+
+      navigate(`/thank-you?${params.toString()}`, {
+        replace: true,
+      });
+    } catch (error) {
+      console.error(error);
+      setError("Payment succeeded but post-payment flow failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  },
+
+  modal: {
+    ondismiss: function () {
+      setSubmitting(false);
+    },
+  },
+};
+
+const rzp = new (window as any).Razorpay(options);
+
+rzp.open(); } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || "Could not generate transaction order.");
+      setSubmitting(false);
+    }
+  }
+ function openVariantPopup(productId: string) {   const product = products.find(p => p._id === productId);
+    if (!product) return;
+    setPopupVariants(withAutoSelectedSingleVariants(product, {}));
+    setPopupVariantQuantities(
+      Object.entries(cart).reduce<Record<string, {
+        quantity: number;
+        selections: Record<string, string>;
+        variantTitle: string;
+        unitPrice: number;
+      }>>((acc, [, item]) => {
+        if (item.productId !== productId || !item.variantId || item.quantity <= 0) return acc;
+        acc[item.variantId] = {
+          quantity: item.quantity,
+          selections: item.variants,
+          variantTitle: item.variantTitle,
+          unitPrice: item.unitPrice,
+        };
+        return acc;
+      }, {})
+    );
+    setPopupVariantError("");
+    setVariantPopupProductId(productId);
+  }
+
+  function setPopupVariantQuantity(
+    variantId: string,
+    details: {
+      quantity: number;
+      selections: Record<string, string>;
+      variantTitle: string;
+      unitPrice: number;
+    },
+  ) {
+    if (details.quantity <= 0 && variantPopupProductId) {
+      const product = products.find(p => p._id === variantPopupProductId);
+      const activeVariant = product && hasCompleteVariantSelection(product, popupVariants)
+        ? findMatchingVariant(product, popupVariants)
+        : null;
+      if (activeVariant?.variantId === variantId) {
+        setPopupVariants(product ? withAutoSelectedSingleVariants(product, {}) : {});
+      }
+    }
+    setPopupVariantQuantities(prev => {
+      if (details.quantity <= 0) {
+        const next = { ...prev };
+        delete next[variantId];
+        return next;
+      }
+      return {
+        ...prev,
+        [variantId]: details,
+      };
+    });
+  }
+
+  function handlePopupAddToCart() {
+    if (!variantPopupProductId) return;
+    const product = products.find(p => p._id === variantPopupProductId);
+    if (!product) return;
+    if (Object.keys(popupVariantQuantities).length === 0) {
+      setPopupVariantError("Please select at least one variant.");
+      return;
+    }
+
+    resetSavedProgress();
+    setCart(prev => {
+      const next = { ...prev };
+      for (const [cartItemId, item] of Object.entries(next)) {
+        if (item.productId === product._id && item.variantId) {
+          delete next[cartItemId];
+        }
+      }
+
+      for (const [variantId, draft] of Object.entries(popupVariantQuantities)) {
+        if (draft.quantity <= 0) continue;
+        next[buildCartItemKey(product._id, variantId)] = {
+          productId: product._id,
+          variantId,
+          variantTitle: draft.variantTitle,
+          quantity: draft.quantity,
+          variants: draft.selections,
+          unitPrice: draft.unitPrice,
+        };
+      }
+
+      return next;
+    });
+
+    setCartFeedback(`${product.title} added to cart`);
+    window.setTimeout(() => setCartFeedback(""), 1800);
+    setPopupVariantQuantities({});
+    setPopupVariantError("");
+    setVariantPopupProductId(null);
+  }
+
+
+
+
+  if (loading) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-8">
+        <div className="mb-6 h-24 animate-pulse rounded-3xl bg-slate-200/80 dark:bg-slate-800/80" />
+        <div className="mb-4 h-16 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800/80" />
+        <div className="grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <div className="h-36 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-2 h-4 w-1/2 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="mt-4 h-10 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+            </div>
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  if (!seller) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center px-4 py-10">
+        <div className="surface-card-strong rounded-[30px] p-8 text-center">
+          <div className="mb-3 inline-flex items-center rounded-2xl border border-teal-100 bg-white/85 px-4 py-2 dark:border-teal-900/40 dark:bg-slate-950/80">
+            <ZensosLogo size="md" alt="Zensos" />
+          </div>
+          <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-slate-100">Store Not Found</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{error || "This seller link is unavailable."}</p>
+          <Link to="/login" className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"><AppIcon name="login" className="text-[14px]" />Sign In to Zensos</Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <>
+    <main className="mx-auto min-h-screen w-full max-w-7xl px-3 pb-24 pt-5 sm:px-5 sm:pb-28 sm:pt-8">
+
+      {/* -- LEFT: Store + Products --------------------------- */}
+      <section className="space-y-6">
+            {/* Social + contact icons � right side */}
+        {/* Banners */}
+        {seller.banners?.length > 0 && (
+          <BannerCarousel banners={seller.banners} />
+        )}
+
+        {/* Discovery controls */}
+        <div className="surface-card rounded-[28px] bg-gradient-to-br from-white to-emerald-50/70 dark:from-slate-950/95 dark:to-slate-900/90 overflow-visible"
+          style={{ zIndex: 1000 }}>
+          {/* Smart search bar */}
+          <div ref={searchBarRef} className="relative overflow-visible"
+            style={{ zIndex: 1000 }}>
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                <AppIcon name="search" className="text-[11px]" />
+              </span>
+              <input
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setShowFilterDropdown(false); }}
+                placeholder="Search products, categories..."
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400 dark:text-slate-100"
+              />
+              {/* Active filter chips */}
+              {activeCategory !== "All" && (
+                <button type="button" onClick={() => setActiveCategory("All")}
+                  className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300">
+                  <span className="max-w-[72px] truncate">{activeCategory}</span><AppIcon name="close" className="text-[8px]" />
+                </button>
+              )}
+              {sortBy !== "latest" && (
+                <button type="button" onClick={() => setSortBy("latest")}
+                  className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300">
+                  <span className="max-w-[72px] truncate">{sortBy === "price_low" ? "Price ?" : sortBy === "price_high" ? "Price ?" : "Discount"}</span><AppIcon name="close" className="text-[8px]" />
+                </button>
+              )}
+              {maxPriceFilter !== null && (
+                <button type="button" onClick={() => setMaxPriceFilter(null)}
+                  className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                  <span>=?{maxPriceFilter}</span><AppIcon name="close" className="text-[8px]" />
+                </button>
+              )}
+              {/* Filter icon */}
+              <button type="button" onClick={() => setShowFilterDropdown((prev) => !prev)}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition ${
+                  (activeCategory !== "All" || sortBy !== "latest" || maxPriceFilter !== null)
+                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-700 dark:bg-teal-900 dark:text-teal-300"
+                    : "border-emerald-100 bg-white/90 text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400"
+                }`} title="Filters">
+                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${activeCategory !== "All" || sortBy !== "latest" || maxPriceFilter !== null ? "bg-teal-600 dark:bg-teal-500" : "bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"}`}>
+                  <AppIcon name="filter" className="text-[10px]" />
+                </span>
+              </button>
+            </div>
+            {/* Filter dropdown */}
+            {showFilterDropdown && filterDropdownStyle && createPortal(
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden dark:border-teal-900/40 dark:bg-slate-950"
+                ref={filterDropdownRef}
+                style={{
+                  position: "fixed",
+                  top: filterDropdownStyle.top,
+                  left: filterDropdownStyle.left,
+                  width: 240,
+                  zIndex: 9999,
+                }}>
+                {/* Sort */}
+                <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Sort by</p>
+                {(["latest", "price_low", "price_high", "discount"] as const).map(opt => (
+                  <button key={opt} type="button"
+                    onClick={() => { setSortBy(opt); setShowFilterDropdown(false); }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
+                      sortBy === opt ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}>
+                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${sortBy === opt ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                    {opt === "latest" ? "Latest" : opt === "price_low" ? "Price: Low to High" : opt === "price_high" ? "Price: High to Low" : "Best Discount"}
+                  </button>
+                ))}
+                {/* Price */}
+                <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-slate-100 dark:border-slate-800 mt-1">Max price</p>
+                {([null, 100, 250, 500, 1000] as (number | null)[]).map(v => (
+                  <button key={String(v)} type="button"
+                    onClick={() => { setMaxPriceFilter(v); setShowFilterDropdown(false); }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
+                      maxPriceFilter === v ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}>
+                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${maxPriceFilter === v ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                    {v === null ? "All prices" : <>Under {"\u20B9"}{v}</>}
+                  </button>
+                ))}
+                {/* Category */}
+                {categoryTabs.length > 1 && (
+                  <>
+                    <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-t border-slate-100 dark:border-slate-800 mt-1">Category</p>
+                    {categoryTabs.map(c => (
+                      <button key={c} type="button"
+                        onClick={() => { setActiveCategory(c); setShowFilterDropdown(false); }}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
+                          activeCategory === c ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                        }`}>
+                        <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${activeCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                        {c}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {/* Reset */}
+                <div className="border-t border-slate-100 dark:border-teal-800 px-2 py-1.5 mt-1">
+                  <button type="button"
+                    onClick={() => { setSortBy("latest"); setMaxPriceFilter(null); setActiveCategory("All"); setSearchQuery(""); setShowFilterDropdown(false); }}
+                    className="w-full rounded-lg px-2 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition">Clear all filters</button>
+                </div>
+              </div>,
+              document.body
+            )}
+          </div>
+        </div>
+
+        {/* Products */}
+        {(() => {
+          function renderCard(product: Product) {
+            const baseItem = getBaseCartItem(product._id);
+            const productCartEntries = cartEntries.filter((entry) => entry?.product._id === product._id);
+            const hasVariantLines = productCartEntries.some((entry) => entry?.item.variantId);
+            const productCartQuantity = productCartEntries.reduce((sum, entry) => sum + entry!.item.quantity, 0);
+            const unit = getProductUnitPricing(product, baseItem.variants);
+            const unitPrice = unit.price;
+            const unitMrp = unit.mrp;
+            const normalizedVariants = getNormalizedVariantGroups(product);
+            const normalizedVariantItems = getNormalizedVariantItems(product);
+            const displayMeasure = getProductDisplayMeasure(product);
+            const requiresVariantSelection = normalizedVariantItems.length > 0 || normalizedVariants.some(v => (v.options || []).length > 0);
+            const discountPercent = unitMrp > unitPrice ? Math.round(((unitMrp - unitPrice) / unitMrp) * 100) : 0;
+            const hasConfiguredVariantItems = Array.isArray(product.variantItems) && product.variantItems.length > 0;
+            const isOutOfStock = requiresVariantSelection
+              ? hasConfiguredVariantItems && normalizedVariantItems.length === 0
+              : false;
+            const isNewProduct = Date.now() - new Date(product.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7;
+            const productImages = getProductImages(product);
+            return (
+              <article key={product._id}
+                className={`group flex flex-col overflow-hidden rounded-[26px] border bg-white/95 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950/90 ${productCartQuantity > 0 ? "border-emerald-400 ring-2 ring-emerald-100/80 dark:ring-emerald-900/40" : "border-slate-200"}`}>
+                <ProductImageGallery
+                  productId={product._id}
+                  title={product.title}
+                  images={productImages}
+                  className="aspect-square"
+                >
+                  <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex flex-col gap-1">
+                    {product.isRecommended && <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-white">REC</span>}
+                    {discountPercent > 0 && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
+                    {isNewProduct && !discountPercent && <span className="rounded-md bg-sky-500 px-1.5 py-0.5 text-[9px] font-bold text-white">NEW</span>}
+                    {isOutOfStock && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">OUT</span>}
+                  </div>
+                </ProductImageGallery>
+                {/* Info */}
+                <div className="flex flex-1 flex-col gap-2 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="line-clamp-2 text-[13px] font-semibold leading-tight text-slate-800 dark:text-slate-100">{product.title}</p>
+                  
+                  </div>
+                  {displayMeasure && (
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400">{displayMeasure}</p>
+                  )}
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{unitPrice}</span>
+                    {unitMrp > 0 && unitMrp > unitPrice && (
+                      <span className="text-xs text-slate-400 line-through">₹{unitMrp}</span>
+                    )}
+                  </div>
+
+                  {/* Details toggle */}
+                  {(product.description || product.notes) && (
+                    <button type="button"
+                      onClick={() => setExpandedProductId(prev => prev === product._id ? null : product._id)}
+                      className="text-left text-[11px] font-semibold text-emerald-600 hover:underline">
+                      {expandedProductId === product._id ? "Hide details" : "View details"}
+                    </button>
+                  )}
+                  {expandedProductId === product._id && product.description && (
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{product.description}</p>
+                  )}
+                  {expandedProductId === product._id && product.notes && (
+                    <p className="text-[11px] italic text-slate-400">{product.notes}</p>
+                  )}
+                  {/* ADD / stepper */}
+                  <div className="mt-auto pt-1">
+                    {!requiresVariantSelection && productCartQuantity > 0 ? (
+                      <div className="flex items-center justify-between rounded-xl bg-emerald-600 px-2 py-1">
+                        <button type="button" onClick={() => setQty(buildCartItemKey(product._id), baseItem.quantity - 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30">-</button>
+                        <span className="text-sm font-bold text-white">{baseItem.quantity}</span>
+                        <button type="button" onClick={() => setQty(buildCartItemKey(product._id), baseItem.quantity + 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30">+</button>
+                      </div>
+                    ) : (
+                      <button type="button" disabled={isOutOfStock}
+                        onClick={() => { if (requiresVariantSelection) { openVariantPopup(product._id); } else { addProduct(product._id); } }}
+                        className="w-full rounded-xl border-2 border-emerald-500 bg-white py-1 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900">
+                        {isOutOfStock ? "Out of stock" : (
+                          <span className="flex flex-col items-center leading-tight">
+                            <span>{requiresVariantSelection ? "Choose variant" : "ADD"}</span>
+                            {requiresVariantSelection && <span className="text-[9px] font-medium text-emerald-500">{normalizedVariantItems.length || normalizedVariants.reduce((s,v)=>s+v.options.length,0)} options</span>}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {requiresVariantSelection && productCartQuantity > 0 && (
+                    <p className="text-center text-[10px] text-emerald-600">
+                      {hasVariantLines ? `${productCartEntries.length} variants in cart` : `${productCartQuantity} in cart`}
+                    </p>
+                  )}
+                </div>
+              </article>
+            );
+          }
+
+          if (visibleProducts.length === 0) {
+            return (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-6 text-center">
+                <p className="text-sm font-semibold text-amber-700">No products match your filters.</p>
+                <p className="mt-1 text-xs text-amber-600">Try clearing search or selecting a different category.</p>
+              </div>
+            );
+          }
+          if (activeCategory === "All" && !searchQuery.trim() && maxPriceFilter === null) {
+            const categorized = groupProductsByCategory(visibleProducts);
+            const recommendedProducts = visibleProducts.filter((product) => product.isRecommended);
+            return (
+              <div className="space-y-6">
+                {recommendedProducts.length > 0 && (
+                  <CategoryScrollRow
+                    title="Recommended"
+                    onSeeAll={() => setActiveCategory("All")}
+                  >
+                    {recommendedProducts.map(p => (
+                      <div key={p._id} className="w-36 shrink-0 sm:w-40">
+                        {renderCard(p)}
+                      </div>
+                    ))}
+                  </CategoryScrollRow>
+                )}
+                {Array.from(categorized.entries()).map(([cat, prods]) => (
+              <CategoryScrollRow
+                  key={cat}
+                  title={cat}
+                  onSeeAll={() => setActiveCategory(cat)}
+                >
+                  {prods.map(p => (
+                    <div key={p._id} className="w-36 shrink-0 sm:w-40">
+                      {renderCard(p)}
+                    </div>
+                  ))}
+                </CategoryScrollRow>
+                ))}
+              </div>
+            );
+          }
+          return (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {visibleProducts.map(renderCard)}
+            </div>
+          );
+        })()}
+      </section>
+    </main>
+
+    {!showCart && (
+      <button
+        type="button"
+        onClick={openCartAndScroll}
+        aria-label="Open cart"
+        className="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
+      >
+        <AppIcon name="cart" className="text-lg" />
+        {cartCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+            {cartCount > 99 ? "99+" : cartCount}
+          </span>
+        )}
+      </button>
+    )}
+
+    {/* Backdrop */}
+    {showCart && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]" onClick={() => setShowCart(false)} />}
+
+    {/* Cart Drawer � bottom on mobile/tablet, right on desktop */}
+    <div ref={cartRef} className={`fixed z-50 bg-white transition-transform duration-300 ease-in-out bottom-0 left-0 right-0 max-h-[88vh] rounded-t-3xl shadow-2xl dark:border-l dark:border-teal-900/40 dark:bg-gradient-to-b dark:from-slate-950 dark:to-slate-900 lg:bottom-0 lg:left-auto lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[460px] lg:flex-col lg:rounded-none lg:rounded-l-3xl ${showCart ? "translate-y-0 lg:translate-x-0 lg:translate-y-0" : "translate-y-full lg:translate-x-full lg:translate-y-0"}`}>
+      <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-600 lg:hidden" />
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-4 border-b border-slate-200 backdrop-blur dark:border-teal-900/30 dark:bg-slate-950/95">
+        <div>
+          <div className="min-w-0">
+                <h1 className="truncate font-heading text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl dark:text-slate-100">
+                  {seller.businessName}
+                </h1>
+              </div>
+        </div>
+        <button type="button" onClick={() => setShowCart(false)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
+          <AppIcon name="close" className="text-[11px]" />
+        </button>
+      </div>
+      <div
+        ref={drawerInnerRef}
+        style={{
+          WebkitOverflowScrolling: "touch" as any,
+          touchAction: "pan-y",
+        }}
+        className="space-y-5 overflow-y-auto p-5 lg:flex-1 max-h-[calc(88vh-72px)] lg:max-h-none lg:h-full"
+      >
+        <div ref={checkoutAnchorRef}>
+          <h2 className="font-heading text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{t("store.checkout", "Checkout")}</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review your cart, enter delivery details, then pay.</p>
+        </div>
+
+        {/* Order summary */}
+        {cartEntries.length === 0 ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">Add one or more products to cart.</p>
+        ) : (
+          <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white p-4 space-y-3 dark:border-slate-700 dark:from-slate-900 dark:to-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Order Summary</p>
+              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-700">
+                {cartEntries.length} item{cartEntries.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {cartEntries.map(({ cartItemId, product, item }) => (
+                <div key={cartItemId} className="rounded-xl border border-slate-200 bg-white/90 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950/70">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{product.title}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {item.variantId ? `${item.variantTitle} • Qty ${item.quantity}` : `Qty ${item.quantity}`}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">₹{item.unitPrice * item.quantity}</p>
+                      <button
+                        type="button"
+                        onClick={() => removeProduct(cartItemId)}
+                        className="mt-1 text-xs font-semibold text-rose-600 transition hover:text-rose-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-slate-200 pt-2 space-y-1">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>Items total</span><span>&#8377;{itemsTotal.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-slate-600">
+                <span>
+                  {seller?.deliveryMode === "flat_rate"
+                    ? `Delivery charge${seller.freeDeliveryThreshold > 0 ? ` (Free above Rs. ${seller.freeDeliveryThreshold})` : ""}`
+                    : "Delivery charge"}
+                </span>
+                <span className="font-semibold text-slate-800">
+                  {deliveryCharge === 0 ? "Free" : <>&#8377;{deliveryCharge.toLocaleString("en-IN")}</>}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
+                <span>Platform charges ({platformCommissionPercentage}%)</span>
+                <span className="font-semibold text-slate-800">&#8377;{platformFee.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200 text-sm">
+                <span>Total Payable</span><span>&#8377;{grandTotal.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm dark:border-teal-900/30 dark:bg-slate-950/70">
+          <div className="flex items-start gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-sm font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-200">
+              <AppIcon name="cart" />
+            </span>
+            <div className="space-y-1 pt-0.5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Checkout & Payment</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Enter billing and shipping details below. Vendor settlement is processed via Razorpay Route after the platform charge is retained.</p>
+            </div>
+          </div>
+
+          {/* Unified Order form */}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <CheckoutAddressSection
+              title="Billing Address"
+              value={billingContact}
+              onChange={setBillingContact}
+              inputClassName={checkoutInputClassName}
+              datalistIdPrefix="billing-"
+              required
+              showEmail
+              emailRequired
+            />
+            <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                checked={shippingSameAsBilling}
+                onChange={(event) => setShippingSameAsBilling(event.target.checked)}
+              />
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Shipping address same as billing address
+              </span>
+            </label>
+            {!shippingSameAsBilling ? (
+              <CheckoutAddressSection
+                title="Shipping Address"
+                value={shippingContact}
+                onChange={setShippingContact}
+                inputClassName={checkoutInputClassName}
+                datalistIdPrefix="shipping-"
+                required
+              />
+            ) : null}
+            {(allowsPrepaid || allowsCod) && (
+              <fieldset className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/50">
+                <legend className="px-1 text-sm font-bold text-slate-800 dark:text-slate-200">Payment Method</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {allowsPrepaid && (
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${paymentMethod === "prepaid" ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-200" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"}`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="prepaid"
+                        checked={paymentMethod === "prepaid"}
+                        onChange={() => setPaymentMethod("prepaid")}
+                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                      />
+                      Pay Online
+                    </label>
+                  )}
+                  {allowsCod && (
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${paymentMethod === "cod" ? "border-zinc-400 bg-zinc-100 text-zinc-900 dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"}`}>
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cod"
+                        checked={paymentMethod === "cod"}
+                        onChange={() => setPaymentMethod("cod")}
+                        className="h-4 w-4 text-zinc-700 focus:ring-zinc-500"
+                      />
+                      Cash on Delivery
+                    </label>
+                  )}
+                </div>
+              </fieldset>
+            )}
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Note (optional)</span>
+              <textarea className="min-h-12 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                placeholder="Special instructions..." value={note} onChange={e => setNote(e.target.value)} />
+            </label>
+
+            <button type="submit" disabled={submitting || selectedItems.length === 0 || !billingContact.fullName.trim() || !String(billingContact.email || "").trim() || !billingContact.phone.number.trim()}
+              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:from-emerald-500 dark:hover:via-teal-500 dark:hover:to-sky-500 mt-2">
+              {submitting ? "Placing order..." : paymentMethod === "cod" ? `Place COD Order (₹${grandTotal})` : `Pay & Place Order (₹${grandTotal})`}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
+
+
+    {/* Variant Selection Popup */}
+    {variantPopupProductId && (() => {
+      const product = products.find(p => p._id === variantPopupProductId);
+      if (!product) return null;
+      const vgs = getNormalizedVariantGroups(product);
+      const selectedVariantEntries = Object.entries(popupVariantQuantities)
+        .filter(([, entry]) => entry.quantity > 0)
+        .sort(([, a], [, b]) => a.variantTitle.localeCompare(b.variantTitle));
+      const hasDraftSelections = selectedVariantEntries.length > 0;
+      return (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/45 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-4" onClick={() => setVariantPopupProductId(null)}>
+          <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-950 sm:max-h-[calc(100vh-2rem)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-7 sm:py-5">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-teal-700 dark:text-teal-300">Select Variants</p>
+                <h3 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100 line-clamp-2">{product.title}</h3>
+              </div>
+              <button type="button" onClick={() => setVariantPopupProductId(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
+                <AppIcon name="close" className="text-[11px]" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+            <div className="grid gap-4">
+              <div className="min-h-0">
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 sm:p-5">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">Choose product variants</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+              {vgs.map(v => (
+                <div key={v.label}>
+                  <div className="mb-3">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{v.label}</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                    {v.options.map(opt => {
+                      const { price: optPrice, mrp: optMrp } = getVariantOptionPricing(product, v.label, opt);
+                      const optOut = Array.isArray(product.variantItems) && product.variantItems.length > 0
+                        ? !product.variantItems.some((item) => item.isActive !== false && item.attributes?.[v.label] === opt)
+                        : false;
+                      const isSelectedOption = popupVariants[v.label] === opt;
+                      const nextSelections = { ...popupVariants, [v.label]: opt };
+                      const optionMatchedVariant = hasCompleteVariantSelection(product, nextSelections)
+                        ? findMatchingVariant(product, nextSelections)
+                        : null;
+                      const optionDraft = optionMatchedVariant
+                        ? popupVariantQuantities[optionMatchedVariant.variantId]
+                        : null;
+                      const optionDraftQuantity = optionDraft?.quantity || 0;
+                      if (optionMatchedVariant && optionDraft && optionDraftQuantity > 0) {
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              setPopupVariants(nextSelections);
+                              setPopupVariantError("");
+                            }}
+                            className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3.5 text-left transition dark:border-emerald-800 dark:bg-emerald-950/20"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-[15px] font-semibold text-emerald-900 dark:text-emerald-200">{opt}</p>
+                                <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                                  {optPrice ? (
+                                    <VariantPriceLabel price={optPrice} mrp={optMrp} className="text-emerald-700/80 dark:text-emerald-300/80" />
+                                  ) : (
+                                    "Selected variant"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      }
+                      return (<button key={opt} type="button" disabled={optOut}
+                        onClick={() => {
+                          setPopupVariants(nextSelections);
+                          setPopupVariantError("");
+                          if (!optionMatchedVariant || popupVariantQuantities[optionMatchedVariant.variantId]) return;
+                          setPopupVariantQuantity(optionMatchedVariant.variantId, {
+                            quantity: 1,
+                            selections: nextSelections,
+                            variantTitle: optionMatchedVariant.title || product.title,
+                            unitPrice: optionMatchedVariant.price,
+                          });
+                        }}
+                        className={`rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition disabled:opacity-40 ${isSelectedOption ? "border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-200" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"}`}>
+                        <span className="block">{opt}</span>
+                        {optPrice ? (
+                          <span className="mt-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <VariantPriceLabel price={optPrice} mrp={optMrp} />
+                          </span>
+                        ) : null}
+                      </button>);
+                    })}
+                  </div>
+                </div>
+              ))}
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Selected variants</p>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Adjust quantity right here before adding to cart.</p>
+                        </div>
+                        <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
+                          {selectedVariantEntries.length} selected
+                        </span>
+                      </div>
+
+                      <div className="mt-3 space-y-3">
+                        {selectedVariantEntries.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+                            Choose a variant option to start adding combinations.
+                          </div>
+                        ) : (
+                          selectedVariantEntries.map(([variantId, draft]) => (
+                            <div key={variantId} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {draft.variantTitle || getVariantDisplayTitle(product, variantId, draft.selections)}
+                                  </p>
+                                  <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                                    {Object.entries(draft.selections).map(([label, value]) => `${label}: ${value}`).join(" | ")}
+                                  </p>
+                                </div>
+                                <div className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {(() => {
+                                    const matched = findMatchingVariant(product, draft.selections, variantId);
+                                    const unitMrp = matched?.mrp
+                                      ?? Object.entries(draft.selections).reduce<number | undefined>((found, [label, value]) => {
+                                        if (found) return found;
+                                        const key = getVariantPriceKey(label, value);
+                                        const variantMrp = product.variantMrps?.[key];
+                                        return typeof variantMrp === "number" && variantMrp > 0 ? variantMrp : found;
+                                      }, undefined)
+                                      ?? product.mrp;
+                                    return <VariantPriceLabel price={draft.unitPrice} mrp={unitMrp} />;
+                                  })()}
+                                </div>
+                              </div>
+
+                              <div className="mt-3 flex items-center justify-end">
+                                <div className="inline-flex items-center gap-1 rounded-2xl border border-emerald-200 bg-white p-1 text-emerald-700 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-300">
+                                  <button
+                                    type="button"
+                                    onClick={() => setPopupVariantQuantity(variantId, {
+                                      quantity: draft.quantity - 1,
+                                      selections: draft.selections,
+                                      variantTitle: draft.variantTitle,
+                                      unitPrice: draft.unitPrice,
+                                    })}
+                                    className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="min-w-8 text-center text-sm font-bold">{draft.quantity}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPopupVariantQuantity(variantId, {
+                                      quantity: draft.quantity + 1,
+                                      selections: draft.selections,
+                                      variantTitle: draft.variantTitle,
+                                      unitPrice: draft.unitPrice,
+                                    })}
+                                    className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hidden min-h-0">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70 sm:p-5 xl:flex xl:max-h-[calc(100vh-15rem)] xl:flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">Selected variants</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Fine-tune quantities before adding to cart.</p>
+                    </div>
+                    <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
+                      {selectedVariantEntries.length} selected
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
+                    {selectedVariantEntries.length === 0 ? (
+                      <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
+                        Choose a variant option to start adding combinations.
+                      </div>
+                    ) : (
+                      selectedVariantEntries.map(([variantId, draft]) => {
+                        const selectionSummary = Object.entries(draft.selections)
+                          .map(([label, value]) => `${label}: ${value}`)
+                          .join(" · ");
+                        return (
+                          <div key={variantId} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">
+                                  {draft.variantTitle || getVariantDisplayTitle(product, variantId, draft.selections)}
+                                </p>
+                                {selectionSummary ? (
+                                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{selectionSummary}</p>
+                                ) : null}
+                              </div>
+                              <div className="shrink-0 text-sm font-bold text-slate-900 dark:text-slate-100">
+                                {(() => {
+                                  const matched = findMatchingVariant(product, draft.selections, variantId);
+                                  const unitMrp = matched?.mrp
+                                    ?? Object.entries(draft.selections).reduce<number | undefined>((found, [label, value]) => {
+                                      if (found) return found;
+                                      const key = getVariantPriceKey(label, value);
+                                      const variantMrp = product.variantMrps?.[key];
+                                      return typeof variantMrp === "number" && variantMrp > 0 ? variantMrp : found;
+                                    }, undefined)
+                                    ?? product.mrp;
+                                  return <VariantPriceLabel price={draft.unitPrice} mrp={unitMrp} />;
+                                })()}
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-end">
+                              <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                                <button
+                                  type="button"
+                                  onClick={() => setPopupVariantQuantity(variantId, {
+                                    quantity: draft.quantity - 1,
+                                    selections: draft.selections,
+                                    variantTitle: draft.variantTitle,
+                                    unitPrice: draft.unitPrice,
+                                  })}
+                                  className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                  -
+                                </button>
+                                <span className="min-w-10 text-center text-sm font-bold">{draft.quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setPopupVariantQuantity(variantId, {
+                                    quantity: draft.quantity + 1,
+                                    selections: draft.selections,
+                                    variantTitle: draft.variantTitle,
+                                    unitPrice: draft.unitPrice,
+                                  })}
+                                  className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+            <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-7">
+              {popupVariantError && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1.5">{popupVariantError}</p>}
+              {hasDraftSelections && (
+                <button
+                  type="button"
+                  onClick={handlePopupAddToCart}
+                  className="mt-3 w-full rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-3.5 text-sm font-semibold text-white transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 dark:hover:from-emerald-500 dark:hover:via-teal-500 dark:hover:to-sky-500"
+                >
+                  Add to Cart
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+    <footer className="space-y-3 py-4 text-center text-xs text-slate-400">
+      {seller.socialLinks?.some((s) => String(s.url || "").trim()) && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Stay Connected</p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            
+            {seller.socialLinks.filter((s) => String(s.url || "").trim()).map((s, i) => (
+              <a
+                key={i}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                title={s.platform}
+                aria-label={s.platform}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-sm transition hover:from-sky-400 hover:to-cyan-500 dark:from-cyan-500 dark:to-blue-500"
+              >
+                <AppIcon name={SOCIAL_ICONS[s.platform] || "link"} className="text-sm" />
+              </a>
+            ))}
+             {seller.whatsappNumber && (
+                <a href={`https://wa.me/${seller.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+                  title="Chat on WhatsApp" aria-label="Chat on WhatsApp"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <AppIcon name="whatsapp" className="text-sm" />
+                </a>
+              )}
+              {seller.callNumber && (
+                <a href={`tel:${seller.callNumber}`} title="Call Seller" aria-label="Call Seller"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-sky-100 dark:border-sky-900/50 dark:bg-sky-950/45 dark:text-sky-300">
+                  <AppIcon name="phone" className="text-sm" />
+                </a>
+              )}
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button type="button" onClick={() => setActivePolicy("privacyPolicy")} className="font-semibold text-slate-500 hover:text-slate-700">
+          Privacy Policy
+        </button>
+        <button type="button" onClick={() => setActivePolicy("returnRefundPolicy")} className="font-semibold text-slate-500 hover:text-slate-700">
+          Return & Refund Policy
+        </button>
+        <button type="button" onClick={() => setActivePolicy("termsAndConditions")} className="font-semibold text-slate-500 hover:text-slate-700">
+          Terms & Conditions
+        </button>
+      </div>
+      <p>
+        <span className="inline-flex flex-wrap items-center justify-center gap-2 text-slate-500">
+          <span>Powered by</span>
+          <ZensosLogo size="sm" alt="Zensos" />
+        </span>
+      </p>
+    </footer>
+    {activePolicy && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-[2px]">
+        <div className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-card">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Store Policy</p>
+              <h3 className="mt-1 font-heading text-xl font-bold text-slate-900">{policyMeta[activePolicy].title}</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActivePolicy(null)}
+              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Close
+            </button>
+          </div>
+          <div className="max-h-[calc(85vh-88px)] overflow-y-auto px-5 py-4">
+            <div className="whitespace-pre-line text-sm leading-6 text-slate-700">
+              {policyMeta[activePolicy].content}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
+  );
+}
+
+

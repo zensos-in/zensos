@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favico.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zensos</title>
+    <meta name="description" content="Zensos helps small sellers and home businesses create their own online store in minutes. Share your store link, accept UPI payments, and manage orders — all in one place." />
+    <meta name="theme-color" content="#0d9488" />
+    <!-- Open Graph -->
+    <meta property="og:title" content="Zensos — Your Personal Online Store" />
+    <meta property="og:description" content="Create your free online store in minutes. Share your link, get orders, accept UPI." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Zensos" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Zensos" />
+    <meta name="twitter:description" content="Your Store. Your Link. Your Sales." />
+  </head>
+  <body>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("zensos_theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (stored === "dark" || (!stored && prefersDark)) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
