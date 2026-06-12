@@ -501,8 +501,8 @@ const emailError =
             { title: "Share instantly", detail: "Launch your store link fast", icon: "share" },
           ].map((item) => (
             <div key={item.title} className="surface-card rounded-[24px] p-4">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
-                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[14px]" />
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[22px]" />
               </span>
               <p className="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.detail}</p>
@@ -563,8 +563,8 @@ const emailError =
               }`}
             >
               {m === "login"
-                ? <><AppIcon name="login" className="text-[10px]" /> {t("auth.login", "Login")}</>
-                : <><AppIcon name="register" className="text-[10px]" /> {t("auth.register", "Register")}</>}
+                ? <><AppIcon name="login" className="text-[16px]" /> {t("auth.login", "Login")}</>
+                : <><AppIcon name="register" className="text-[16px]" /> {t("auth.register", "Register")}</>}
             </button>
           ))}
         </div>
@@ -583,7 +583,7 @@ const emailError =
             {mode === "register" && (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/70">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-700">
+                  <p className="text-xs font-semibold uppercase text-teal-700">
                     Step {registerSectionIndex + 1} of {registerSections.length}
                   </p>
                 </div>
@@ -659,7 +659,7 @@ const emailError =
                   {/* Divider */}
                   <div className={`sm:col-span-2 ${registerSection === "business" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
                     <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    <span className="text-xs font-semibold uppercase text-slate-400">
                       Business Info
                     </span>
                     <div className="h-px flex-1 bg-slate-200" />
@@ -705,7 +705,7 @@ const emailError =
 
                   <div className={`sm:col-span-2 ${registerSection === "bank" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
                     <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Bank & Payments</span>
+                    <span className="text-xs font-semibold uppercase text-slate-400">Bank & Payments</span>
                     <div className="h-px flex-1 bg-slate-200" />
                   </div>
 
@@ -761,7 +761,7 @@ const emailError =
 
                   <div className={`sm:col-span-2 ${registerSection === "address" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
                     <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Address & Contact</span>
+                    <span className="text-xs font-semibold uppercase text-slate-400">Address & Contact</span>
                     <div className="h-px flex-1 bg-slate-200" />
                   </div>
 
@@ -803,7 +803,7 @@ const emailError =
                   {/* KYC Documents */}
                   <div className={`sm:col-span-2 ${registerSection === "kyc" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
                     <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">PAN & KYC Documents</span>
+                    <span className="text-xs font-semibold uppercase text-slate-400">PAN & KYC Documents</span>
                     <div className="h-px flex-1 bg-slate-200" />
                   </div>
                   <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
@@ -1223,7 +1223,7 @@ const emailError =
           <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-4 py-4 sm:px-5">
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Vendor Policy Checklist</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">Vendor Policy Checklist</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
                   {DEFAULT_VENDOR_POLICY_POINTS.map((point, index) => (
                     <li key={index}>{point}</li>
@@ -1231,7 +1231,7 @@ const emailError =
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">General Terms & Conditions</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">General Terms & Conditions</p>
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
                   {DEFAULT_POLICY_CONTENT.termsAndConditions}
                 </p>
