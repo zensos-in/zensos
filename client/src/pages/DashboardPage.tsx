@@ -59,20 +59,20 @@ const emptyProductForm: ProductForm = {
 };
 
 const statusClasses: Record<OrderStatus, string> = {
-  pending:   "bg-amber-100 text-amber-700 border-amber-200",
-  paid:      "bg-sky-100 text-sky-700 border-sky-200",
+  pending: "bg-amber-100 text-amber-700 border-amber-200",
+  paid: "bg-sky-100 text-sky-700 border-sky-200",
   delivered: "bg-emerald-100 text-emerald-700 border-emerald-200",
   cancelled: "bg-rose-100 text-rose-700 border-rose-200",
 };
 const STATUS_DOT: Record<OrderStatus, string> = {
-  pending:   "bg-amber-400",
-  paid:      "bg-sky-500",
+  pending: "bg-amber-400",
+  paid: "bg-sky-500",
   delivered: "bg-emerald-500",
   cancelled: "bg-rose-500",
 };
 const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending:   "Pending",
-  paid:      "Paid",
+  pending: "Pending",
+  paid: "Paid",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
@@ -123,7 +123,7 @@ function ImageUploadField({
     setUploading(true);
     setUploadError("");
     try {
-     const compressedFile = await compressImage(file, 0.75, 1200, 1200, false);
+      const compressedFile = await compressImage(file, 0.75, 1200, 1200, false);
       const form = new FormData();
       form.append("image", compressedFile);
       const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
@@ -237,17 +237,17 @@ function getOrderItems(order: Order) {
 
   return order.product
     ? [{
-        product: order.product,
-        productTitle: order.product.title,
-        productCategory: order.product.category,
-        productImageUrl: order.product.imageUrl,
-        variantId: "",
-        variantTitle: "",
-        selectedVariants: order.selectedVariants || {},
-        unitPrice: order.quantity > 0 ? order.amount / order.quantity : order.amount,
-        quantity: order.quantity,
-        lineTotal: order.amount,
-      }]
+      product: order.product,
+      productTitle: order.product.title,
+      productCategory: order.product.category,
+      productImageUrl: order.product.imageUrl,
+      variantId: "",
+      variantTitle: "",
+      selectedVariants: order.selectedVariants || {},
+      unitPrice: order.quantity > 0 ? order.amount / order.quantity : order.amount,
+      quantity: order.quantity,
+      lineTotal: order.amount,
+    }]
     : [];
 }
 
@@ -1212,7 +1212,7 @@ export function DashboardPage() {
             <img src={seller.businessLogo} alt="logo" className="h-10 w-10 rounded-xl object-contain border border-slate-200" />
           )}
           <div>
-          
+
             <h1 className="font-heading text-xl font-bold text-slate-900 sm:text-2xl">{seller?.businessName || "Zensos"}</h1>
           </div>
         </div>
@@ -1225,7 +1225,7 @@ export function DashboardPage() {
               aria-label="Open public store in new tab"
               className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 sm:flex-none"
             >
-              <AppIcon name="store" className="text-[11px]" /> Open Store
+              <AppIcon name="store" className="text-[18px]" /> Open Store
             </a>
           ) : (
             <button
@@ -1235,10 +1235,10 @@ export function DashboardPage() {
               aria-label="Publish store for approval"
               className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition sm:flex-none"
             >
-              {isPublishingStore ? <><AppIcon name="pending" className="text-[11px]" /> Sending...</> : isPublishPending ? <><AppIcon name="pending" className="text-[11px]" /> Pending Approval</> : <><AppIcon name="share" className="text-[11px]" /> {isPublishRejected ? "Publish Store Again" : "Publish Store"}</>}
+              {isPublishingStore ? <><AppIcon name="pending" className="text-[18px]" /> Sending...</> : isPublishPending ? <><AppIcon name="pending" className="text-[18px]" /> Pending Approval</> : <><AppIcon name="share" className="text-[18px]" /> {isPublishRejected ? "Publish Store Again" : "Publish Store"}</>}
             </button>
           )}
-          <button onClick={logout} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-slate-700 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-slate-600 hover:to-slate-800 dark:from-slate-800 dark:to-slate-950"><AppIcon name="logout" className="text-[11px]" />Logout</button>
+          <button onClick={logout} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-slate-700 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-slate-600 hover:to-slate-800 dark:from-slate-800 dark:to-slate-950"><AppIcon name="logout" className="text-[18px]" />Logout</button>
         </div>
       </header>
 
@@ -1250,8 +1250,8 @@ export function DashboardPage() {
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
             className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
-            <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7 ${tab === t.key ? "bg-white/15" : "bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"}`}>
-              <AppIcon name={t.icon} className="text-[11px]" />
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] shadow-sm">
+              <AppIcon name={t.icon} className="text-[20px] text-[#333632]" />
             </span>
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
@@ -1330,7 +1330,7 @@ export function DashboardPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-[11px] font-semibold uppercase text-slate-500">
                       {s.label}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
@@ -1342,7 +1342,7 @@ export function DashboardPage() {
                   >
                     <AppIcon
                       name={s.icon as Parameters<typeof AppIcon>[0]["name"]}
-                      className="text-[13px]"
+                      className="text-[18px]"
                     />
                   </span>
                 </div>
@@ -1356,11 +1356,11 @@ export function DashboardPage() {
           {/* Row 2 — Revenue cards */}
           <div className="grid gap-3 sm:grid-cols-2">
             <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-emerald-50/70 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Revenue — Last 7 Days</p>
+              <p className="text-xs uppercase text-slate-500">Revenue — Last 7 Days</p>
               <p className="mt-1 text-3xl font-bold text-teal-700">₹{stats.value7d.toLocaleString("en-IN")}</p>
             </article>
             <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-sky-50/70 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Revenue — Last 30 Days</p>
+              <p className="text-xs uppercase text-slate-500">Revenue — Last 30 Days</p>
               <p className="mt-1 text-3xl font-bold text-teal-700">₹{stats.value30d.toLocaleString("en-IN")}</p>
             </article>
           </div>
@@ -1377,14 +1377,14 @@ export function DashboardPage() {
                     className="block rounded-xl border-2 border-slate-200 p-1 hover:border-teal-400 transition"
                     title="Click for share / download options"
                   > */}
-                    <QRCodeCanvas
-                      value={storeUrl}
-                      size={100}
-                      ref={storeQrCanvasRef}
-                      includeMargin
-                      bgColor="#ffffff"
-                      fgColor="#0f172a"
-                    />
+                  <QRCodeCanvas
+                    value={storeUrl}
+                    size={100}
+                    ref={storeQrCanvasRef}
+                    includeMargin
+                    bgColor="#ffffff"
+                    fgColor="#0f172a"
+                  />
                   {/* </button> */}
                   {/* {showStoreQrActions && (
                     <div className="absolute left-0 top-full z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
@@ -1395,7 +1395,7 @@ export function DashboardPage() {
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0 text-center sm:text-left">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Your Store QR Code</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500 mb-1">Your Store QR Code</p>
                   <a
                     href={storeUrl}
                     target="_blank"
@@ -1409,12 +1409,12 @@ export function DashboardPage() {
                       type="button"
                       onClick={() => void shareStoreLink()}
                       className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500 transition"
-                    ><AppIcon name="share" className="text-[11px]" /> Share Store</button>
+                    ><AppIcon name="share" className="text-[14px]" /> Share Store</button>
                     <button
                       type="button"
                       onClick={downloadStoreQrCode}
                       className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:from-sky-400 hover:to-cyan-500 transition"
-                    ><AppIcon name="download" className="text-[11px]" /> Download QR</button>
+                    ><AppIcon name="download" className="text-[14px]" /> Download QR</button>
                   </div>
                 </div>
               </div>
@@ -1422,7 +1422,7 @@ export function DashboardPage() {
           )}
           {!isStoreApproved && (
             <article className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Store Publishing</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Store Publishing</p>
               <h3 className="mt-1 text-lg font-bold text-slate-900">
                 {isStoreDraft ? "Publish your store when you're ready" : isPublishPending ? "Your store is waiting for admin approval" : "Your store needs approval before it can open"}
               </h3>
@@ -1560,11 +1560,10 @@ export function DashboardPage() {
           <article className="min-w-0 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card space-y-3 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
             <div className="flex items-center justify-between">
               <h2 className="font-heading text-xl font-bold text-slate-900">Store Banners</h2>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold border ${
-                banners.length >= 5
+              <span className={`rounded-full px-3 py-1 text-xs font-bold border ${banners.length >= 5
                   ? "border-rose-200 bg-rose-50 text-rose-700"
                   : "border-slate-200 bg-slate-50 text-slate-600"
-              }`}>{banners.length}/5</span>
+                }`}>{banners.length}/5</span>
             </div>
             <p className="text-xs text-slate-500">Upload up to 5 banner images. Drag banners up or down to set the order they appear in your public store carousel.</p>
             <div className="space-y-2">
@@ -1576,11 +1575,10 @@ export function DashboardPage() {
                   onDragOver={e => handleBannerDragOver(e, i)}
                   onDrop={() => handleBannerDrop(i)}
                   onDragEnd={resetBannerDragState}
-                  className={`flex flex-col gap-2 rounded-xl border bg-slate-50 p-2 transition ${
-                    dragOverBannerIndex === i
+                  className={`flex flex-col gap-2 rounded-xl border bg-slate-50 p-2 transition ${dragOverBannerIndex === i
                       ? "border-teal-300 ring-2 ring-teal-100"
                       : "border-slate-200"
-                  } ${draggedBannerIndex === i ? "opacity-70" : ""}`}
+                    } ${draggedBannerIndex === i ? "opacity-70" : ""}`}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <div className="flex flex-col items-center gap-1 px-1 text-slate-400 shrink-0 cursor-grab active:cursor-grabbing">
@@ -2067,11 +2065,10 @@ export function DashboardPage() {
                             vv[i] = { ...vv[i], isActive: !vv[i].isActive };
                             return { ...p, variants: vv };
                           })}
-                          className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition ${
-                            v.isActive
+                          className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition ${v.isActive
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                               : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
-                          }`}
+                            }`}
                         >
                           {v.isActive ? "Active" : "Inactive"}
                         </button>
@@ -2088,12 +2085,12 @@ export function DashboardPage() {
                       </div>
                     </div>
                   ))}
-                <button
-                  type="button"
-                  onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", isActive: true }] }))}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
-                >+ Add Variant</button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", isActive: true }] }))}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+                  >+ Add Variant</button>
+                </div>
               </div>
 
               <div className="flex flex-wrap justify-between gap-2 pt-1">
@@ -2118,178 +2115,175 @@ export function DashboardPage() {
 
           {/* Product catalog */}
           <div className="h-full min-w-0">
-          <article className="min-w-0 h-full flex flex-col rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-            {/* Catalog header + search */}
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <h2 className="font-heading text-xl font-bold text-slate-900">Product Catalog</h2>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-500">{products.length}</span>
-            </div>
-            {/* Search bar with filter icon */}
-            <div className="relative">
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="search" className="text-[10px]" /></span>
-                <input
-                  className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
-                  placeholder="Search products…"
-                  value={catalogSearch}
-                  onChange={e => setCatalogSearch(e.target.value)}
-                />
-                {catalogCategory && (
+            <article className="min-w-0 h-full flex flex-col rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+              {/* Catalog header + search */}
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h2 className="font-heading text-xl font-bold text-slate-900">Product Catalog</h2>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-500">{products.length}</span>
+              </div>
+              {/* Search bar with filter icon */}
+              <div className="relative">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="search" className="text-[10px]" /></span>
+                  <input
+                    className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    placeholder="Search products…"
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                  />
+                  {catalogCategory && (
+                    <button
+                      type="button"
+                      onClick={() => { setCatalogCategory(""); setShowFilterDropdown(false); }}
+                      className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                    >
+                      <span className="max-w-[80px] truncate">{catalogCategory}</span>
+                      <AppIcon name="close" className="text-[8px]" />
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => { setCatalogCategory(""); setShowFilterDropdown(false); }}
-                    className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                    onClick={() => setShowFilterDropdown(v => !v)}
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${catalogCategory
+                        ? "border-teal-300 bg-teal-100 text-teal-700"
+                        : "border-emerald-100 bg-white text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                      }`}
+                    title="Filter by category"
                   >
-                    <span className="max-w-[80px] truncate">{catalogCategory}</span>
-                    <AppIcon name="close" className="text-[8px]" />
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"><AppIcon name="filter" className="text-[10px]" /></span>
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowFilterDropdown(v => !v)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${
-                    catalogCategory
-                      ? "border-teal-300 bg-teal-100 text-teal-700"
-                      : "border-emerald-100 bg-white text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
-                  }`}
-                  title="Filter by category"
-                >
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"><AppIcon name="filter" className="text-[10px]" /></span>
-                </button>
-              </div>
-              {/* Filter dropdown */}
-              {showFilterDropdown && categories.length > 0 && (
-                <div className="absolute right-0 z-30 mt-1 w-48 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden dark:border-teal-900/40 dark:bg-slate-950">
-                  <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-slate-400">Filter by Category</p>
-                  <ul className="max-h-52 overflow-y-auto py-1">
-                    {categories.map(c => (
-                      <li key={c}>
+                </div>
+                {/* Filter dropdown */}
+                {showFilterDropdown && categories.length > 0 && (
+                  <div className="absolute right-0 z-30 mt-1 w-48 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden dark:border-teal-900/40 dark:bg-slate-950">
+                    <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase text-slate-400">Filter by Category</p>
+                    <ul className="max-h-52 overflow-y-auto py-1">
+                      {categories.map(c => (
+                        <li key={c}>
+                          <button
+                            type="button"
+                            onClick={() => { setCatalogCategory(prev => prev === c ? "" : c); setShowFilterDropdown(false); }}
+                            className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${catalogCategory === c
+                                ? "bg-teal-50 font-semibold text-teal-800"
+                                : "text-slate-700 hover:bg-slate-50"
+                              }`}
+                          >
+                            <span className={`h-3.5 w-3.5 rounded-full border flex-shrink-0 ${catalogCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"
+                              }`} />
+                            {c}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    {catalogCategory && (
+                      <div className="border-t border-slate-100 px-2 py-1.5">
                         <button
                           type="button"
-                          onClick={() => { setCatalogCategory(prev => prev === c ? "" : c); setShowFilterDropdown(false); }}
-                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
-                            catalogCategory === c
-                              ? "bg-teal-50 font-semibold text-teal-800"
-                              : "text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className={`h-3.5 w-3.5 rounded-full border flex-shrink-0 ${
-                            catalogCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"
-                          }`} />
-                          {c}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  {catalogCategory && (
-                    <div className="border-t border-slate-100 px-2 py-1.5">
-                      <button
-                        type="button"
-                        onClick={() => { setCatalogCategory(""); setShowFilterDropdown(false); }}
-                        className="w-full rounded-lg px-2 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
-                      >Clear filter</button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            {loading && <p className="mt-4 text-sm text-slate-500">Loading...</p>}
-            {!loading && products.length === 0 && <p className="mt-4 text-sm text-slate-500">No products yet.</p>}
-            <div className="mt-3 flex-1 overflow-y-auto space-y-3 pr-1">
-              {products
-                .filter(prod => {
-                  const q = catalogSearch.trim().toLowerCase();
-                  const categoryText = getProductCategories(prod).join(" ").toLowerCase();
-                  const matchSearch = !q || prod.title.toLowerCase().includes(q) || categoryText.includes(q) || (prod.category || "").toLowerCase().includes(q);
-                  const matchCat = productMatchesCategory(prod, catalogCategory);
-                  return matchSearch && matchCat;
-                })
-                .map(prod => (
-                <div key={prod._id} className={`rounded-2xl border p-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
-                  <div className="flex items-start gap-2">
-                    {getProductImages(prod)[0] && <img src={getProductImages(prod)[0]} alt="" className="h-12 w-12 rounded-lg object-cover" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-800 truncate break-words">{prod.title}</p>
-                      {getProductCategories(prod).length > 0 ? (
-                        <div className="mt-0.5 flex flex-wrap gap-1">
-                          {prod.isRecommended && (
-                            <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                              Recommended
-                            </span>
-                          )}
-                          {getProductCategories(prod).map((tag) => (
-                            <span
-                              key={`${prod._id}-${tag}`}
-                              className="inline-block rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className="flex gap-2 mt-1">
-                        <span className="text-sm font-bold text-slate-900">₹{prod.price}</span>
-                        {prod.mrp > 0 && prod.mrp > prod.price && (
-                          <span className="text-xs text-slate-400 line-through self-center">₹{prod.mrp}</span>
-                        )}
+                          onClick={() => { setCatalogCategory(""); setShowFilterDropdown(false); }}
+                          className="w-full rounded-lg px-2 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                        >Clear filter</button>
                       </div>
-                      {prod.variants.some(v => v.options.length > 0) && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {prod.variants.flatMap(variant =>
-                            variant.options.map(option => {
-                              const priceKey = getVariantPriceKey(variant.label, option);
-                              const variantPrice = prod.variantPrices?.[priceKey];
-                              const variantMrp =
-                                prod.variantMrps?.[priceKey]
-                                ?? prod.variantItems?.find((item) => item.variantId === `legacy:${priceKey}`)?.mrp;
-                              return (
-                                <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                  {option}
-                                  {variantPrice ? (
-                                    <>
-                                      {" · ₹"}
-                                      {variantPrice}
-                                      {variantMrp && variantMrp > variantPrice ? (
-                                        <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
-                                      ) : null}
-                                    </>
-                                  ) : null}
+                    )}
+                  </div>
+                )}
+              </div>
+              {loading && <p className="mt-4 text-sm text-slate-500">Loading...</p>}
+              {!loading && products.length === 0 && <p className="mt-4 text-sm text-slate-500">No products yet.</p>}
+              <div className="mt-3 flex-1 overflow-y-auto space-y-3 pr-1">
+                {products
+                  .filter(prod => {
+                    const q = catalogSearch.trim().toLowerCase();
+                    const categoryText = getProductCategories(prod).join(" ").toLowerCase();
+                    const matchSearch = !q || prod.title.toLowerCase().includes(q) || categoryText.includes(q) || (prod.category || "").toLowerCase().includes(q);
+                    const matchCat = productMatchesCategory(prod, catalogCategory);
+                    return matchSearch && matchCat;
+                  })
+                  .map(prod => (
+                    <div key={prod._id} className={`rounded-2xl border p-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
+                      <div className="flex items-start gap-2">
+                        {getProductImages(prod)[0] && <img src={getProductImages(prod)[0]} alt="" className="h-12 w-12 rounded-lg object-cover" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-800 truncate break-words">{prod.title}</p>
+                          {getProductCategories(prod).length > 0 ? (
+                            <div className="mt-0.5 flex flex-wrap gap-1">
+                              {prod.isRecommended && (
+                                <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                  Recommended
                                 </span>
-                              );
-                            })
+                              )}
+                              {getProductCategories(prod).map((tag) => (
+                                <span
+                                  key={`${prod._id}-${tag}`}
+                                  className="inline-block rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                          <div className="flex gap-2 mt-1">
+                            <span className="text-sm font-bold text-slate-900">₹{prod.price}</span>
+                            {prod.mrp > 0 && prod.mrp > prod.price && (
+                              <span className="text-xs text-slate-400 line-through self-center">₹{prod.mrp}</span>
+                            )}
+                          </div>
+                          {prod.variants.some(v => v.options.length > 0) && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {prod.variants.flatMap(variant =>
+                                variant.options.map(option => {
+                                  const priceKey = getVariantPriceKey(variant.label, option);
+                                  const variantPrice = prod.variantPrices?.[priceKey];
+                                  const variantMrp =
+                                    prod.variantMrps?.[priceKey]
+                                    ?? prod.variantItems?.find((item) => item.variantId === `legacy:${priceKey}`)?.mrp;
+                                  return (
+                                    <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                      {option}
+                                      {variantPrice ? (
+                                        <>
+                                          {" · ₹"}
+                                          {variantPrice}
+                                          {variantMrp && variantMrp > variantPrice ? (
+                                            <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
+                                          ) : null}
+                                        </>
+                                      ) : null}
+                                    </span>
+                                  );
+                                })
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleStartEdit(prod)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition"
+                        ><AppIcon name="edit" className="text-[10px]" /> Edit</button>
+                        <button onClick={() => handleToggleProduct(prod._id)}
+                          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70"}`}>
+                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[10px]" />
+                          {prod.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                        <button onClick={() => handleDeleteProduct(prod)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
+                        ><AppIcon name="close" className="text-[10px]" /> Delete</button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleStartEdit(prod)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition"
-                    ><AppIcon name="edit" className="text-[10px]" /> Edit</button>
-                    <button onClick={() => handleToggleProduct(prod._id)}
-                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70"}`}>
-                      <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[10px]" />
-                      {prod.isActive ? "Deactivate" : "Activate"}
-                    </button>
-                    <button onClick={() => handleDeleteProduct(prod)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
-                    ><AppIcon name="close" className="text-[10px]" /> Delete</button>
-                  </div>
-                </div>
-              ))}
-              {!loading && products.filter(p => {
-                const q = catalogSearch.trim().toLowerCase();
-                const categoryText = getProductCategories(p).join(" ").toLowerCase();
-                return (
-                  (!q || p.title.toLowerCase().includes(q) || categoryText.includes(q) || (p.category || "").toLowerCase().includes(q))
-                  && productMatchesCategory(p, catalogCategory)
-                );
-              }).length === 0 && products.length > 0 && (
-                <p className="py-4 text-center text-sm text-slate-400">No products match your search / filter.</p>
-              )}
-            </div>
-          </article>
+                  ))}
+                {!loading && products.filter(p => {
+                  const q = catalogSearch.trim().toLowerCase();
+                  const categoryText = getProductCategories(p).join(" ").toLowerCase();
+                  return (
+                    (!q || p.title.toLowerCase().includes(q) || categoryText.includes(q) || (p.category || "").toLowerCase().includes(q))
+                    && productMatchesCategory(p, catalogCategory)
+                  );
+                }).length === 0 && products.length > 0 && (
+                    <p className="py-4 text-center text-sm text-slate-400">No products match your search / filter.</p>
+                  )}
+              </div>
+            </article>
 
           </div>
         </div>
@@ -2305,19 +2299,19 @@ export function DashboardPage() {
                   <AppIcon name="trash" className="text-[14px]" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-500">Protected delete</p>
+                  <p className="text-xs font-semibold uppercase text-rose-500">Protected delete</p>
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white">Delete product with OTP</h2>
                 </div>
               </div>
 
               <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Product</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">Product</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{productPendingDelete.title}</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">This removal is permanent and cannot be undone.</p>
               </div>
 
               <div className="mb-5 rounded-2xl border border-rose-100 bg-rose-50/80 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-500">Step 1</p>
+                <p className="text-xs font-semibold uppercase text-rose-500">Step 1</p>
                 <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
                   Send a one-time password to <span className="font-semibold">{deleteProductOtpSentTo || seller?.businessEmail || "your saved business email"}</span>.
                 </p>
@@ -2325,7 +2319,7 @@ export function DashboardPage() {
 
               {deleteProductOtpSentTo ? (
                 <div className="mb-5 rounded-2xl border border-sky-100 bg-sky-50/80 p-4 dark:border-sky-900/40 dark:bg-sky-950/20">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Step 2</p>
+                  <p className="text-xs font-semibold uppercase text-sky-600">Step 2</p>
                   <label className="mt-2 block space-y-2">
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                     <input
@@ -2432,7 +2426,7 @@ export function DashboardPage() {
                 </button>
               )}
               <button type="button" onClick={() => setShowOrderFilter(v => !v)}
-                className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${ (orderStatusFilter || orderCategoryFilter) ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-700 dark:bg-teal-900/50 dark:text-teal-300" : "border-emerald-100 bg-white text-slate-400 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"}`}>
+                className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${(orderStatusFilter || orderCategoryFilter) ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-700 dark:bg-teal-900/50 dark:text-teal-300" : "border-emerald-100 bg-white text-slate-400 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"}`}>
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"><AppIcon name="filter" className="text-[10px]" /></span>
               </button>
             </div>
@@ -2449,14 +2443,14 @@ export function DashboardPage() {
                 </ul>
                 {categories.length > 0 && (
                   <><p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase tracking-wider text-slate-400">Category</p>
-                  <ul className="py-1 max-h-40 overflow-y-auto">
-                    {categories.map(c => (
-                      <li key={c}><button type="button" onClick={() => { setOrderCategoryFilter(prev => prev === c ? "" : c); setShowOrderFilter(false); }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderCategoryFilter === c ? "bg-teal-50 font-semibold text-teal-800" : "text-slate-700 hover:bg-slate-50"}`}>
-                        <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${orderCategoryFilter === c ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />{c}
-                      </button></li>
-                    ))}
-                  </ul></>
+                    <ul className="py-1 max-h-40 overflow-y-auto">
+                      {categories.map(c => (
+                        <li key={c}><button type="button" onClick={() => { setOrderCategoryFilter(prev => prev === c ? "" : c); setShowOrderFilter(false); }}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderCategoryFilter === c ? "bg-teal-50 font-semibold text-teal-800" : "text-slate-700 hover:bg-slate-50"}`}>
+                          <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${orderCategoryFilter === c ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />{c}
+                        </button></li>
+                      ))}
+                    </ul></>
                 )}
                 {(orderStatusFilter || orderCategoryFilter) && (
                   <div className="border-t border-slate-100 px-2 py-1.5">
@@ -2488,36 +2482,36 @@ export function DashboardPage() {
                   {filtered.map(order => {
                     const isUnread = !order.isViewed;
                     return (
-                    <article key={order._id} className={`rounded-2xl border p-3 transition ${isUnread ? "border-zinc-400 bg-zinc-200 shadow-md dark:border-zinc-600 dark:bg-zinc-800 [&>p]:text-zinc-800 dark:[&>p]:text-zinc-100 [&>p>strong]:text-zinc-950 dark:[&>p>strong]:text-white" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70"}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className={`font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
-                            {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
+                      <article key={order._id} className={`rounded-2xl border p-3 transition ${isUnread ? "border-zinc-400 bg-zinc-200 shadow-md dark:border-zinc-600 dark:bg-zinc-800 [&>p]:text-zinc-800 dark:[&>p]:text-zinc-100 [&>p>strong]:text-zinc-950 dark:[&>p>strong]:text-white" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className={`font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
+                              {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
+                            </div>
+                            <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
+                            {getOrderShippingSummary(order) && <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span><span className="line-clamp-2">{getOrderShippingSummary(order)}</span></p>}
                           </div>
-                          <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
-                          {getOrderShippingSummary(order) && <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span><span className="line-clamp-2">{getOrderShippingSummary(order)}</span></p>}
+                          <span className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />{STATUS_LABEL[order.paymentStatus]}
+                          </span>
                         </div>
-                        <span className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />{STATUS_LABEL[order.paymentStatus]}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm text-slate-700">{getOrderItemSummary(order)||"—"}</p>
-                      <p className="text-xs text-slate-500">Qty: {order.quantity} · ₹{order.amount} + ₹{order.deliveryCharge||0} = <strong>₹{order.amount+(order.deliveryCharge||0)}</strong></p>
-                      <div className="mt-3 flex gap-2">
-                        <button onClick={() => void handleViewOrder(order)} className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">👁 View</button>
-                        <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
-                          {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                        </select>
-                      </div>
-                    </article>
+                        <p className="mt-2 text-sm text-slate-700">{getOrderItemSummary(order) || "—"}</p>
+                        <p className="text-xs text-slate-500">Qty: {order.quantity} · ₹{order.amount} + ₹{order.deliveryCharge || 0} = <strong>₹{order.amount + (order.deliveryCharge || 0)}</strong></p>
+                        <div className="mt-3 flex gap-2">
+                          <button onClick={() => void handleViewOrder(order)} className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">👁 View</button>
+                          <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
+                            {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                          </select>
+                        </div>
+                      </article>
                     );
                   })}
                 </div>
                 {/* Desktop table */}
                 <div className="hidden overflow-x-auto md:block mt-4">
                   <table className="min-w-full border-collapse text-left text-sm">
-                    <thead><tr className="border-b border-slate-200 text-xs uppercase tracking-[0.14em] text-slate-500">
+                    <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
                       <th className="pb-2 pr-4">Customer</th><th className="pb-2 pr-4">Product</th>
                       <th className="pb-2 pr-4">Variant</th><th className="pb-2 pr-4">Qty</th>
                       <th className="pb-2 pr-4">Total</th><th className="pb-2 pr-4" title="Status">●</th>
@@ -2527,39 +2521,39 @@ export function DashboardPage() {
                       {filtered.map(order => {
                         const isUnread = !order.isViewed;
                         return (
-                        <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
-                          <td className="py-3 pr-4">
-                            <div className="flex items-center gap-2">
-                              <p className={`font-semibold whitespace-nowrap ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
-                              {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
-                            </div>
-                            <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
-                            {getOrderShippingSummary(order) && <p className={`flex items-center gap-1.5 text-xs max-w-[160px] truncate ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`} title={getOrderShippingSummary(order)}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span>{getOrderShippingSummary(order)}</p>}
-                          </td>
-                          <td className="py-3 pr-4">
-                            <p className="text-slate-700">{getOrderItemSummary(order)||"—"}</p>
-                            {getOrderPrimaryCategory(order) && <p className="text-xs text-teal-700">{getOrderPrimaryCategory(order)}</p>}
-                          </td>
-                          <td className="py-3 pr-4 text-xs text-slate-500 whitespace-nowrap">{getOrderItems(order).map((item) => item.variantTitle || Object.values(item.selectedVariants || {}).join(", ") || "—").join(" | ")}</td>
-                          <td className="py-3 pr-4 text-slate-700">{order.quantity}</td>
-                          <td className="py-3 pr-4 font-semibold text-slate-900 whitespace-nowrap">₹{order.amount+(order.deliveryCharge||0)}</td>
-                          <td className="py-3 pr-4">
-                            <span title={STATUS_LABEL[order.paymentStatus]} className={`inline-flex h-3 w-3 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
-                          </td>
-                          <td className="py-3 pr-4">
-                            <select className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
-                              {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                            </select>
-                          </td>
-                          <td className="py-3">
-                            <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1 text-xs font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition whitespace-nowrap"><AppIcon name="orders" className="text-[9px]" /> View</button>
-                          </td>
-                        </tr>
+                          <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-2">
+                                <p className={`font-semibold whitespace-nowrap ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
+                                {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
+                              </div>
+                              <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
+                              {getOrderShippingSummary(order) && <p className={`flex items-center gap-1.5 text-xs max-w-[160px] truncate ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`} title={getOrderShippingSummary(order)}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span>{getOrderShippingSummary(order)}</p>}
+                            </td>
+                            <td className="py-3 pr-4">
+                              <p className="text-slate-700">{getOrderItemSummary(order) || "—"}</p>
+                              {getOrderPrimaryCategory(order) && <p className="text-xs text-teal-700">{getOrderPrimaryCategory(order)}</p>}
+                            </td>
+                            <td className="py-3 pr-4 text-xs text-slate-500 whitespace-nowrap">{getOrderItems(order).map((item) => item.variantTitle || Object.values(item.selectedVariants || {}).join(", ") || "—").join(" | ")}</td>
+                            <td className="py-3 pr-4 text-slate-700">{order.quantity}</td>
+                            <td className="py-3 pr-4 font-semibold text-slate-900 whitespace-nowrap">₹{order.amount + (order.deliveryCharge || 0)}</td>
+                            <td className="py-3 pr-4">
+                              <span title={STATUS_LABEL[order.paymentStatus]} className={`inline-flex h-3 w-3 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
+                            </td>
+                            <td className="py-3 pr-4">
+                              <select className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
+                                {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                              </select>
+                            </td>
+                            <td className="py-3">
+                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1 text-xs font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition whitespace-nowrap"><AppIcon name="orders" className="text-[9px]" /> View</button>
+                            </td>
+                          </tr>
                         );
                       })}
                     </tbody>
                   </table>
-                  {filtered.length===0&&<p className="py-6 text-center text-sm text-slate-400">No orders match your search / filter.</p>}
+                  {filtered.length === 0 && <p className="py-6 text-center text-sm text-slate-400">No orders match your search / filter.</p>}
                 </div>
               </>
             );
@@ -2586,20 +2580,20 @@ export function DashboardPage() {
             <div className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-4 sm:px-6">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Customer</p>
+                  <p className="text-xs font-bold uppercase text-slate-400 mb-1">Customer</p>
                   <p className="font-semibold text-slate-800">{viewingOrder.customerName}</p>
                   <p className="text-sm text-slate-600">{viewingOrder.customerPhone}</p>
                   {viewingOrder.customerEmail && <p className="break-all text-sm text-slate-600">{viewingOrder.customerEmail}</p>}
                 </div>
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Order Date</p>
-                  <p className="text-sm text-slate-700">{new Date(viewingOrder.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p>
-                  <p className="text-xs text-slate-400">{new Date(viewingOrder.createdAt).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</p>
+                  <p className="text-xs font-bold uppercase text-slate-400 mb-1">Order Date</p>
+                  <p className="text-sm text-slate-700">{new Date(viewingOrder.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  <p className="text-xs text-slate-400">{new Date(viewingOrder.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
                 </div>
               </div>
               <OrderAddressCards order={viewingOrder} />
               <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Product</p>
+                <p className="text-xs font-bold uppercase text-slate-400 mb-1">Product</p>
                 <div className="space-y-2">
                   {getOrderItems(viewingOrder).map((item, index) => (
                     <div key={`${item.productTitle}-${item.variantId}-${index}`}>
@@ -2611,31 +2605,31 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-slate-200 overflow-hidden">
-                {[{l:"Quantity",v:viewingOrder.quantity},{l:"Amount Total",v:`₹${viewingOrder.amount}`},{l:"Delivery Charge",v:`₹${viewingOrder.deliveryCharge||0}`}].map(r=>(
+                {[{ l: "Quantity", v: viewingOrder.quantity }, { l: "Amount Total", v: `₹${viewingOrder.amount}` }, { l: "Delivery Charge", v: `₹${viewingOrder.deliveryCharge || 0}` }].map(r => (
                   <div key={r.l} className="flex justify-between px-4 py-2.5 border-b border-slate-100">
                     <span className="text-sm text-slate-600">{r.l}</span><span className="text-sm font-semibold text-slate-800">{r.v}</span>
                   </div>
                 ))}
                 <div className="flex justify-between px-4 py-2.5 bg-slate-50">
                   <span className="text-sm font-bold text-slate-700">Grand Total</span>
-                  <span className="text-sm font-bold text-teal-700">₹{viewingOrder.amount+(viewingOrder.deliveryCharge||0)}</span>
+                  <span className="text-sm font-bold text-teal-700">₹{viewingOrder.amount + (viewingOrder.deliveryCharge || 0)}</span>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-1">
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Payment Method</p>
-                  <p className="text-sm font-semibold text-slate-700 capitalize">{viewingOrder.paymentMethod||"—"}</p>
+                  <p className="text-xs font-bold uppercase text-slate-400 mb-1">Payment Method</p>
+                  <p className="text-sm font-semibold text-slate-700 capitalize">{viewingOrder.paymentMethod || "—"}</p>
                 </div>
               </div>
               {viewingOrder.paymentScreenshotUrl && (
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Payment Proof</p>
+                  <p className="text-xs font-bold uppercase text-slate-400 mb-1">Payment Proof</p>
                   <a href={viewingOrder.paymentScreenshotUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-teal-700 underline">View Screenshot</a>
                 </div>
               )}
-              {viewingOrder.note&&(
+              {viewingOrder.note && (
                 <div className="rounded-xl bg-amber-50 border border-amber-200 p-3">
-                  <p className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-1">Customer Note</p>
+                  <p className="text-xs font-bold uppercase text-amber-600 mb-1">Customer Note</p>
                   <p className="text-sm text-amber-800">{viewingOrder.note}</p>
                 </div>
               )}
@@ -2643,7 +2637,7 @@ export function DashboardPage() {
             <div className="flex flex-col gap-2 border-t border-slate-100 px-4 py-3 dark:border-teal-900/30 sm:flex-row sm:px-6">
               <select className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 value={viewingOrder.paymentStatus}
-                onChange={e => { handleOrderStatus(viewingOrder._id, e.target.value as OrderStatus); setViewingOrder(o => o?{...o,paymentStatus:e.target.value as OrderStatus}:o); }}>
+                onChange={e => { handleOrderStatus(viewingOrder._id, e.target.value as OrderStatus); setViewingOrder(o => o ? { ...o, paymentStatus: e.target.value as OrderStatus } : o); }}>
                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
               <button
@@ -2666,7 +2660,7 @@ export function DashboardPage() {
           <section className="overflow-hidden rounded-[30px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-600">Analytics overview</p>
+                <p className="text-xs font-semibold uppercase text-emerald-600">Analytics overview</p>
                 <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Sales performance at a glance</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Track order volume, revenue quality, and top-selling products in the same visual language as the rest of your dashboard.</p>
               </div>
@@ -2703,7 +2697,7 @@ export function DashboardPage() {
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total Orders</p>
+                      <p className="text-[11px] font-semibold uppercase text-slate-500">Total Orders</p>
                       <p className="mt-1 text-xs text-slate-500">Confirmed non-cancelled orders</p>
                     </div>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[12px]" /></span>
@@ -2714,7 +2708,7 @@ export function DashboardPage() {
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/80 to-teal-50/70 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Total Revenue</p>
+                      <p className="text-[11px] font-semibold uppercase text-slate-500">Total Revenue</p>
                       <p className="mt-1 text-xs text-slate-500">Value captured in period</p>
                     </div>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[12px]" /></span>
@@ -2725,7 +2719,7 @@ export function DashboardPage() {
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-sky-50/75 to-cyan-50/70 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Avg. Order Value</p>
+                      <p className="text-[11px] font-semibold uppercase text-slate-500">Avg. Order Value</p>
                       <p className="mt-1 text-xs text-slate-500">Revenue per completed order</p>
                     </div>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/45 dark:text-sky-300"><AppIcon name="dashboard" className="text-[12px]" /></span>
@@ -2736,7 +2730,7 @@ export function DashboardPage() {
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-amber-50/80 to-orange-50/70 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Units Sold</p>
+                      <p className="text-[11px] font-semibold uppercase text-slate-500">Units Sold</p>
                       <p className="mt-1 text-xs text-slate-500">Total product quantities moved</p>
                     </div>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/45 dark:text-amber-300"><AppIcon name="products" className="text-[12px]" /></span>
@@ -2750,12 +2744,12 @@ export function DashboardPage() {
                 <article className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Top products</p>
+                      <p className="text-xs font-semibold uppercase text-slate-500">Top products</p>
                       <h3 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-white">Best-selling catalogue items</h3>
                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">See which products are driving the strongest revenue in this selected period.</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-right dark:border-slate-800 dark:bg-slate-900/70">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Top performer</p>
+                      <p className="text-[11px] font-semibold uppercase text-slate-500">Top performer</p>
                       <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{reportTopProduct?.title || "No sales yet"}</p>
                       <p className="mt-1 text-xs text-slate-500">{reportTopProduct ? "₹" + reportTopProduct.revenue.toLocaleString("en-IN") + " revenue" : "No revenue in this window"}</p>
                     </div>
@@ -2790,11 +2784,11 @@ export function DashboardPage() {
                               </div>
                               <div className="grid shrink-0 grid-cols-2 gap-3 lg:w-[230px]">
                                 <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Revenue</p>
+                                  <p className="text-[11px] font-semibold uppercase text-slate-500">Revenue</p>
                                   <p className="mt-1 text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{product.revenue.toLocaleString("en-IN")}</p>
                                 </div>
                                 <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
-                                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Share</p>
+                                  <p className="text-[11px] font-semibold uppercase text-slate-500">Share</p>
                                   <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{report.totalRevenue > 0 ? Math.round((product.revenue / report.totalRevenue) * 100) : 0}%</p>
                                 </div>
                               </div>
@@ -2808,13 +2802,13 @@ export function DashboardPage() {
 
                 <div className="space-y-4">
                   <article className="rounded-[28px] border border-white/70 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 text-white shadow-card dark:border-teal-900/35">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Performance snapshot</p>
+                    <p className="text-xs font-semibold uppercase text-emerald-300">Performance snapshot</p>
                     <h3 className="mt-2 font-heading text-xl font-bold">Revenue concentration</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">{reportTopProduct ? reportTopProduct.title + " contributes " + reportTopProductRevenueShare + "% of your total revenue in this range." : "Your next order will start shaping this report."}</p>
                     <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                       <div className="flex items-end justify-between gap-3">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Lead product revenue</p>
+                          <p className="text-[11px] font-semibold uppercase text-slate-400">Lead product revenue</p>
                           <p className="mt-1 text-3xl font-bold">{reportTopProduct ? "₹" + reportTopProduct.revenue.toLocaleString("en-IN") : "₹0"}</p>
                         </div>
                         <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">{"Last " + reportDays + " days"}</span>
@@ -2826,7 +2820,7 @@ export function DashboardPage() {
                   </article>
 
                   <article className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Report summary</p>
+                    <p className="text-xs font-semibold uppercase text-slate-500">Report summary</p>
                     <div className="mt-4 space-y-3">
                       {[
                         { label: "Active period", value: "Last " + reportDays + " days" },
@@ -2861,22 +2855,22 @@ export function DashboardPage() {
             <>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <article className="rounded-3xl border border-white/70 bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-card">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-100">Gross Sales</p>
+                  <p className="text-xs font-semibold uppercase text-emerald-100">Gross Sales</p>
                   <p className="mt-2 font-heading text-2xl font-bold">₹{earningsData.summary.grossRevenue.toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-emerald-200 mt-1">Product plus delivery before platform charges</p>
                 </article>
                 <article className="rounded-3xl border border-white/70 bg-gradient-to-br from-teal-600 to-sky-600 p-5 text-white shadow-card">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-teal-100">Net Earnings</p>
+                  <p className="text-xs font-semibold uppercase text-teal-100">Net Earnings</p>
                   <p className="mt-2 font-heading text-2xl font-bold">₹{earningsData.summary.netEarnings.toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-teal-200 mt-1">Vendor payable after platform charges</p>
                 </article>
                 <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Platform Charges</p>
+                  <p className="text-xs font-semibold uppercase text-slate-400">Platform Charges</p>
                   <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.platformChargesDeducted || 0).toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Deducted from gross sales</p>
                 </article>
                 <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Delivery Earnings</p>
+                  <p className="text-xs font-semibold uppercase text-slate-400">Delivery Earnings</p>
                   <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{earningsData.summary.deliveryFees.toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Delivery charges included in vendor payable</p>
                 </article>
@@ -2884,12 +2878,12 @@ export function DashboardPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pending Settlements</p>
+                  <p className="text-xs font-semibold uppercase text-slate-400">Pending Settlements</p>
                   <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.pendingSettlements || 0).toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Paid orders waiting for transfer</p>
                 </article>
                 <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Completed Settlements</p>
+                  <p className="text-xs font-semibold uppercase text-slate-400">Completed Settlements</p>
                   <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.completedSettlements || 0).toLocaleString("en-IN")}</p>
                   <p className="text-[10px] text-slate-500 mt-1">Transferred to linked account</p>
                 </article>
@@ -2903,7 +2897,7 @@ export function DashboardPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
+                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
                         <th className="py-2.5 px-2">Order ID</th>
                         <th className="py-2.5 px-2 text-right">Product</th>
                         <th className="py-2.5 px-2 text-right">Delivery</th>
@@ -2945,7 +2939,7 @@ export function DashboardPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
+                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
                         <th className="py-2.5 px-2">Date</th>
                         <th className="py-2.5 px-2">Transaction Ref</th>
                         <th className="py-2.5 px-2">Purpose</th>
@@ -2992,7 +2986,7 @@ export function DashboardPage() {
           {/* Account banner */}
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-5 py-3 shadow-card">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-400 uppercase tracking-wide">Store URL</p>
+              <p className="text-xs text-slate-400 uppercase">Store URL</p>
               <a
                 href={storeUrl}
                 target="_blank"
@@ -3090,9 +3084,14 @@ export function DashboardPage() {
 
           <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600">Registered details</p>
-                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Seller profile</h3>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50 text-teal-600 shadow-sm dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
+                  <AppIcon name="profile" className="text-[18px]" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-teal-600">Registered details</p>
+                  <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Seller profile</h3>
+                </div>
               </div>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
                 {seller?.createdAt ? new Date(seller.createdAt).toLocaleDateString() : "New seller"}
@@ -3124,8 +3123,8 @@ export function DashboardPage() {
                 { label: "Address proof", value: seller?.addressProofUrl ? "Uploaded" : "" },
                 { label: "PAN document", value: seller?.panDocumentUrl ? "Uploaded" : "" },
               ].map(({ label, value }) => (
-                <div key={label} className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                <div key={label} className="min-w-0 rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/50">
+                  <p className="text-[11px] font-semibold uppercase text-slate-400">{label}</p>
                   <p className="mt-1 break-words text-sm font-semibold text-slate-800 dark:text-slate-100">{value || "Not added"}</p>
                 </div>
               ))}
@@ -3135,8 +3134,10 @@ export function DashboardPage() {
           <form onSubmit={handleProfileSave} noValidate className="space-y-5">
             {/* Business Identity */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-600 text-sm">🏢</span>
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50 text-teal-600 shadow-sm dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
+                  <span className="text-[18px]">🏢</span>
+                </span>
                 Business Identity
               </h3>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -3201,8 +3202,10 @@ export function DashboardPage() {
 
             {/* Bank & Payments */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 text-sm">₹</span>
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400">
+                  <span className="text-[18px] font-bold">₹</span>
+                </span>
                 Bank & Payments
               </h3>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -3231,8 +3234,10 @@ export function DashboardPage() {
 
             {/* Contact Details */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600"><AppIcon name="phone" className="text-[10px]" /></span>
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-600 shadow-sm dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
+                  <AppIcon name="phone" className="text-[18px]" />
+                </span>
                 Contact Details
               </h3>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -3245,14 +3250,14 @@ export function DashboardPage() {
                   <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
                   <div className="flex gap-2">
                     <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" value={storeWhatsapp.countryCode} readOnly disabled placeholder="+91" />
-                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeWhatsapp.number} onChange={e => setStoreWhatsapp(p => ({...p, number: e.target.value.replace(/\D/g,"").slice(0,15)}))} />
+                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeWhatsapp.number} onChange={e => setStoreWhatsapp(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Call number</span>
                   <div className="flex gap-2">
                     <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" value={storeCall.countryCode} readOnly disabled placeholder="+91" />
-                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeCall.number} onChange={e => setStoreCall(p => ({...p, number: e.target.value.replace(/\D/g,"").slice(0,15)}))} />
+                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeCall.number} onChange={e => setStoreCall(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                   </div>
                 </div>
               </div>
@@ -3260,8 +3265,10 @@ export function DashboardPage() {
 
             {/* Business Address */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600"><AppIcon name="location" className="text-[10px]" /></span>
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-100 bg-violet-50 text-violet-600 shadow-sm dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
+                  <AppIcon name="location" className="text-[18px]" />
+                </span>
                 Business Address
               </h3>
               <AddressFields
@@ -3274,8 +3281,10 @@ export function DashboardPage() {
 
             {/* KYC Documents */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 text-sm">🪺</span>
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-1 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 text-amber-600 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
+                  <span className="text-[18px]">🪺</span>
+                </span>
                 KYC Documents
               </h3>
               <p className="text-xs text-slate-500 mb-4">Upload clear images of your documents. Required for admin verification and store approval.</p>
@@ -3322,12 +3331,12 @@ export function DashboardPage() {
           <article className="mt-8 rounded-3xl border border-white/70 bg-white/90 p-6 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
             <div className="mb-5 flex items-start gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-sm">
-                <AppIcon name="pending" className="text-[12px]" />
+                <AppIcon name="pending" className="text-[22px]" />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-600">Account protection</p>
+                <p className="text-xs font-semibold uppercase text-amber-600">Account protection</p>
                 <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Sensitive account actions</h3>
-                
+
               </div>
             </div>
 
@@ -3363,7 +3372,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-           
+
           </article>
 
           {/* Delete Store Confirmation Modal */}
@@ -3376,7 +3385,7 @@ export function DashboardPage() {
                       <AppIcon name="trash" className="text-[14px]" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-500">Protected delete</p>
+                      <p className="text-xs font-semibold uppercase text-amber-500">Protected delete</p>
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white">Delete store with OTP</h2>
                     </div>
                   </div>
@@ -3398,7 +3407,7 @@ export function DashboardPage() {
                   </ul>
 
                   <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50/80 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-500">Step 1</p>
+                    <p className="text-xs font-semibold uppercase text-amber-500">Step 1</p>
                     <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
                       Send a one-time password to <span className="font-semibold">{deleteStoreOtpSentTo || seller?.businessEmail || 'your saved business email'}</span>.
                     </p>
@@ -3406,7 +3415,7 @@ export function DashboardPage() {
 
                   {deleteStoreOtpSentTo ? (
                     <div className="mb-5 rounded-2xl border border-sky-100 bg-sky-50/80 p-4 dark:border-sky-900/40 dark:bg-sky-950/20">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Step 2</p>
+                      <p className="text-xs font-semibold uppercase text-sky-600">Step 2</p>
                       <label className="mt-2 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                         <input
@@ -3487,7 +3496,7 @@ export function DashboardPage() {
                       <AppIcon name="trash" className="text-[14px]" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-500">Protected delete</p>
+                      <p className="text-xs font-semibold uppercase text-rose-500">Protected delete</p>
                       <h2 className="text-lg font-bold text-slate-900 dark:text-white">Delete profile with OTP</h2>
                     </div>
                   </div>
@@ -3513,7 +3522,7 @@ export function DashboardPage() {
                   </ul>
 
                   <div className="mb-5 rounded-2xl border border-rose-100 bg-rose-50/80 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-500">Step 1</p>
+                    <p className="text-xs font-semibold uppercase text-rose-500">Step 1</p>
                     <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">
                       Send a one-time password to <span className="font-semibold">{deleteProfileOtpSentTo || seller?.businessEmail || 'your saved business email'}</span>.
                     </p>
@@ -3521,7 +3530,7 @@ export function DashboardPage() {
 
                   {deleteProfileOtpSentTo ? (
                     <div className="mb-5 rounded-2xl border border-sky-100 bg-sky-50/80 p-4 dark:border-sky-900/40 dark:bg-sky-950/20">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Step 2</p>
+                      <p className="text-xs font-semibold uppercase text-sky-600">Step 2</p>
                       <label className="mt-2 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                         <input

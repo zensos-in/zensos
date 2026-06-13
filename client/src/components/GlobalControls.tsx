@@ -16,7 +16,7 @@ export function GlobalControls() {
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          <AppIcon name="sun" className="text-[13px]" />
+          <AppIcon name="sun" className="text-[15px]" />
           <span className="hidden sm:inline">Light</span>
         </button>
         <button
@@ -28,7 +28,7 @@ export function GlobalControls() {
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           }`}
         >
-          <AppIcon name="moon" className="text-[13px]" />
+          <AppIcon name="moon" className="text-[15px]" />
           <span className="hidden sm:inline">Dark</span>
         </button>
       </div>
