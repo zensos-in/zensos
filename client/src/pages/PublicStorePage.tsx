@@ -344,12 +344,12 @@ function CategoryScrollRow({
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">{title}</h3>
         <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
         <button type="button" onClick={() => scroll(-1)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
-          <AppIcon name="chevronLeft" className="text-[10px]" />
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/80 text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60">
+          <AppIcon name="chevronLeft" className="text-[16px]" />
         </button>
         <button type="button" onClick={() => scroll(1)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
-          <AppIcon name="chevronRight" className="text-[10px]" />
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/80 text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60">
+          <AppIcon name="chevronRight" className="text-[16px]" />
         </button>
         <button type="button" onClick={onSeeAll}
           className="shrink-0 text-xs font-semibold text-teal-600 hover:underline">
@@ -1183,8 +1183,8 @@ rzp.open(); } catch (err: any) {
           <div ref={searchBarRef} className="relative overflow-visible"
             style={{ zIndex: 1000 }}>
             <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
-                <AppIcon name="search" className="text-[11px]" />
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-slate-400 dark:text-slate-500">
+                <AppIcon name="search" className="text-[22px]" />
               </span>
               <input
                 value={searchQuery}
@@ -1213,14 +1213,12 @@ rzp.open(); } catch (err: any) {
               )}
               {/* Filter icon */}
               <button type="button" onClick={() => setShowFilterDropdown((prev) => !prev)}
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition ${
                   (activeCategory !== "All" || sortBy !== "latest" || maxPriceFilter !== null)
-                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-700 dark:bg-teal-900 dark:text-teal-300"
+                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900 dark:text-teal-300"
                     : "border-emerald-100 bg-white/90 text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400"
                 }`} title="Filters">
-                <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full ${activeCategory !== "All" || sortBy !== "latest" || maxPriceFilter !== null ? "bg-teal-600 dark:bg-teal-500" : "bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"}`}>
-                  <AppIcon name="filter" className="text-[10px]" />
-                </span>
+                <AppIcon name="filter" className="text-[18px]" />
               </button>
             </div>
             {/* Filter dropdown */}
@@ -1309,7 +1307,7 @@ rzp.open(); } catch (err: any) {
             const productImages = getProductImages(product);
             return (
               <article key={product._id}
-                className={`group flex flex-col overflow-hidden rounded-[26px] border bg-white/95 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950/90 ${productCartQuantity > 0 ? "border-emerald-400 ring-2 ring-emerald-100/80 dark:ring-emerald-900/40" : "border-slate-200"}`}>
+                className={`group flex flex-col overflow-hidden rounded-2xl border bg-white/95 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950/90 ${productCartQuantity > 0 ? "border-emerald-400 ring-2 ring-emerald-100/80 dark:ring-emerald-900/40" : "border-slate-200"}`}>
                 <ProductImageGallery
                   productId={product._id}
                   title={product.title}
@@ -1317,7 +1315,13 @@ rzp.open(); } catch (err: any) {
                   className="aspect-square"
                 >
                   <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex flex-col gap-1">
-                    {product.isRecommended && <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-white">REC</span>}
+                    {product.isRecommended && (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+                        <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                      </span>
+                    )}
                     {discountPercent > 0 && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
                     {isNewProduct && !discountPercent && <span className="rounded-md bg-sky-500 px-1.5 py-0.5 text-[9px] font-bold text-white">NEW</span>}
                     {isOutOfStock && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">OUT</span>}
@@ -1466,8 +1470,8 @@ rzp.open(); } catch (err: any) {
                 </h1>
               </div>
         </div>
-        <button type="button" onClick={() => setShowCart(false)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
-          <AppIcon name="close" className="text-[11px]" />
+        <button type="button" onClick={() => setShowCart(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors duration-200">
+          <AppIcon name="close" className="text-[18px]" />
         </button>
       </div>
       <div

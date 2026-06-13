@@ -154,11 +154,9 @@ function ImageUploadField({
           onChange={e => onChange(e.target.value)}
         />
         <label
-          className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-100 bg-emerald-50/80 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-emerald-100 dark:border-teal-900/40 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800 ${uploading ? "pointer-events-none opacity-50" : ""}`}
+          className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60 ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500">
-            <AppIcon name={uploading ? "pending" : "upload"} className="text-[10px]" />
-          </span>
+          <AppIcon name={uploading ? "pending" : "upload"} className="text-[18px]" />
           {uploading ? "Uploading..." : "Upload"}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </label>
@@ -1249,7 +1247,7 @@ export function DashboardPage() {
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
-            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-[#333632] shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
+            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ffa366] to-[#ffeedd] text-[#333632] shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
             <AppIcon name={t.icon} className="text-[20px]" />
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
@@ -1340,7 +1338,7 @@ export function DashboardPage() {
                   >
                     <AppIcon
                       name={s.icon as Parameters<typeof AppIcon>[0]["name"]}
-                      className="text-[18px]"
+                      className="text-[22px]"
                     />
                   </span>
                 </div>
@@ -1653,7 +1651,7 @@ export function DashboardPage() {
                   onClick={handleCancelEdit}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
                 >
-                  <AppIcon name="close" className="text-[10px]" /> Cancel
+                  <AppIcon name="close" className="text-sm" /> Cancel
                 </button>
               )}
             </div>
@@ -1882,7 +1880,7 @@ export function DashboardPage() {
                 </label>
               </div>
 
-              <label className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 transition hover:border-emerald-200">
+              <label className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 transition hover:border-emerald-200 dark:border-emerald-900/35 dark:bg-emerald-950/20 dark:hover:border-emerald-800/30">
                 <input
                   type="checkbox"
                   checked={productForm.isRecommended}
@@ -2102,10 +2100,10 @@ export function DashboardPage() {
                   </button>
                 )}
                 <button type="submit" disabled={isSubmittingProduct}
-                  className={`w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${editingProduct ? "bg-amber-600 hover:bg-amber-500 sm:flex-1" : "bg-teal-600 hover:bg-teal-500"}`}>
+                  className={`w-full inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${editingProduct ? "bg-amber-600 hover:bg-amber-500 sm:flex-1" : "bg-teal-600 hover:bg-teal-500"}`}>
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
-                    : editingProduct ? <><AppIcon name="edit" className="text-[10px]" /> Update Product</> : <><AppIcon name="products" className="text-[10px]" /> Add Product</>}
+                    : editingProduct ? <><AppIcon name="edit" className="text-base" />Update Product</> : <><AppIcon name="products" className="text-base" />Add Product</>}
                 </button>
               </div>
             </form>
@@ -2122,7 +2120,9 @@ export function DashboardPage() {
               {/* Search bar with filter icon */}
               <div className="relative">
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="search" className="text-[10px]" /></span>
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-teal-600 dark:text-teal-400">
+                    <AppIcon name="search" className="text-[22px]" />
+                  </span>
                   <input
                     className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
                     placeholder="Search products…"
@@ -2142,13 +2142,13 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowFilterDropdown(v => !v)}
-                    className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${catalogCategory
-                        ? "border-teal-300 bg-teal-100 text-teal-700"
-                        : "border-emerald-100 bg-white text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${catalogCategory || showFilterDropdown
+                        ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
+                        : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
                       }`}
                     title="Filter by category"
                   >
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"><AppIcon name="filter" className="text-[10px]" /></span>
+                    <AppIcon name="filter" className="text-[18px]" />
                   </button>
                 </div>
                 {/* Filter dropdown */}
@@ -2415,7 +2415,9 @@ export function DashboardPage() {
           {/* Search + filter bar */}
           <div className="relative mt-4">
             <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="search" className="text-[10px]" /></span>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-teal-600 dark:text-teal-400">
+                <AppIcon name="search" className="text-[22px]" />
+              </span>
               <input className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Search by customer, product or category…" value={orderSearch} onChange={e => setOrderSearch(e.target.value)} />
               {(orderStatusFilter || orderCategoryFilter) && (
                 <button type="button" onClick={() => { setOrderStatusFilter(""); setOrderCategoryFilter(""); }}
@@ -2424,8 +2426,13 @@ export function DashboardPage() {
                 </button>
               )}
               <button type="button" onClick={() => setShowOrderFilter(v => !v)}
-                className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${(orderStatusFilter || orderCategoryFilter) ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-700 dark:bg-teal-900/50 dark:text-teal-300" : "border-emerald-100 bg-white text-slate-400 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"}`}>
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-cyan-600 dark:from-cyan-500 dark:to-blue-500"><AppIcon name="filter" className="text-[10px]" /></span>
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${
+                  (orderStatusFilter || orderCategoryFilter) || showOrderFilter
+                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
+                    : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
+                }`}
+              >
+                <AppIcon name="filter" className="text-[18px]" />
               </button>
             </div>
             {showOrderFilter && (
@@ -2675,7 +2682,7 @@ export function DashboardPage() {
                   ))}
                 </div>
                 <button onClick={handleExport} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white">
-                  <AppIcon name="download" className="text-[11px]" /> Export Report
+                  <AppIcon name="download" className="text-[18px]" /> Export Report
                 </button>
               </div>
             </div>
@@ -2684,7 +2691,7 @@ export function DashboardPage() {
           {loadingReport ? (
             <div className="rounded-[28px] border border-white/70 bg-white/90 p-10 text-center shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-500 text-white shadow-sm">
-                <AppIcon name="pending" className="text-[14px]" />
+                <AppIcon name="pending" className="text-[24px]" />
               </div>
               <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Preparing your report...</p>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Pulling orders, revenue, and product performance for the selected window.</p>
@@ -2698,7 +2705,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Total Orders</p>
                       <p className="mt-1 text-xs text-slate-500">Confirmed non-cancelled orders</p>
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[12px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[22px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{report.totalOrders}</p>
                   <p className="mt-2 text-xs text-slate-500">{"Across the last " + reportDays + " days"}</p>
@@ -2709,7 +2716,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Total Revenue</p>
                       <p className="mt-1 text-xs text-slate-500">Value captured in period</p>
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[12px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[22px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">₹{report.totalRevenue.toLocaleString("en-IN")}</p>
                   <p className="mt-2 text-xs text-slate-500">Revenue for the active range</p>
@@ -2720,7 +2727,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Avg. Order Value</p>
                       <p className="mt-1 text-xs text-slate-500">Revenue per completed order</p>
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/45 dark:text-sky-300"><AppIcon name="dashboard" className="text-[12px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/45 dark:text-sky-300"><AppIcon name="dashboard" className="text-[22px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">₹{reportAverageOrderValue.toLocaleString("en-IN")}</p>
                   <p className="mt-2 text-xs text-slate-500">{"Based on " + (report.totalOrders || 0) + " orders"}</p>
@@ -2731,7 +2738,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Units Sold</p>
                       <p className="mt-1 text-xs text-slate-500">Total product quantities moved</p>
                     </div>
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/45 dark:text-amber-300"><AppIcon name="products" className="text-[12px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/45 dark:text-amber-300"><AppIcon name="products" className="text-[22px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{reportTotalUnits}</p>
                   <p className="mt-2 text-xs text-slate-500">{"From " + report.topProducts.length + " selling product" + (report.topProducts.length === 1 ? "" : "s")}</p>
@@ -2755,7 +2762,7 @@ export function DashboardPage() {
 
                   {report.topProducts.length === 0 ? (
                     <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/80 p-8 text-center dark:border-slate-800 dark:bg-slate-900/60">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"><AppIcon name="reports" className="text-[12px]" /></div>
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950"><AppIcon name="reports" className="text-[24px]" /></div>
                       <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">No sales data for this period</p>
                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Once orders come in, your top products and performance mix will appear here.</p>
                     </div>
