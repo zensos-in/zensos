@@ -1249,10 +1249,8 @@ export function DashboardPage() {
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
-            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 text-white shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
-            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] shadow-sm">
-              <AppIcon name={t.icon} className="text-[20px] text-[#333632]" />
-            </span>
+            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-[#333632] shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
+            <AppIcon name={t.icon} className="text-[20px]" />
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
               <span className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none shadow-sm ring-1 ${tab === t.key ? "!bg-white !text-zinc-950 ring-white/70 dark:!bg-white dark:!text-zinc-950" : "bg-zinc-700 text-white ring-black/5 dark:bg-white dark:text-zinc-950 dark:ring-white/20"}`}>
