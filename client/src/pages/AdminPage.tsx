@@ -802,8 +802,8 @@ export function AdminPage() {
     return (
       <main className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-6 px-3 py-8 sm:px-4 sm:py-10 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden space-y-5 lg:block">
-          <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-700 shadow-sm dark:border-sky-900/40 dark:bg-slate-950/80 dark:text-sky-300">
-            <AppIcon name="policies" className="text-[14px]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/80 px-4 py-2 text-xs font-bold uppercase text-sky-700 shadow-sm dark:border-sky-900/40 dark:bg-slate-950/80 dark:text-sky-300">
+            <AppIcon name="policies" className="text-[18px]" />
             Admin Console
           </div>
           <h1 className="font-heading text-4xl font-bold leading-tight text-slate-900 dark:text-slate-100">
@@ -819,8 +819,8 @@ export function AdminPage() {
               { label: "KYC access", value: "Ready", icon: "policies" },
             ].map((item) => (
               <div key={item.label} className="surface-card rounded-[24px] p-4">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
-                  <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[15px]" />
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                  <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[24px]" />
                 </span>
                 <p className="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{item.label}</p>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.value}</p>
@@ -830,11 +830,11 @@ export function AdminPage() {
         </section>
         <Card className="w-full space-y-5 p-6 sm:p-7">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-teal-700 dark:border-teal-900/40 dark:bg-teal-950/40 dark:text-teal-300">
-              <AppIcon name="dashboard" className="text-[13px]" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-bold uppercase text-teal-700 dark:border-teal-900/40 dark:bg-teal-950/40 dark:text-teal-300">
+              <AppIcon name="dashboard" className="text-[18px]" />
               Admin Access
             </div>
-            <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100"> Admin {t("auth.login", "Login")}</h1>
+            <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">Admin {t("auth.login", "Login")}</h1>
             <p className="text-sm leading-6 text-slate-500 dark:text-slate-300">Review seller requests and approve registrations.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -870,8 +870,8 @@ export function AdminPage() {
     <main className="mx-auto w-full max-w-7xl space-y-4 px-3 py-5 sm:px-4 sm:py-8">
       <header className="surface-card-strong flex flex-col items-stretch justify-between gap-4 rounded-[28px] bg-gradient-to-r from-white via-slate-50 to-sky-50/70 p-5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 sm:flex-row sm:items-center">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/85 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-sky-700 dark:border-sky-900/40 dark:bg-slate-950/80 dark:text-sky-300">
-            <AppIcon name="policies" className="text-[13px]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/85 px-3 py-1 text-xs font-bold uppercase text-sky-700 dark:border-sky-900/40 dark:bg-slate-950/80 dark:text-sky-300">
+            <AppIcon name="policies" className="text-[18px]" />
             {adminTab === "sellers" ? "Moderation Queue" : "Revenue Console"}
           </div>
           <h1 className="mt-3 font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -884,7 +884,7 @@ export function AdminPage() {
           </p>
         </div>
         <Button onClick={logout} variant="secondary" className="w-full sm:w-auto">
-          <AppIcon name="logout" className="text-[14px]" />
+          <AppIcon name="logout" className="text-[18px]" />
           Logout
         </Button>
       </header>
@@ -904,7 +904,7 @@ export function AdminPage() {
                 : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             }`}
           >
-            <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[13px]" />
+            <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[18px]" />
             {item.label}
           </button>
         ))}
@@ -922,11 +922,11 @@ export function AdminPage() {
           <Card key={item.label} className="rounded-[26px] p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{item.label}</p>
+                <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">{item.label}</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
               </div>
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[14px]" />
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[22px]" />
               </span>
             </div>
             <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{item.value}</p>
@@ -941,7 +941,7 @@ export function AdminPage() {
       <Card className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Platform Revenue</p>
+            <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Platform Revenue</p>
             <h2 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100">Commission and settlement tracking</h2>
           </div>
           <Button variant="secondary" onClick={() => void loadPlatformFinance()} loading={financeLoading} className="w-full sm:w-auto">

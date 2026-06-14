@@ -87,7 +87,8 @@ function ImageUploadField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-        <label className={`inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 sm:w-auto ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+        <label className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 shadow-sm px-4 py-2.5 text-sm font-semibold transition hover:bg-emerald-100 sm:w-auto dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+          <AppIcon name={uploading ? "pending" : "upload"} className="text-[18px]" />
           {uploading ? "Uploading..." : "Upload"}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </label>
@@ -513,18 +514,18 @@ const emailError =
         {/* Step indicators */}
         <div className="flex flex-wrap items-start justify-center gap-3 lg:justify-start">
           {activeSteps.map((s, i) => (
-            <div key={s.key} className="flex items-center gap-2">
+            <div key={s.key} className="flex items-start gap-2">
               <div className="flex flex-col items-center gap-1">
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-bold transition-all duration-300 ${
                     i < currentStepIndex
-                      ? "bg-teal-600 text-white shadow-sm"
+                      ? "border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400"
                       : i === currentStepIndex
-                      ? "bg-teal-600 text-white ring-4 ring-teal-100 shadow-sm dark:ring-teal-950/60"
-                      : "bg-white text-slate-400 shadow-sm dark:bg-slate-900"
+                      ? "border-teal-200 bg-teal-50 text-teal-600 ring-4 ring-teal-100/50 shadow-sm dark:border-teal-800/50 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-950/60"
+                      : "border-slate-100 bg-slate-50 text-slate-400 shadow-sm dark:border-slate-800/50 dark:bg-slate-900/40"
                   }`}
                 >
-                  {i < currentStepIndex ? <AppIcon name="check" className="text-[10px]" /> : String(i + 1)}
+                  {i < currentStepIndex ? <AppIcon name="check" className="text-[18px]" /> : String(i + 1)}
                 </div>
                 <span
                   className={`text-[10px] font-semibold tracking-wide ${
@@ -536,8 +537,8 @@ const emailError =
               </div>
               {i < activeSteps.length - 1 && (
                 <div
-                  className={`mb-4 h-0.5 w-8 rounded transition-all duration-300 ${
-                    i < currentStepIndex ? "bg-teal-400" : "bg-slate-200"
+                  className={`mt-5 h-0.5 w-8 rounded transition-all duration-300 ${
+                    i < currentStepIndex ? "bg-teal-400" : "bg-slate-200 dark:bg-slate-850"
                   }`}
                 />
               )}
@@ -563,8 +564,8 @@ const emailError =
               }`}
             >
               {m === "login"
-                ? <><AppIcon name="login" className="text-[16px]" /> {t("auth.login", "Login")}</>
-                : <><AppIcon name="register" className="text-[16px]" /> {t("auth.register", "Register")}</>}
+                ? <><AppIcon name="login" className="text-[20px]" /> {t("auth.login", "Login")}</>
+                : <><AppIcon name="register" className="text-[20px]" /> {t("auth.register", "Register")}</>}
             </button>
           ))}
         </div>
@@ -573,7 +574,7 @@ const emailError =
         {step === "contact" && (
           <>
             <h2 className="font-heading text-2xl font-bold text-slate-900">
-              {mode === "login" ? "Sign In to Your Dukan" : "Create Your Dukan"}
+              {mode === "login" ? "Sign in to Your Zensos Store" : "Create Your Zensos Store"}
             </h2>
             <p className="mt-1.5 text-sm text-slate-500">
               {mode === "login"
