@@ -1536,7 +1536,13 @@ export function DashboardPage() {
                 <div key={i} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-sm sm:flex-row sm:items-center">
                   <span className="font-semibold text-slate-700 w-full sm:w-24 shrink-0">{s.platform}</span>
                   <span className="flex-1 min-w-0 text-slate-500 truncate">{s.url}</span>
-                  <button onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))} className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-2 py-1 text-xs font-semibold text-white"><AppIcon name="close" className="text-[8px]" /></button>
+                  <button
+                    onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                    title="Remove link"
+                  >
+                    <AppIcon name="close" className="text-[14px]" />
+                  </button>
                 </div>
               ))}
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -1586,13 +1592,13 @@ export function DashboardPage() {
                       <p className="text-xs text-slate-400 truncate">{b.imageUrl}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <span className="rounded-full border border-teal-200 bg-teal-50 px-2 py-1 text-[11px] font-bold text-teal-700">
+                      <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
                         Position {i + 1}
                       </span>
                       <button
                         type="button"
                         onClick={() => setBanners(prev => prev.filter((_, j) => j !== i))}
-                        className="text-rose-600 text-xs font-semibold px-2 py-1 rounded-lg border border-rose-200 bg-rose-50"
+                        className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
                       >
                         Remove
                       </button>
@@ -1649,9 +1655,9 @@ export function DashboardPage() {
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
                 >
-                  <AppIcon name="close" className="text-sm" /> Cancel
+                  <AppIcon name="close" className="text-[22px]" /> Cancel
                 </button>
               )}
             </div>
@@ -1682,7 +1688,7 @@ export function DashboardPage() {
                 </label>
                 <label className="relative block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Category</span>
-                  <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                     <div className="flex flex-wrap gap-2">
                       {productForm.categories.map((tag) => (
                         <button
@@ -1801,7 +1807,7 @@ export function DashboardPage() {
                                 className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
                                 aria-label={`Save category ${c}`}
                               >
-                                <AppIcon name="check" className="h-3.5 w-3.5" />
+                                <AppIcon name="check" className="text-[14px]" />
                               </button>
                               <button
                                 type="button"
@@ -1842,7 +1848,7 @@ export function DashboardPage() {
                                 className="flex h-7 w-7 items-center justify-center rounded-full border border-sky-200 bg-sky-50 text-sky-600 transition hover:bg-sky-100 hover:text-sky-700"
                                 aria-label={`Edit category ${c}`}
                               >
-                                <AppIcon name="edit" className="h-3.5 w-3.5" />
+                                <AppIcon name="edit" className="text-[14px]" />
                               </button>
                               <button
                                 type="button"
@@ -1854,7 +1860,7 @@ export function DashboardPage() {
                                 className="flex h-7 w-7 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
                                 aria-label={`Delete category ${c}`}
                               >
-                                <AppIcon name="trash" className="h-3.5 w-3.5" />
+                                <AppIcon name="trash" className="text-[14px]" />
                               </button>
                             </>
                           )}
@@ -1925,7 +1931,7 @@ export function DashboardPage() {
                               ...p,
                               imageUrls: p.imageUrls.length > 1 ? p.imageUrls.filter((_, i) => i !== index) : [""],
                             }))}
-                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
+                            className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60 shrink-0"
                           >Remove</button>
                         </div>
                         {normalizeImageUrl(url) && (
@@ -2075,7 +2081,7 @@ export function DashboardPage() {
                           aria-label={`Remove variant ${i + 1}`}
                           title="Remove variant"
                         >
-                          <AppIcon name="close" className="text-[9px]" />
+                          <AppIcon name="close" className="text-[14px]" />
                           Remove
                         </button>
                       </div>
@@ -2094,16 +2100,16 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:w-auto"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:w-auto"
                   >
-                    Cancel Edit
+                    <AppIcon name="close" className="text-[22px]" /> Cancel Edit
                   </button>
                 )}
                 <button type="submit" disabled={isSubmittingProduct}
                   className={`w-full inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${editingProduct ? "bg-amber-600 hover:bg-amber-500 sm:flex-1" : "bg-teal-600 hover:bg-teal-500"}`}>
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
-                    : editingProduct ? <><AppIcon name="edit" className="text-base" />Update Product</> : <><AppIcon name="products" className="text-base" />Add Product</>}
+                    : editingProduct ? <><AppIcon name="edit" className="text-[22px]" />Update Product</> : <><AppIcon name="products" className="text-[22px]" />Add Product</>}
                 </button>
               </div>
             </form>
@@ -2258,15 +2264,15 @@ export function DashboardPage() {
                         <button
                           onClick={() => handleStartEdit(prod)}
                           className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition"
-                        ><AppIcon name="edit" className="text-[10px]" /> Edit</button>
+                        ><AppIcon name="edit" className="text-[14px]" /> Edit</button>
                         <button onClick={() => handleToggleProduct(prod._id)}
                           className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70"}`}>
-                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[10px]" />
+                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[14px]" />
                           {prod.isActive ? "Deactivate" : "Activate"}
                         </button>
                         <button onClick={() => handleDeleteProduct(prod)}
                           className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
-                        ><AppIcon name="close" className="text-[10px]" /> Delete</button>
+                        ><AppIcon name="close" className="text-[14px]" /> Delete</button>
                       </div>
                     </div>
                   ))}
