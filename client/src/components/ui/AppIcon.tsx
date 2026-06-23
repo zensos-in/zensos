@@ -41,7 +41,8 @@ type AppIconName =
   | "sun"
   | "moon"
   | "earnings"
-  | "language";
+  | "language"
+  | "visibility";
 
 type IconProps = {
   className?: string;
@@ -344,6 +345,12 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="M3 10h18" />
       <circle cx="16" cy="14" r="1" />
+    </IconBase>
+  ),
+  visibility: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
     </IconBase>
   ),
 };

@@ -262,6 +262,18 @@ function getOrderPrimaryCategory(order: Order) {
   return getOrderItems(order)[0]?.productCategory || order.product?.category || "";
 }
 
+function getOrderCityPincode(order: Order): string {
+  const address = getOrderShippingSummary(order) || "";
+  const parsed = parseAddress(address);
+  return [parsed.city, parsed.pincode].filter(Boolean).join(", ");
+}
+
+function getOrderProductNames(order: Order): string {
+  const items = getOrderItems(order);
+  if (items.length === 0) return "—";
+  return items.map((item) => item.productTitle).filter(Boolean).join(", ");
+}
+
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 export function DashboardPage() {
   const { seller, logout, updateProfile, refreshProfile } = useAuth();
@@ -1202,7 +1214,7 @@ export function DashboardPage() {
     ? report.topProducts.reduce((sum, product) => sum + product.unitsSold, 0)
     : 0;
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-4 px-3 py-5 sm:px-4 sm:py-8">
+    <main className="mx-auto w-full max-w-7xl space-y-4 px-3 py-5 pb-20 sm:px-4 sm:py-8 sm:pb-24">
       {/* Header */}
       <header className="flex flex-col gap-3 rounded-3xl border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-teal-900/40 dark:bg-gradient-to-br dark:from-slate-950/95 dark:via-slate-900/90 dark:to-slate-900/95">
         <div className="flex items-center gap-3">
@@ -1437,205 +1449,252 @@ export function DashboardPage() {
       {/* ══════════════════════════════════ TAB: STORE OPTIONS ══ */}
       {tab === "store" && (
         <div className="grid gap-6 min-w-0 lg:grid-cols-2">
-          {/* Branding */}
+          {/* LEFT CARD — Branding + Store Banners */}
           <article className="min-w-0 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card space-y-4 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-            <h2 className="font-heading text-xl font-bold text-slate-900">Branding & Contact</h2>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Business Logo URL</span>
-              <ImageUploadField value={storeLogo} onChange={setStoreLogo} placeholder="https://..." />
-            </label>
-            {storeLogo && <img src={normalizeImageUrl(storeLogo)} alt="logo preview" className="h-16 w-16 rounded-xl object-contain border border-slate-200" />}
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Favicon URL</span>
-              <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} placeholder="https://..." />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">WhatsApp Number</span>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input className="w-full max-w-[8rem] rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400" placeholder="+91" value={storeWhatsapp.countryCode} readOnly />
-                <input className="flex-1 min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400" placeholder="9876543210" value={storeWhatsapp.number} onChange={e => setStoreWhatsapp((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
-              </div>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Call Number</span>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input className="w-full max-w-[8rem] rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400" placeholder="+91" value={storeCall.countryCode} readOnly />
-                <input className="flex-1 min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400" placeholder="9876543210" value={storeCall.number} onChange={e => setStoreCall((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
-              </div>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Delivery Option</span>
-              <select
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 bg-white"
-                value={storeDeliveryMode}
-                onChange={e => setStoreDeliveryMode(e.target.value as "always_free" | "flat_rate")}
-              >
-                <option value="always_free">Free Delivery</option>
-                <option value="flat_rate">Flat Delivery Charge</option>
-              </select>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Payment Option</span>
-              <select
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 bg-white"
-                value={storePaymentMode}
-                onChange={e => setStorePaymentMode(e.target.value as PaymentMode)}
-              >
-                <option value="prepaid_only">UPI / Prepaid</option>
-                <option value="cod_only">Cash on Delivery Only</option>
-                <option value="both">Allow Both Prepaid and Cash on Delivery</option>
-              </select>
-              <p className="text-xs text-slate-500">This controls what the customer can choose during checkout.</p>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Fixed Delivery Charge (₹)</span>
-              <input
-                type="number" min={0}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-                placeholder="0"
-                value={storeDeliveryCharge}
-                readOnly={storeDeliveryMode === "always_free"}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (v === "") { setStoreDeliveryCharge(""); return; }
-                  setStoreDeliveryCharge(String(Math.max(0, Number(v) || 0)));
-                }}
-                disabled={storeDeliveryMode === "always_free"}
-              />
-              <p className="text-xs text-slate-500">
-                {storeDeliveryMode === "always_free"
-                  ? "Customers will always see free delivery."
-                  : "This flat charge applies until the free-delivery threshold is reached."}
-              </p>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Free Delivery Above Billing Amount (₹)</span>
-              <input
-                type="number" min={0}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-                placeholder="500"
-                value={storeFreeDeliveryThreshold}
-                onChange={e => {
-                  const v = e.target.value;
-                  if (v === "") { setStoreFreeDeliveryThreshold(""); return; }
-                  setStoreFreeDeliveryThreshold(String(Math.max(0, Number(v) || 0)));
-                }}
-                disabled={storeDeliveryMode === "always_free"}
-              />
-              <p className="text-xs text-slate-500">
-                {storeDeliveryMode === "always_free"
-                  ? "Threshold is ignored when delivery is always free."
-                  : "If the customer billing amount reaches this value, delivery becomes free."}
-              </p>
-            </label>
+            {/* Card heading */}
+            <h2 className="font-heading text-xl font-bold text-slate-900 dark:text-slate-100 mb-5">Branding & Store Banner</h2>
 
-            {/* Social Links — inside Branding & Contact */}
-            <div className="border-t border-slate-100 pt-4 space-y-3">
-              <p className="text-sm font-semibold text-slate-700">Social & Online Links</p>
-              {socialLinks.map((s, i) => (
-                <div key={i} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-sm sm:flex-row sm:items-center">
-                  <span className="font-semibold text-slate-700 w-full sm:w-24 shrink-0">{s.platform}</span>
-                  <span className="flex-1 min-w-0 text-slate-500 truncate">{s.url}</span>
-                  <button
-                    onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                    title="Remove link"
-                  >
-                    <AppIcon name="close" className="text-[14px]" />
-                  </button>
-                </div>
-              ))}
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <select className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none bg-white sm:w-auto" value={newSocialPlatform} onChange={e => setNewSocialPlatform(e.target.value)}>
-                  {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
-                </select>
-                <input className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
-                <button
-                  onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
-                  className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
-                >Add</button>
+            {/* ── Sub-section 1: Branding ── */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Branding</p>
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Business Logo</span>
+                <ImageUploadField value={storeLogo} onChange={setStoreLogo} placeholder="upload an image file or paste an URL" />
+              </label>
+              {storeLogo && <img src={normalizeImageUrl(storeLogo)} alt="logo preview" className="h-16 w-16 rounded-xl object-contain border border-slate-200 dark:border-slate-700" />}
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Favicon</span>
+                <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} placeholder="upload an image file or paste an URL" />
+              </label>
+            </div>
+
+            {/* ── Sub-section 2: Store Banners ── */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Store Banners</p>
+                <span className={`rounded-full px-3 py-1 text-xs font-bold border ${banners.length >= 5
+                  ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
+                  : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}>{banners.length}/5</span>
               </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Upload up to 5 banner images. Drag banners up or down to set the order they appear in your public store carousel.</p>
+              <div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-800/60">
+                <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 w-full">📐 Recommended Banner Size</p>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
+                  🖥️ Desktop — <span className="font-bold">1200 × 400 px</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
+                  📱 Mobile — <span className="font-bold">600 × 300 px</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                {banners.map((b, i) => (
+                  <div
+                    key={`${b.imageUrl}-${i}`}
+                    draggable
+                    onDragStart={() => handleBannerDragStart(i)}
+                    onDragOver={e => handleBannerDragOver(e, i)}
+                    onDrop={() => handleBannerDrop(i)}
+                    onDragEnd={resetBannerDragState}
+                    className={`flex flex-col gap-2 rounded-xl border p-2 transition ${dragOverBannerIndex === i
+                      ? "border-teal-300 ring-2 ring-teal-100 bg-white dark:bg-slate-800 dark:ring-teal-900/40"
+                      : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
+                      } ${draggedBannerIndex === i ? "opacity-70" : ""}`}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex flex-col items-center gap-1 px-1 text-slate-400 dark:text-slate-500 shrink-0 cursor-grab active:cursor-grabbing">
+                        <span className="text-sm leading-none">⋮⋮</span>
+                      </div>
+                      {b.imageUrl && <img src={normalizeImageUrl(b.imageUrl)} alt="" className="h-12 w-20 rounded-lg object-cover" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{b.title || `Banner ${i + 1}`}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{b.imageUrl}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
+                          Position {i + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setBanners(prev => prev.filter((_, j) => j !== i))}
+                          className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {banners.length < 5 ? (
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Banner Image</span>
+                    <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} placeholder="Banner Image URL" />
+                  </label>
+                  <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="Banner title (optional)" value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} />
+                  <button
+                    onClick={() => {
+                      if (newBannerUrl.trim() && banners.length < 5) {
+                        setBanners(prev => [...prev, { imageUrl: newBannerUrl.trim(), title: newBannerTitle.trim() }]);
+                        setNewBannerUrl(""); setNewBannerTitle("");
+                      }
+                    }}
+                    className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
+                  >+ Add Banner</button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-semibold text-center">
+                  🚫 Maximum 5 banners reached. Remove one to add another.
+                </div>
+              )}
             </div>
           </article>
 
-          {/* Banners — max 5 */}
-          <article className="min-w-0 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card space-y-3 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading text-xl font-bold text-slate-900">Store Banners</h2>
-              <span className={`rounded-full px-3 py-1 text-xs font-bold border ${banners.length >= 5
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                  : "border-slate-200 bg-slate-50 text-slate-600"
-                }`}>{banners.length}/5</span>
-            </div>
-            <p className="text-xs text-slate-500">Upload up to 5 banner images. Drag banners up or down to set the order they appear in your public store carousel.</p>
-            <div className="space-y-2">
-              {banners.map((b, i) => (
-                <div
-                  key={`${b.imageUrl}-${i}`}
-                  draggable
-                  onDragStart={() => handleBannerDragStart(i)}
-                  onDragOver={e => handleBannerDragOver(e, i)}
-                  onDrop={() => handleBannerDrop(i)}
-                  onDragEnd={resetBannerDragState}
-                  className={`flex flex-col gap-2 rounded-xl border bg-slate-50 p-2 transition ${dragOverBannerIndex === i
-                      ? "border-teal-300 ring-2 ring-teal-100"
-                      : "border-slate-200"
-                    } ${draggedBannerIndex === i ? "opacity-70" : ""}`}
+          {/* RIGHT CARD — Delivery + Contact & Social Links */}
+          <article className="min-w-0 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card space-y-4 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900 dark:text-slate-100">
+
+            {/* ── Sub-section: Delivery ── */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Delivery</p>
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Delivery Option</span>
+                <select
+                  className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-slate-400 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  value={storeDeliveryMode}
+                  onChange={e => setStoreDeliveryMode(e.target.value as "always_free" | "flat_rate")}
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="flex flex-col items-center gap-1 px-1 text-slate-400 shrink-0 cursor-grab active:cursor-grabbing">
-                      <span className="text-sm leading-none">⋮⋮</span>
-                    </div>
-                    {b.imageUrl && <img src={normalizeImageUrl(b.imageUrl)} alt="" className="h-12 w-20 rounded-lg object-cover" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700 truncate">{b.title || `Banner ${i + 1}`}</p>
-                      <p className="text-xs text-slate-400 truncate">{b.imageUrl}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
-                        Position {i + 1}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setBanners(prev => prev.filter((_, j) => j !== i))}
-                        className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                  <option value="always_free">Free Delivery</option>
+                  <option value="flat_rate">Flat Delivery Charge</option>
+                </select>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Payment Option</span>
+                <select
+                  className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-slate-400 bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  value={storePaymentMode}
+                  onChange={e => setStorePaymentMode(e.target.value as PaymentMode)}
+                >
+                  <option value="prepaid_only">UPI / Prepaid</option>
+                  <option value="cod_only">Cash on Delivery Only</option>
+                  <option value="both">Allow Both Prepaid and Cash on Delivery</option>
+                </select>
+                <p className="text-xs text-slate-500 dark:text-slate-400">This controls what the customer can choose during checkout.</p>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Fixed Delivery Charge (₹)</span>
+                <input
+                  type="number" min={0}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  placeholder="0"
+                  value={storeDeliveryCharge}
+                  readOnly={storeDeliveryMode === "always_free"}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === "") { setStoreDeliveryCharge(""); return; }
+                    setStoreDeliveryCharge(String(Math.max(0, Number(v) || 0)));
+                  }}
+                  disabled={storeDeliveryMode === "always_free"}
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {storeDeliveryMode === "always_free"
+                    ? "Customers will always see free delivery."
+                    : "This flat charge applies until the free-delivery threshold is reached."}
+                </p>
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Free Delivery Above Billing Amount (₹)</span>
+                <input
+                  type="number" min={0}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  placeholder="500"
+                  value={storeFreeDeliveryThreshold}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === "") { setStoreFreeDeliveryThreshold(""); return; }
+                    setStoreFreeDeliveryThreshold(String(Math.max(0, Number(v) || 0)));
+                  }}
+                  disabled={storeDeliveryMode === "always_free"}
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {storeDeliveryMode === "always_free"
+                    ? "Customers receive free delivery when their order value reaches this amount"
+                    : "If the customer billing amount reaches this value, delivery becomes free."}
+                </p>
+              </label>
+            </div>
+
+            {/* ── Sub-section: Contact & Social Links ── */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact & Social Links</p>
+              {/* WhatsApp + Call — side by side grid */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* WhatsApp */}
+                <div className="space-y-1">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">WhatsApp Number</span>
+                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
+                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
+                      {storeWhatsapp.countryCode || "+91"}
+                    </span>
+                    <input
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="9876543210"
+                      value={storeWhatsapp.number}
+                      onChange={e => setStoreWhatsapp((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
+                    />
                   </div>
                 </div>
-              ))}
+                {/* Call */}
+                <div className="space-y-1">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Call Number</span>
+                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
+                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
+                      {storeCall.countryCode || "+91"}
+                    </span>
+                    <input
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="9876543210"
+                      value={storeCall.number}
+                      onChange={e => setStoreCall((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Social Links */}
+              <div className="pt-1 space-y-2">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide dark:text-slate-400">Social Links</p>
+                {socialLinks.map((s, i) => (
+                  <div key={i} className="relative flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-2 pr-10 text-sm sm:flex-row sm:items-center sm:gap-2 sm:pr-2 dark:border-slate-700 dark:bg-slate-800/60">
+                    <span className="font-semibold text-slate-700 w-full sm:w-24 shrink-0 dark:text-slate-300">{s.platform}</span>
+                    <span className="flex-1 min-w-0 text-slate-500 truncate dark:text-slate-400">{s.url}</span>
+                    <button
+                      onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
+                      className="absolute top-2 right-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition sm:relative sm:top-auto sm:right-auto dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                      title="Remove link"
+                    >
+                      <AppIcon name="close" className="text-[14px]" />
+                    </button>
+                  </div>
+                ))}
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select className="w-full rounded-lg border border-slate-200 px-2 pr-10 py-2 text-sm outline-none bg-white sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" value={newSocialPlatform} onChange={e => setNewSocialPlatform(e.target.value)}>
+                    {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                  </select>
+                  <input className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
+                  <button
+                    onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
+                    className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
+                  >Add</button>
+                </div>
+              </div>
             </div>
-            {banners.length < 5 ? (
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <label className="block space-y-1">
-                  <span className="text-xs font-semibold text-slate-600">Banner Image</span>
-                  <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} placeholder="Banner Image URL" />
-                </label>
-                <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none" placeholder="Banner title (optional)" value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} />
-                <button
-                  onClick={() => {
-                    if (newBannerUrl.trim() && banners.length < 5) {
-                      setBanners(prev => [...prev, { imageUrl: newBannerUrl.trim(), title: newBannerTitle.trim() }]);
-                      setNewBannerUrl(""); setNewBannerTitle("");
-                    }
-                  }}
-                  className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
-                >+ Add Banner</button>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-semibold text-center">
-                🚫 Maximum 5 banners reached. Remove one to add another.
-              </div>
-            )}
           </article>
 
 
 
           <div className="lg:col-span-2">
             <button onClick={handleStoreSave} disabled={isSavingStore}
-              className="w-full rounded-2xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-teal-500 disabled:bg-teal-300 transition">
+              className="w-full rounded-2xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-teal-500 disabled:bg-teal-300 transition dark:bg-teal-700 dark:hover:bg-teal-600 dark:disabled:bg-teal-900/60">
               {isSavingStore ? "Saving Store Options..." : "Save All Store Options"}
             </button>
           </div>
@@ -1886,16 +1945,16 @@ export function DashboardPage() {
                 </label>
               </div>
 
-              <label className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 transition hover:border-emerald-200 dark:border-emerald-900/35 dark:bg-emerald-950/20 dark:hover:border-emerald-800/30">
+              <label className="flex items-start gap-3 rounded-2xl border border-[#ffa366] bg-[#ffeedd]/10 p-4 transition hover:bg-[#ffeedd]/20 dark:border-[#ffa366]/50 dark:bg-[#ffa366]/5 dark:hover:bg-[#ffa366]/10">
                 <input
                   type="checkbox"
                   checked={productForm.isRecommended}
                   onChange={e => setProductForm(p => ({ ...p, isRecommended: e.target.checked }))}
-                  className="mt-1 h-4 w-4 rounded border-emerald-300 text-emerald-600 accent-emerald-600"
+                  className="mt-1 h-4 w-4 rounded border-[#ffa366] accent-[#ffa366]"
                 />
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-slate-800">Is it Recommended?</span>
-                  <span className="block text-xs text-slate-500">Show this product in the Recommended section at the top of the public store.</span>
+                  <span className="block text-sm font-semibold text-slate-800 dark:text-slate-100">Highlight this product as Recommended?</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">Show this product as a recommended item at the top of your storefront.</span>
                 </span>
               </label>
 
@@ -1922,7 +1981,7 @@ export function DashboardPage() {
                                 next[index] = nextUrl;
                                 return { ...p, imageUrls: next };
                               })}
-                              placeholder="https://..."
+                              placeholder="Upload an image file or paste an image URL"
                             />
                           </div>
                           <button
@@ -1946,7 +2005,7 @@ export function DashboardPage() {
                   <span className="text-sm font-semibold text-slate-700">Description</span>
                   <textarea
                     className="min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-                    placeholder="What does the customer get?"
+                    placeholder="Describe the product, its features, ingredients, benefits, or what is included."
                     value={productForm.description}
                     onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))}
                   />
@@ -1955,7 +2014,7 @@ export function DashboardPage() {
                   <span className="text-sm font-semibold text-slate-700">Additional Info (Notes)</span>
                   <textarea
                     className="min-h-14 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
-                    placeholder="Delivery info, pickup details..."
+                    placeholder="Delivery details, storage instructions, pickup information, etc."
                     value={productForm.notes}
                     onChange={e => setProductForm(p => ({ ...p, notes: e.target.value }))}
                   />
@@ -1972,17 +2031,17 @@ export function DashboardPage() {
                     value={productForm.packSize}
                     onChange={e => setProductForm(p => ({ ...p, packSize: e.target.value }))}
                   />
-                  <p className="text-xs text-slate-500">Optional when you already use variants only.</p>
+                  <p className="text-xs text-slate-500">Leave blank if you are using product variants below. </p>
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-sm font-semibold text-slate-700">UOM</span>
+                  <span className="text-sm font-semibold text-slate-700">Unit</span>
                   <input
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400"
                     placeholder="ml / g / pcs"
                     value={productForm.uom}
                     onChange={e => setProductForm(p => ({ ...p, uom: e.target.value }))}
                   />
-                  <p className="text-xs text-slate-500">Shows with pack size on the store card.</p>
+                  <p className="text-xs text-slate-500">Displayed along with the pack size.</p>
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Selling Price (₹)</span>
@@ -1993,7 +2052,7 @@ export function DashboardPage() {
                     value={productForm.price}
                     onChange={e => setProductForm(p => ({ ...p, price: e.target.value }))}
                   />
-                  <p className="text-xs text-slate-500">Leave empty if pricing only through variants.</p>
+                  <p className="text-xs text-slate-500">Leave blank if you have added prices for product variants.</p>
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">MRP (₹)</span>
@@ -2004,7 +2063,7 @@ export function DashboardPage() {
                     value={productForm.mrp}
                     onChange={e => setProductForm(p => ({ ...p, mrp: e.target.value }))}
                   />
-                  <p className="text-xs text-slate-500">MRP should be greater than selling price.</p>
+                  <p className="text-xs text-slate-500">Must be higher than the selling price.</p>
                 </label>
               </div>
 
@@ -2012,54 +2071,60 @@ export function DashboardPage() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Product Variants &amp; Pricing</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Each variant has pack size, UOM, selling price, MRP, and its own active status.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Add different sizes or variations of this product along with their prices.</p>
                 </div>
                 <div className="space-y-3">
                   {productForm.variants.map((v, i) => (
                     <div key={i} className="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
-                      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-                        <label className="col-span-2 block min-w-0 space-y-1 lg:col-span-1">
-                          <span className="text-xs font-semibold text-slate-500">Pack size</span>
-                          <input
-                            className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
-                            placeholder="e.g. 500"
-                            value={v.label}
-                            onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], label: e.target.value }; return { ...p, variants: vv }; })}
-                          />
-                        </label>
-                        <label className="block min-w-0 space-y-1">
-                          <span className="text-xs font-semibold text-slate-500">UOM</span>
-                          <input
-                            className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
-                            placeholder="g / ml"
-                            value={v.uom}
-                            onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], uom: e.target.value }; return { ...p, variants: vv }; })}
-                          />
-                        </label>
-                        <label className="block min-w-0 space-y-1">
-                          <span className="text-xs font-semibold text-slate-500">Selling (₹)</span>
-                          <input
-                            type="number"
-                            min={0}
-                            className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
-                            placeholder="499"
-                            value={v.amount}
-                            onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], amount: e.target.value }; return { ...p, variants: vv }; })}
-                          />
-                        </label>
-                        <label className="block min-w-0 space-y-1">
-                          <span className="text-xs font-semibold text-slate-500">MRP (₹)</span>
-                          <input
-                            type="number"
-                            min={0}
-                            className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
-                            placeholder="599"
-                            value={v.mrp}
-                            onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], mrp: e.target.value }; return { ...p, variants: vv }; })}
-                          />
-                        </label>
+                      <div className="space-y-2.5">
+                        {/* Row 1: Pack size + Unit */}
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <label className="block min-w-0 space-y-1">
+                            <span className="text-xs font-semibold text-slate-500">Pack size</span>
+                            <input
+                              className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                              placeholder="e.g. 500"
+                              value={v.label}
+                              onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], label: e.target.value }; return { ...p, variants: vv }; })}
+                            />
+                          </label>
+                          <label className="block min-w-0 space-y-1">
+                            <span className="text-xs font-semibold text-slate-500">Unit</span>
+                            <input
+                              className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                              placeholder="g / ml"
+                              value={v.uom}
+                              onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], uom: e.target.value }; return { ...p, variants: vv }; })}
+                            />
+                          </label>
+                        </div>
+                        {/* Row 2: Selling Price + MRP */}
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <label className="block min-w-0 space-y-1">
+                            <span className="text-xs font-semibold text-slate-500">Selling (₹)</span>
+                            <input
+                              type="number"
+                              min={0}
+                              className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                              placeholder="499"
+                              value={v.amount}
+                              onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], amount: e.target.value }; return { ...p, variants: vv }; })}
+                            />
+                          </label>
+                          <label className="block min-w-0 space-y-1">
+                            <span className="text-xs font-semibold text-slate-500">MRP (₹)</span>
+                            <input
+                              type="number"
+                              min={0}
+                              className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                              placeholder="599"
+                              value={v.mrp}
+                              onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], mrp: e.target.value }; return { ...p, variants: vv }; })}
+                            />
+                          </label>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button
                           type="button"
                           onClick={() => setProductForm(p => {
@@ -2068,8 +2133,8 @@ export function DashboardPage() {
                             return { ...p, variants: vv };
                           })}
                           className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition ${v.isActive
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                              : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                            : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                         >
                           {v.isActive ? "Active" : "Inactive"}
@@ -2149,8 +2214,8 @@ export function DashboardPage() {
                     type="button"
                     onClick={() => setShowFilterDropdown(v => !v)}
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${catalogCategory || showFilterDropdown
-                        ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
-                        : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
+                      ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
+                      : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
                       }`}
                     title="Filter by category"
                   >
@@ -2168,8 +2233,8 @@ export function DashboardPage() {
                             type="button"
                             onClick={() => { setCatalogCategory(prev => prev === c ? "" : c); setShowFilterDropdown(false); }}
                             className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${catalogCategory === c
-                                ? "bg-teal-50 font-semibold text-teal-800"
-                                : "text-slate-700 hover:bg-slate-50"
+                              ? "bg-teal-50 font-semibold text-teal-800"
+                              : "text-slate-700 hover:bg-slate-50"
                               }`}
                           >
                             <span className={`h-3.5 w-3.5 rounded-full border flex-shrink-0 ${catalogCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"
@@ -2203,11 +2268,12 @@ export function DashboardPage() {
                     return matchSearch && matchCat;
                   })
                   .map(prod => (
-                    <div key={prod._id} className={`rounded-2xl border p-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
-                      <div className="flex items-start gap-2">
-                        {getProductImages(prod)[0] && <img src={getProductImages(prod)[0]} alt="" className="h-12 w-12 rounded-lg object-cover" />}
+                    <div key={prod._id} className={`rounded-2xl border p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
+                      {/* Image + Info row */}
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        {getProductImages(prod)[0] && <img src={getProductImages(prod)[0]} alt="" className="h-12 w-12 lg:h-16 lg:w-16 rounded-lg object-cover shrink-0" />}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-800 truncate break-words">{prod.title}</p>
+                          <p className="font-semibold text-slate-800 truncate break-words dark:text-slate-100">{prod.title}</p>
                           {getProductCategories(prod).length > 0 ? (
                             <div className="mt-0.5 flex flex-wrap gap-1">
                               {prod.isRecommended && (
@@ -2226,7 +2292,7 @@ export function DashboardPage() {
                             </div>
                           ) : null}
                           <div className="flex gap-2 mt-1">
-                            <span className="text-sm font-bold text-slate-900">₹{prod.price}</span>
+                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{prod.price}</span>
                             {prod.mrp > 0 && prod.mrp > prod.price && (
                               <span className="text-xs text-slate-400 line-through self-center">₹{prod.mrp}</span>
                             )}
@@ -2260,19 +2326,20 @@ export function DashboardPage() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
+                      {/* Action buttons — bottom on mobile, right column on desktop */}
+                      <div className="flex flex-row flex-wrap gap-2 sm:flex-col sm:gap-1.5 sm:shrink-0 sm:self-center">
                         <button
                           onClick={() => handleStartEdit(prod)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition"
-                        ><AppIcon name="edit" className="text-[14px]" /> Edit</button>
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100 transition dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400"
+                        ><AppIcon name="edit" className="text-[16px]" /> Edit</button>
                         <button onClick={() => handleToggleProduct(prod._id)}
-                          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70"}`}>
-                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[14px]" />
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50"}`}>
+                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[16px]" />
                           {prod.isActive ? "Deactivate" : "Activate"}
                         </button>
                         <button onClick={() => handleDeleteProduct(prod)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
-                        ><AppIcon name="close" className="text-[14px]" /> Delete</button>
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
+                        ><AppIcon name="close" className="text-[16px]" /> Delete</button>
                       </div>
                     </div>
                   ))}
@@ -2432,11 +2499,10 @@ export function DashboardPage() {
                 </button>
               )}
               <button type="button" onClick={() => setShowOrderFilter(v => !v)}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${
-                  (orderStatusFilter || orderCategoryFilter) || showOrderFilter
-                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
-                    : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
-                }`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${(orderStatusFilter || orderCategoryFilter) || showOrderFilter
+                  ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
+                  : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
+                  }`}
               >
                 <AppIcon name="filter" className="text-[18px]" />
               </button>
@@ -2493,25 +2559,29 @@ export function DashboardPage() {
                   {filtered.map(order => {
                     const isUnread = !order.isViewed;
                     return (
-                      <article key={order._id} className={`rounded-2xl border p-3 transition ${isUnread ? "border-zinc-400 bg-zinc-200 shadow-md dark:border-zinc-600 dark:bg-zinc-800 [&>p]:text-zinc-800 dark:[&>p]:text-zinc-100 [&>p>strong]:text-zinc-950 dark:[&>p>strong]:text-white" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70"}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className={`font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
-                              {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
-                            </div>
-                            <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
-                            {getOrderShippingSummary(order) && <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span><span className="line-clamp-2">{getOrderShippingSummary(order)}</span></p>}
-                          </div>
-                          <span className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
+                      <article key={order._id} className={`rounded-2xl border p-3 transition ${isUnread ? "border-zinc-400 bg-zinc-200 shadow-md dark:border-zinc-600 dark:bg-zinc-800" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70"}`}>
+                        {/* Order No + Status */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>#{order._id.slice(-8).toUpperCase()}</p>
+                          <span className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />{STATUS_LABEL[order.paymentStatus]}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm text-slate-700">{getOrderItemSummary(order) || "—"}</p>
-                        <p className="text-xs text-slate-500">Qty: {order.quantity} · ₹{order.amount} + ₹{order.deliveryCharge || 0} = <strong>₹{order.amount + (order.deliveryCharge || 0)}</strong></p>
+                        {/* Customer Name */}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                          <p className={`font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
+                          {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
+                        </div>
+                        {/* Contact — Phone, City, Pincode */}
+                        <p className={`mt-0.5 text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{[order.customerPhone, getOrderCityPincode(order)].filter(Boolean).join(" · ") || "—"}</p>
+                        {/* Product */}
+                        <p className={`mt-2 text-sm ${isUnread ? "text-zinc-800 dark:text-zinc-100" : "text-slate-700 dark:text-slate-200"}`}>{getOrderProductNames(order)}</p>
+                        {/* Order Value */}
+                        <p className={`mt-1 text-sm font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-900 dark:text-slate-100"}`}>Order Value: ₹{order.amount + (order.deliveryCharge || 0)}</p>
+                        {/* Actions */}
                         <div className="mt-3 flex gap-2">
-                          <button onClick={() => void handleViewOrder(order)} className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">👁 View</button>
-                          <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
+                          <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
+                          <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                             {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                           </select>
                         </div>
@@ -2523,41 +2593,58 @@ export function DashboardPage() {
                 <div className="hidden overflow-x-auto md:block mt-4">
                   <table className="min-w-full border-collapse text-left text-sm">
                     <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                      <th className="pb-2 pr-4">Customer</th><th className="pb-2 pr-4">Product</th>
-                      <th className="pb-2 pr-4">Variant</th><th className="pb-2 pr-4">Qty</th>
-                      <th className="pb-2 pr-4">Total</th><th className="pb-2 pr-4" title="Status">●</th>
-                      <th className="pb-2 pr-4">Update</th><th className="pb-2">View</th>
+                      <th className="pb-2 pr-4">Order No</th>
+                      <th className="pb-2 pr-4">Customer Name</th>
+                      <th className="pb-2 pr-4">Contact</th>
+                      <th className="pb-2 pr-4">Product</th>
+                      <th className="pb-2 pr-4">Order Value</th>
+                      <th className="pb-2 pr-4">Order Status</th>
+                      <th className="pb-2 pr-4">Update</th>
+                      <th className="pb-2">View</th>
                     </tr></thead>
                     <tbody>
                       {filtered.map(order => {
                         const isUnread = !order.isViewed;
                         return (
                           <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
+                            {/* Order No */}
+                            <td className="py-3 pr-4">
+                              <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>#{order._id.slice(-8).toUpperCase()}</p>
+                            </td>
+                            {/* Customer Name */}
                             <td className="py-3 pr-4">
                               <div className="flex items-center gap-2">
                                 <p className={`font-semibold whitespace-nowrap ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
                                 {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
                               </div>
+                            </td>
+                            {/* Contact — Phone, City, Pincode */}
+                            <td className="py-3 pr-4">
                               <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
-                              {getOrderShippingSummary(order) && <p className={`flex items-center gap-1.5 text-xs max-w-[160px] truncate ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-400"}`} title={getOrderShippingSummary(order)}><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500"><AppIcon name="location" className="text-[8px]" /></span>{getOrderShippingSummary(order)}</p>}
+                              {getOrderCityPincode(order) && <p className={`text-xs ${isUnread ? "text-zinc-600 dark:text-zinc-400" : "text-slate-400 dark:text-slate-500"}`}>{getOrderCityPincode(order)}</p>}
                             </td>
+                            {/* Product — comma-separated names */}
                             <td className="py-3 pr-4">
-                              <p className="text-slate-700">{getOrderItemSummary(order) || "—"}</p>
-                              {getOrderPrimaryCategory(order) && <p className="text-xs text-teal-700">{getOrderPrimaryCategory(order)}</p>}
+                              <p className="text-slate-700 dark:text-slate-200">{getOrderProductNames(order)}</p>
                             </td>
-                            <td className="py-3 pr-4 text-xs text-slate-500 whitespace-nowrap">{getOrderItems(order).map((item) => item.variantTitle || Object.values(item.selectedVariants || {}).join(", ") || "—").join(" | ")}</td>
-                            <td className="py-3 pr-4 text-slate-700">{order.quantity}</td>
-                            <td className="py-3 pr-4 font-semibold text-slate-900 whitespace-nowrap">₹{order.amount + (order.deliveryCharge || 0)}</td>
+                            {/* Order Value */}
+                            <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">₹{order.amount + (order.deliveryCharge || 0)}</td>
+                            {/* Order Status */}
                             <td className="py-3 pr-4">
-                              <span title={STATUS_LABEL[order.paymentStatus]} className={`inline-flex h-3 w-3 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
+                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
+                                <span className={`h-2 w-2 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
+                                {STATUS_LABEL[order.paymentStatus]}
+                              </span>
                             </td>
+                            {/* Update */}
                             <td className="py-3 pr-4">
-                              <select className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
+                              <select className="rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                               </select>
                             </td>
+                            {/* View Order */}
                             <td className="py-3">
-                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1 text-xs font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition whitespace-nowrap"><AppIcon name="orders" className="text-[9px]" /> View</button>
+                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition whitespace-nowrap"><AppIcon name="visibility" className="text-[16px]" /> View Order</button>
                             </td>
                           </tr>
                         );
@@ -2585,7 +2672,7 @@ export function DashboardPage() {
                 <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses[viewingOrder.paymentStatus]}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[viewingOrder.paymentStatus]}`} />{STATUS_LABEL[viewingOrder.paymentStatus]}
                 </span>
-                <button onClick={() => setViewingOrder(null)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500"><AppIcon name="close" className="text-[10px]" /></button>
+                <button onClick={() => setViewingOrder(null)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white transition hover:from-rose-400 hover:to-red-500 shadow-sm"><AppIcon name="close" className="text-[14px]" /></button>
               </div>
             </div>
             <div className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-4 sm:px-6">
@@ -2646,7 +2733,7 @@ export function DashboardPage() {
               )}
             </div>
             <div className="flex flex-col gap-2 border-t border-slate-100 px-4 py-3 dark:border-teal-900/30 sm:flex-row sm:px-6">
-              <select className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              <select className="flex-1 rounded-xl border border-slate-200 bg-white px-3 pr-10 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 value={viewingOrder.paymentStatus}
                 onChange={e => { handleOrderStatus(viewingOrder._id, e.target.value as OrderStatus); setViewingOrder(o => o ? { ...o, paymentStatus: e.target.value as OrderStatus } : o); }}>
                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
@@ -2658,7 +2745,7 @@ export function DashboardPage() {
                   });
                 }}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto sm:whitespace-nowrap"
-              ><AppIcon name="orders" className="text-[10px]" /> Print / PDF</button>
+              ><AppIcon name="orders" className="text-[18px]" /> Print / PDF</button>
             </div>
           </div>
         </div>
@@ -2667,11 +2754,11 @@ export function DashboardPage() {
 
       {/* Reports */}
       {tab === "reports" && (
-        <div className="space-y-5">
-          <section className="overflow-hidden rounded-[30px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+        <div className="space-y-5 mb-16">
+          <section className="rounded-[30px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs font-semibold uppercase text-emerald-600">Analytics overview</p>
+                <p className="text-xs font-semibold uppercase text-orange-500">Analytics overview</p>
                 <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Sales performance at a glance</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Track order volume, revenue quality, and top-selling products in the same visual language as the rest of your dashboard.</p>
               </div>
@@ -2681,7 +2768,7 @@ export function DashboardPage() {
                     <button
                       key={d}
                       onClick={() => setReportDays(d)}
-                      className={reportDays === d ? "rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm" : "rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}
+                      className={reportDays === d ? "rounded-xl border border-orange-400 bg-orange-400/15 px-4 py-2 text-sm font-semibold text-orange-600 shadow-sm dark:text-orange-300" : "rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}
                     >
                       {d === 7 ? "Last 7 days" : "Last 30 days"}
                     </button>
@@ -2711,7 +2798,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Total Orders</p>
                       <p className="mt-1 text-xs text-slate-500">Confirmed non-cancelled orders</p>
                     </div>
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[22px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[26px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{report.totalOrders}</p>
                   <p className="mt-2 text-xs text-slate-500">{"Across the last " + reportDays + " days"}</p>
@@ -2722,7 +2809,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Total Revenue</p>
                       <p className="mt-1 text-xs text-slate-500">Value captured in period</p>
                     </div>
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[22px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[26px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">₹{report.totalRevenue.toLocaleString("en-IN")}</p>
                   <p className="mt-2 text-xs text-slate-500">Revenue for the active range</p>
@@ -2733,7 +2820,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Avg. Order Value</p>
                       <p className="mt-1 text-xs text-slate-500">Revenue per completed order</p>
                     </div>
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/45 dark:text-sky-300"><AppIcon name="dashboard" className="text-[22px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/45 dark:text-sky-300"><AppIcon name="dashboard" className="text-[26px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">₹{reportAverageOrderValue.toLocaleString("en-IN")}</p>
                   <p className="mt-2 text-xs text-slate-500">{"Based on " + (report.totalOrders || 0) + " orders"}</p>
@@ -2744,7 +2831,7 @@ export function DashboardPage() {
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Units Sold</p>
                       <p className="mt-1 text-xs text-slate-500">Total product quantities moved</p>
                     </div>
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/45 dark:text-amber-300"><AppIcon name="products" className="text-[22px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/45 dark:text-amber-300"><AppIcon name="products" className="text-[26px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{reportTotalUnits}</p>
                   <p className="mt-2 text-xs text-slate-500">{"From " + report.topProducts.length + " selling product" + (report.topProducts.length === 1 ? "" : "s")}</p>
@@ -2777,7 +2864,7 @@ export function DashboardPage() {
                       {report.topProducts.map((product, index) => {
                         const leaderRevenue = report.topProducts[0]?.revenue || 1;
                         const revenueWidth = Math.max(10, Math.min(100, (product.revenue / leaderRevenue) * 100));
-                        const rankClass = index === 0 ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white" : index === 1 ? "bg-gradient-to-br from-sky-500 to-cyan-600 text-white" : "bg-gradient-to-br from-amber-400 to-orange-500 text-white";
+                        const rankClass = index === 0 ? "bg-gradient-to-br from-orange-200 to-amber-100 text-orange-700" : index === 1 ? "bg-gradient-to-br from-sky-500 to-cyan-600 text-white" : "bg-gradient-to-br from-amber-400 to-orange-500 text-white";
                         return (
                           <div key={product.title + "-" + index} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 transition hover:border-emerald-200 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-teal-800">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -2790,7 +2877,7 @@ export function DashboardPage() {
                                   </div>
                                 </div>
                                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500" style={{ width: String(revenueWidth) + "%" }} />
+                                  <div className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300" style={{ width: String(revenueWidth) + "%" }} />
                                 </div>
                               </div>
                               <div className="grid shrink-0 grid-cols-2 gap-3 lg:w-[230px]">
@@ -2813,19 +2900,19 @@ export function DashboardPage() {
 
                 <div className="space-y-4">
                   <article className="rounded-[28px] border border-white/70 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 text-white shadow-card dark:border-teal-900/35">
-                    <p className="text-xs font-semibold uppercase text-emerald-300">Performance snapshot</p>
+                    <p className="text-xs font-semibold uppercase text-orange-400">Performance snapshot</p>
                     <h3 className="mt-2 font-heading text-xl font-bold">Revenue concentration</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">{reportTopProduct ? reportTopProduct.title + " contributes " + reportTopProductRevenueShare + "% of your total revenue in this range." : "Your next order will start shaping this report."}</p>
-                    <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                      <div className="flex items-end justify-between gap-3">
+                    <div className="mt-5 rounded-3xl border border-white/10 p-4" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase text-slate-400">Lead product revenue</p>
-                          <p className="mt-1 text-3xl font-bold">{reportTopProduct ? "₹" + reportTopProduct.revenue.toLocaleString("en-IN") : "₹0"}</p>
+                          <p className="text-[11px] font-semibold uppercase" style={{ color: "#94a3b8" }}>Lead product revenue</p>
+                          <p className="mt-1 text-3xl font-bold text-white">{reportTopProduct ? "₹" + reportTopProduct.revenue.toLocaleString("en-IN") : "₹0"}</p>
                         </div>
-                        <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">{"Last " + reportDays + " days"}</span>
+                        <span className="self-start sm:self-auto rounded-full border border-orange-400/40 px-3 py-1 text-xs font-semibold" style={{ backgroundColor: "rgba(251,146,60,0.15)", color: "#fed7aa" }}>{"Last " + reportDays + " days"}</span>
                       </div>
-                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-300" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
+                      <div className="mt-4 h-2 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
+                        <div className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
                       </div>
                     </div>
                   </article>
@@ -2858,13 +2945,13 @@ export function DashboardPage() {
         </div>
       )}
       {tab === "earnings" && (
-        <div className="mx-auto max-w-4xl space-y-5">
+        <div className="space-y-5">
           {/* Earnings Header Summary Cards */}
           {loadingEarnings ? (
             <div className="text-center py-10 text-slate-500">Loading earnings ledger...</div>
           ) : earningsData ? (
             <>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <article className="rounded-3xl border border-white/70 bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-card">
                   <p className="text-xs font-semibold uppercase text-emerald-100">Gross Sales</p>
                   <p className="mt-2 font-heading text-2xl font-bold">₹{earningsData.summary.grossRevenue.toLocaleString("en-IN")}</p>
@@ -2887,105 +2974,107 @@ export function DashboardPage() {
                 </article>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Pending Settlements</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.pendingSettlements || 0).toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Paid orders waiting for transfer</p>
+              <div className="mx-auto max-w-4xl space-y-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
+                    <p className="text-xs font-semibold uppercase text-slate-400">Pending Settlements</p>
+                    <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.pendingSettlements || 0).toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Paid orders waiting for transfer</p>
+                  </article>
+                  <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
+                    <p className="text-xs font-semibold uppercase text-slate-400">Completed Settlements</p>
+                    <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.completedSettlements || 0).toLocaleString("en-IN")}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Transferred to linked account</p>
+                  </article>
+                </div>
+
+                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
+                  <div className="mb-4">
+                    <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Order-wise Earnings</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Platform charges are included in customer payment and deducted before settlement</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
+                          <th className="py-2.5 px-2">Order ID</th>
+                          <th className="py-2.5 px-2 text-right">Product</th>
+                          <th className="py-2.5 px-2 text-right">Delivery</th>
+                          <th className="py-2.5 px-2 text-right">Platform Fee</th>
+                          <th className="py-2.5 px-2 text-right">Net Earning</th>
+                          <th className="py-2.5 px-2">Settlement</th>
+                          <th className="py-2.5 px-2">Settlement Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(earningsData.orders || []).length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="text-center py-10 text-slate-500">No earnings orders recorded yet.</td>
+                          </tr>
+                        ) : (
+                          earningsData.orders.map((order: any) => (
+                            <tr key={order.orderId} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
+                              <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300">{String(order.orderId).slice(-8)}</td>
+                              <td className="py-3 px-2 text-right font-semibold">₹{Number(order.productAmount || 0).toLocaleString("en-IN")}</td>
+                              <td className="py-3 px-2 text-right">₹{Number(order.deliveryCharge || 0).toLocaleString("en-IN")}</td>
+                              <td className="py-3 px-2 text-right text-rose-600">₹{Number(order.platformFee || 0).toLocaleString("en-IN")}</td>
+                              <td className="py-3 px-2 text-right font-bold text-emerald-600">₹{Number(order.netVendorEarning || 0).toLocaleString("en-IN")}</td>
+                              <td className="py-3 px-2 capitalize">{String(order.settlementStatus || "unsettled").replace(/_/g, " ")}</td>
+                              <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{order.settlementDate ? new Date(order.settlementDate).toLocaleDateString("en-IN") : "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </article>
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Completed Settlements</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.completedSettlements || 0).toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Transferred to linked account</p>
+
+                {/* Transaction Ledger Table */}
+                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
+                  <div className="mb-4">
+                    <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Transaction & Payout Ledger</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Direct vendor settlements via Razorpay Route after payment capture</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
+                          <th className="py-2.5 px-2">Date</th>
+                          <th className="py-2.5 px-2">Transaction Ref</th>
+                          <th className="py-2.5 px-2">Purpose</th>
+                          <th className="py-2.5 px-2">Type</th>
+                          <th className="py-2.5 px-2 text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {earningsData.ledger.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="text-center py-10 text-slate-500">No direct settlements recorded yet.</td>
+                          </tr>
+                        ) : (
+                          earningsData.ledger.map((log: any) => (
+                            <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
+                              <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{new Date(log.createdAt).toLocaleDateString("en-IN")}</td>
+                              <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300 font-semibold">{log.razorpayTransferId || "platform_ledger"}</td>
+                              <td className="py-3 px-2">
+                                <span className="capitalize">{log.purpose.replace(/_/g, " ")}</span>
+                              </td>
+                              <td className="py-3 px-2">
+                                <span className={`inline-block rounded-full px-2 py-0.5 font-bold uppercase text-[9px] ${log.type === "credit" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+                                  {log.type}
+                                </span>
+                              </td>
+                              <td className={`py-3 px-2 text-right font-bold font-mono ${log.type === "credit" ? "text-emerald-600" : "text-rose-600"}`}>
+                                {log.type === "credit" ? "+" : "-"}₹{(log.amountPaise / 100).toLocaleString("en-IN")}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </article>
               </div>
-
-              <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
-                <div className="mb-4">
-                  <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Order-wise Earnings</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Platform charges are included in customer payment and deducted before settlement</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
-                        <th className="py-2.5 px-2">Order ID</th>
-                        <th className="py-2.5 px-2 text-right">Product</th>
-                        <th className="py-2.5 px-2 text-right">Delivery</th>
-                        <th className="py-2.5 px-2 text-right">Platform Fee</th>
-                        <th className="py-2.5 px-2 text-right">Net Earning</th>
-                        <th className="py-2.5 px-2">Settlement</th>
-                        <th className="py-2.5 px-2">Settlement Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(earningsData.orders || []).length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="text-center py-10 text-slate-500">No earnings orders recorded yet.</td>
-                        </tr>
-                      ) : (
-                        earningsData.orders.map((order: any) => (
-                          <tr key={order.orderId} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
-                            <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300">{String(order.orderId).slice(-8)}</td>
-                            <td className="py-3 px-2 text-right font-semibold">₹{Number(order.productAmount || 0).toLocaleString("en-IN")}</td>
-                            <td className="py-3 px-2 text-right">₹{Number(order.deliveryCharge || 0).toLocaleString("en-IN")}</td>
-                            <td className="py-3 px-2 text-right text-rose-600">₹{Number(order.platformFee || 0).toLocaleString("en-IN")}</td>
-                            <td className="py-3 px-2 text-right font-bold text-emerald-600">₹{Number(order.netVendorEarning || 0).toLocaleString("en-IN")}</td>
-                            <td className="py-3 px-2 capitalize">{String(order.settlementStatus || "unsettled").replace(/_/g, " ")}</td>
-                            <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{order.settlementDate ? new Date(order.settlementDate).toLocaleDateString("en-IN") : "-"}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
-
-              {/* Transaction Ledger Table */}
-              <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
-                <div className="mb-4">
-                  <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Transaction & Payout Ledger</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Direct vendor settlements via Razorpay Route after payment capture</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
-                        <th className="py-2.5 px-2">Date</th>
-                        <th className="py-2.5 px-2">Transaction Ref</th>
-                        <th className="py-2.5 px-2">Purpose</th>
-                        <th className="py-2.5 px-2">Type</th>
-                        <th className="py-2.5 px-2 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {earningsData.ledger.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="text-center py-10 text-slate-500">No direct settlements recorded yet.</td>
-                        </tr>
-                      ) : (
-                        earningsData.ledger.map((log: any) => (
-                          <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
-                            <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{new Date(log.createdAt).toLocaleDateString("en-IN")}</td>
-                            <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300 font-semibold">{log.razorpayTransferId || "platform_ledger"}</td>
-                            <td className="py-3 px-2">
-                              <span className="capitalize">{log.purpose.replace(/_/g, " ")}</span>
-                            </td>
-                            <td className="py-3 px-2">
-                              <span className={`inline-block rounded-full px-2 py-0.5 font-bold uppercase text-[9px] ${log.type === "credit" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
-                                {log.type}
-                              </span>
-                            </td>
-                            <td className={`py-3 px-2 text-right font-bold font-mono ${log.type === "credit" ? "text-emerald-600" : "text-rose-600"}`}>
-                              {log.type === "credit" ? "+" : "-"}₹{(log.amountPaise / 100).toLocaleString("en-IN")}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
             </>
           ) : (
             <div className="text-center py-10 text-slate-500">Failed to load earnings metrics.</div>
@@ -3158,7 +3247,7 @@ export function DashboardPage() {
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Business category</span>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" value={profileCategory} onChange={e => setProfileCategory(e.target.value)}>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-teal-400" value={profileCategory} onChange={e => setProfileCategory(e.target.value)}>
                     <option value="">— Select category —</option>
                     {profileCategoryOptions.map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -3197,7 +3286,7 @@ export function DashboardPage() {
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Business type</span>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={profileBusinessType} onChange={e => setProfileBusinessType(e.target.value)}>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={profileBusinessType} onChange={e => setProfileBusinessType(e.target.value)}>
                     <option value="individual">Individual / Proprietorship</option>
                     <option value="partnership">Partnership</option>
                     <option value="company">Private / Public Company</option>
@@ -3362,7 +3451,7 @@ export function DashboardPage() {
                   onClick={showDeleteStoreModal}
                   className="mt-4 group flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700/60 dark:bg-slate-900/60 dark:text-amber-300 dark:hover:bg-amber-950/30"
                 >
-                  <AppIcon name="trash" className="text-[13px]" />
+                  <AppIcon name="trash" className="text-[20px]" />
                   Delete Store & Products
                 </button>
               </div>
@@ -3377,7 +3466,7 @@ export function DashboardPage() {
                   onClick={showDeleteProfileModal}
                   className="mt-4 group flex w-full items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 hover:border-rose-400 dark:border-rose-700/60 dark:bg-slate-900/60 dark:text-rose-300 dark:hover:bg-rose-950/30"
                 >
-                  <AppIcon name="trash" className="text-[13px]" />
+                  <AppIcon name="trash" className="text-[20px]" />
                   Delete Profile
                 </button>
               </div>
