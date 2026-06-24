@@ -41,7 +41,18 @@ const variantItemSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { _id: false }
+  {
+    _id: false,
+    toJSON: {
+      transform(_doc, ret) {
+        // Convert attributes Map → plain object so API consumers can use bracket notation
+        if (ret.attributes instanceof Map) {
+          ret.attributes = Object.fromEntries(ret.attributes);
+        }
+        return ret;
+      },
+    },
+  }
 );
 
 const productSchema = new mongoose.Schema(
@@ -137,6 +148,18 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform(_doc, ret) {
+        // Convert Mongoose Map fields to plain objects for API consumers
+        if (ret.variantPrices instanceof Map) {
+          ret.variantPrices = Object.fromEntries(ret.variantPrices);
+        }
+        if (ret.variantMrps instanceof Map) {
+          ret.variantMrps = Object.fromEntries(ret.variantMrps);
+        }
+        return ret;
+      },
+    },
   }
 );
 

@@ -106,33 +106,7 @@ function getVariantPriceKey(label: string, option: string) {
   return `${label}::${option}`;
 }
 
-function getVariantOptionPricing(product: Product, label: string, option: string) {
-  const priceKey = getVariantPriceKey(label, option);
-  const matchedItem = product.variantItems?.find(
-    (item) => item.variantId === `legacy:${priceKey}` || item.attributes?.[label] === option,
-  );
-  if (matchedItem) {
-    return {
-      price: matchedItem.price,
-      mrp: matchedItem.mrp || product.variantMrps?.[priceKey] || product.mrp,
-    };
-  }
-  return {
-    price: product.variantPrices?.[priceKey] ?? product.price,
-    mrp: product.variantMrps?.[priceKey] ?? product.mrp,
-  };
-}
 
-function VariantPriceLabel({ price, mrp, className = "" }: { price?: number; mrp?: number; className?: string }) {
-  if (!price || price <= 0) return null;
-  const showMrp = typeof mrp === "number" && mrp > 0 && mrp > price;
-  return (
-    <span className={`inline-flex items-baseline gap-1 ${className}`.trim()}>
-      <span>₹{price}</span>
-      {showMrp ? <span className="text-xs text-slate-400 line-through">₹{mrp}</span> : null}
-    </span>
-  );
-}
 
 function buildLegacyVariantItems(product: Product): VariantItem[] {
   const items: VariantItem[] = [];
@@ -344,15 +318,15 @@ function CategoryScrollRow({
         <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">{title}</h3>
         <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
         <button type="button" onClick={() => scroll(-1)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/80 text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60">
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50/80 text-orange-700 shadow-sm transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 dark:hover:bg-orange-950/60">
           <AppIcon name="chevronLeft" className="text-[16px]" />
         </button>
         <button type="button" onClick={() => scroll(1)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50/80 text-emerald-700 shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60">
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50/80 text-orange-700 shadow-sm transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 dark:hover:bg-orange-950/60">
           <AppIcon name="chevronRight" className="text-[16px]" />
         </button>
         <button type="button" onClick={onSeeAll}
-          className="shrink-0 text-xs font-semibold text-teal-600 hover:underline">
+          className="shrink-0 text-xs font-semibold text-orange-600 hover:underline dark:text-orange-400">
           See all →
         </button>
       </div>
@@ -362,6 +336,107 @@ function CategoryScrollRow({
       </div>
     </div>
   );
+}
+
+function renderOriginalIcon(platform: string) {
+  const p = String(platform || "").toLowerCase().trim();
+  if (p === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <defs>
+          <radialGradient id="ig-brand-grad" cx="30%" cy="107%" r="130%">
+            <stop offset="0%" stopColor="#fdf497" />
+            <stop offset="5%" stopColor="#fdf497" />
+            <stop offset="45%" stopColor="#fd5949" />
+            <stop offset="60%" stopColor="#d6249f" />
+            <stop offset="90%" stopColor="#285AEB" />
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="24" height="24" rx="6" fill="url(#ig-brand-grad)" />
+        <rect x="5" y="5" width="14" height="14" rx="4.5" stroke="white" strokeWidth="1.8" fill="none" />
+        <circle cx="12" cy="12" r="3" stroke="white" strokeWidth="1.8" fill="none" />
+        <circle cx="16.5" cy="7.5" r="0.9" fill="white" />
+      </svg>
+    );
+  }
+  if (p === "facebook") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="#1877F2">
+        <circle cx="12" cy="12" r="12" />
+        <path d="M14.6 12h-2v7h-3v-7h-1.5V9.5h1.5v-2c0-2 1.2-3 3-3 1 0 1.8.1 2 .1v2.3h-1.3c-1 0-1.2.5-1.2 1.2v1.4h2.5l-.5 2.5z" fill="white" />
+      </svg>
+    );
+  }
+  if (p === "youtube") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.528 3.545 12 3.545 12 3.545s-7.528 0-9.388.51a3.003 3.003 0 0 0-2.11 2.108C0 8.024 0 12 0 12s0 3.976.502 5.837a3.003 3.003 0 0 0 2.11 2.108c1.86.51 9.388.51 9.388.51s7.53 0 9.388-.51a3.003 3.003 0 0 0 2.11-2.108C24 15.976 24 12 24 12s0-3.976-.502-5.837z" fill="#FF0000" />
+        <polygon points="9.545 8.834 9.545 15.166 15.006 12" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+  if (p === "whatsapp") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <path fill="#25D366" d="M12.031 2c-5.502 0-9.96 4.458-9.96 9.961a9.9 9.9 0 0 0 1.524 5.211L2 22l4.992-1.31A9.9 9.9 0 0 0 12.03 22c5.502 0 9.96-4.458 9.96-9.961C21.99 6.458 17.533 2 12.03 2z" />
+        <path fill="white" d="M17.472 14.382c-.32-.16-1.89-.93-2.18-1.04-.29-.11-.51-.17-.72.15-.22.32-.83 1.04-1.02 1.26-.19.22-.38.24-.7.08-1.32-.66-2.38-1.72-3.04-3.04-.16-.32-.14-.51.08-.7.19-.22.8-.94 1.02-1.26.19-.32.09-.54-.08-.7-.17-.17-1.57-1.63-1.89-1.95-.31-.32-.53-.27-.72-.27-.19 0-.41.01-.63.01-.22 0-.58.08-.88.41-.3.32-1.15 1.12-1.15 2.73 0 1.61 1.17 3.17 1.33 3.39.16.22 2.3 3.51 5.58 4.93.78.34 1.39.54 1.87.7.79.25 1.5.21 2.07.13.63-.09 1.89-.77 2.15-1.48.26-.71.26-1.32.18-1.45-.08-.13-.3-.21-.62-.37z" />
+      </svg>
+    );
+  }
+  if (p === "phone" || p === "call") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <circle cx="12" cy="12" r="12" fill="#0EA5E9" />
+        <path fill="white" d="M17.472 14.382c-.32-.16-1.89-.93-2.18-1.04-.29-.11-.51-.17-.72.15-.22.32-.83 1.04-1.02 1.26-.19.22-.38.24-.7.08-1.32-.66-2.38-1.72-3.04-3.04-.16-.32-.14-.51.08-.7.19-.22.8-.94 1.02-1.26.19-.32.09-.54-.08-.7-.17-.17-1.57-1.63-1.89-1.95-.31-.32-.53-.27-.72-.27-.19 0-.41.01-.63.01-.22 0-.58.08-.88.41-.3.32-1.15 1.12-1.15 2.73 0 1.61 1.17 3.17 1.33 3.39.16.22 2.3 3.51 5.58 4.93.78.34 1.39.54 1.87.7.79.25 1.5.21 2.07.13.63-.09 1.89-.77 2.15-1.48.26-.71.26-1.32.18-1.45-.08-.13-.3-.21-.62-.37z" />
+      </svg>
+    );
+  }
+  if (p === "twitter" || p === "twitter/x") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <circle cx="12" cy="12" r="12" fill="black" />
+        <path d="M18.2 6h-2.3l-4 5.3L8 6H3l5 7-5.3 7h2.3l4.3-5.7 4 5.7h5l-5.3-7.5L18.2 6z" fill="white" />
+      </svg>
+    );
+  }
+  if (p === "linkedin") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="#0077B5">
+        <circle cx="12" cy="12" r="12" />
+        <path d="M9 17v-6h-2v6h2zM8 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm9 8v-3.5a2.5 2.5 0 0 0-5 0V17h-2v-6h2v1a3.5 3.5 0 0 1 6 2.5V17h-2z" fill="white" />
+      </svg>
+    );
+  }
+  if (p === "website") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <circle cx="12" cy="12" r="12" fill="#64748b" />
+        <circle cx="12" cy="12" r="8" stroke="white" strokeWidth="1.5" fill="none" />
+        <path d="M4 12h16" stroke="white" strokeWidth="1.5" />
+        <path d="M12 4c2.2 2.4 3.3 5 3.3 8S14.2 17.6 12 20" stroke="white" strokeWidth="1.5" fill="none" />
+        <path d="M12 4c-2.2 2.4-3.3 5-3.3 8S9.8 17.6 12 20" stroke="white" strokeWidth="1.5" fill="none" />
+      </svg>
+    );
+  }
+  if (p === "google location" || p === "location") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <circle cx="12" cy="12" r="12" fill="#ea4335" />
+        <path d="M12 17s4-3.8 4-7a4 4 0 1 0-8 0c0 3.2 4 7 4 7z" fill="white" />
+        <circle cx="12" cy="10" r="1.5" fill="#ea4335" />
+      </svg>
+    );
+  }
+  if (p === "link" || p === "other") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0">
+        <circle cx="12" cy="12" r="12" fill="#475569" />
+        <path d="M9 13l2-2a2 2 0 1 1 2.8 2.8l-1.4 1.4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        <path d="M15 11l-2 2a2 2 0 1 1-2.8-2.8l1.4-1.4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      </svg>
+    );
+  }
+  return <AppIcon name={SOCIAL_ICONS[platform] || "link"} className="text-2xl" />;
 }
 
 export function PublicStorePage() {
@@ -971,7 +1046,7 @@ const options = {
   },
 
   theme: {
-    color: "#0f766e",
+    color: "#ea580c",
   },
 
   handler: async function (paymentRes: any) {
@@ -1153,7 +1228,7 @@ rzp.open(); } catch (err: any) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center justify-center px-4 py-10">
         <div className="surface-card-strong rounded-[30px] p-8 text-center">
-          <div className="mb-3 inline-flex items-center rounded-2xl border border-teal-100 bg-white/85 px-4 py-2 dark:border-teal-900/40 dark:bg-slate-950/80">
+          <div className="mb-3 inline-flex items-center rounded-2xl border border-orange-100 bg-white/85 px-4 py-2 dark:border-orange-900/40 dark:bg-slate-950/80">
             <ZensosLogo size="md" alt="Zensos" />
           </div>
           <h1 className="font-heading text-2xl font-bold text-slate-900 dark:text-slate-100">Store Not Found</h1>
@@ -1170,14 +1245,14 @@ rzp.open(); } catch (err: any) {
 
       {/* -- LEFT: Store + Products --------------------------- */}
       <section className="space-y-6">
-            {/* Social + contact icons � right side */}
+            {/* Social + contact icons  right side */}
         {/* Banners */}
         {seller.banners?.length > 0 && (
           <BannerCarousel banners={seller.banners} />
         )}
 
         {/* Discovery controls */}
-        <div className="surface-card rounded-[28px] bg-gradient-to-br from-white to-emerald-50/70 dark:from-slate-950/95 dark:to-slate-900/90 overflow-visible"
+        <div className="surface-card rounded-[28px] bg-gradient-to-br from-white to-orange-50/40 dark:from-slate-950/95 dark:to-slate-900/90 overflow-visible"
           style={{ zIndex: 1000 }}>
           {/* Smart search bar */}
           <div ref={searchBarRef} className="relative overflow-visible"
@@ -1195,35 +1270,35 @@ rzp.open(); } catch (err: any) {
               {/* Active filter chips */}
               {activeCategory !== "All" && (
                 <button type="button" onClick={() => setActiveCategory("All")}
-                  className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition dark:border-teal-800 dark:bg-teal-950 dark:text-teal-300">
-                  <span className="max-w-[72px] truncate">{activeCategory}</span><AppIcon name="close" className="text-[8px]" />
+                  className="flex items-center gap-2 rounded-full border border-orange-300 bg-orange-50 px-4 py-1.5 text-lg font-bold text-orange-700 hover:bg-orange-100 hover:scale-105 active:scale-95 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 shadow-sm">
+                  <span className="max-w-[180px] truncate">{activeCategory}</span><AppIcon name="close" className="text-[15px]" />
                 </button>
               )}
               {sortBy !== "latest" && (
                 <button type="button" onClick={() => setSortBy("latest")}
-                  className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300">
-                  <span className="max-w-[72px] truncate">{sortBy === "price_low" ? "Price ?" : sortBy === "price_high" ? "Price ?" : "Discount"}</span><AppIcon name="close" className="text-[8px]" />
+                  className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-1.5 text-lg font-bold text-violet-700 hover:bg-violet-100 hover:scale-105 active:scale-95 transition dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300 shadow-sm">
+                  <span className="max-w-[100px] truncate">{sortBy === "price_low" ? "Price ↑" : sortBy === "price_high" ? "Price ↓" : "Discount"}</span><AppIcon name="close" className="text-[15px]" />
                 </button>
               )}
               {maxPriceFilter !== null && (
                 <button type="button" onClick={() => setMaxPriceFilter(null)}
-                  className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                  <span>=?{maxPriceFilter}</span><AppIcon name="close" className="text-[8px]" />
+                  className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-lg font-bold text-amber-700 hover:bg-amber-100 hover:scale-105 active:scale-95 transition dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300 shadow-sm">
+                  <span>≤₹{maxPriceFilter}</span><AppIcon name="close" className="text-[15px]" />
                 </button>
               )}
               {/* Filter icon */}
               <button type="button" onClick={() => setShowFilterDropdown((prev) => !prev)}
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition ${
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border transition ${
                   (activeCategory !== "All" || sortBy !== "latest" || maxPriceFilter !== null)
-                    ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900 dark:text-teal-300"
-                    : "border-emerald-100 bg-white/90 text-slate-400 hover:border-emerald-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400"
+                    ? "border-orange-300 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900 dark:text-orange-300"
+                    : "border-orange-100 bg-white/90 text-slate-400 hover:border-orange-200 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400"
                 }`} title="Filters">
-                <AppIcon name="filter" className="text-[18px]" />
+                <AppIcon name="filter" className="text-[20px]" />
               </button>
             </div>
             {/* Filter dropdown */}
             {showFilterDropdown && filterDropdownStyle && createPortal(
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden dark:border-teal-900/40 dark:bg-slate-950"
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden dark:border-orange-900/40 dark:bg-slate-950"
                 ref={filterDropdownRef}
                 style={{
                   position: "fixed",
@@ -1238,9 +1313,9 @@ rzp.open(); } catch (err: any) {
                   <button key={opt} type="button"
                     onClick={() => { setSortBy(opt); setShowFilterDropdown(false); }}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
-                      sortBy === opt ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                      sortBy === opt ? "bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}>
-                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${sortBy === opt ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${sortBy === opt ? "border-orange-500 bg-orange-500" : "border-slate-300"}`} />
                     {opt === "latest" ? "Latest" : opt === "price_low" ? "Price: Low to High" : opt === "price_high" ? "Price: High to Low" : "Best Discount"}
                   </button>
                 ))}
@@ -1250,9 +1325,9 @@ rzp.open(); } catch (err: any) {
                   <button key={String(v)} type="button"
                     onClick={() => { setMaxPriceFilter(v); setShowFilterDropdown(false); }}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
-                      maxPriceFilter === v ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                      maxPriceFilter === v ? "bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-850"
                     }`}>
-                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${maxPriceFilter === v ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                    <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${maxPriceFilter === v ? "border-orange-500 bg-orange-500" : "border-slate-300"}`} />
                     {v === null ? "All prices" : <>Under {"\u20B9"}{v}</>}
                   </button>
                 ))}
@@ -1264,16 +1339,16 @@ rzp.open(); } catch (err: any) {
                       <button key={c} type="button"
                         onClick={() => { setActiveCategory(c); setShowFilterDropdown(false); }}
                         className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${
-                          activeCategory === c ? "bg-teal-50 font-semibold text-teal-800 dark:bg-teal-950 dark:text-teal-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                          activeCategory === c ? "bg-orange-50 font-semibold text-orange-800 dark:bg-orange-950 dark:text-orange-200" : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-850"
                         }`}>
-                        <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${activeCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />
+                        <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${activeCategory === c ? "border-orange-500 bg-orange-500" : "border-slate-300"}`} />
                         {c}
                       </button>
                     ))}
                   </>
                 )}
                 {/* Reset */}
-                <div className="border-t border-slate-100 dark:border-teal-800 px-2 py-1.5 mt-1">
+                <div className="border-t border-slate-100 dark:border-orange-800 px-2 py-1.5 mt-1">
                   <button type="button"
                     onClick={() => { setSortBy("latest"); setMaxPriceFilter(null); setActiveCategory("All"); setSearchQuery(""); setShowFilterDropdown(false); }}
                     className="w-full rounded-lg px-2 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition">Clear all filters</button>
@@ -1307,22 +1382,57 @@ rzp.open(); } catch (err: any) {
             const productImages = getProductImages(product);
             return (
               <article key={product._id}
-                className={`group flex flex-col overflow-hidden rounded-2xl border bg-white/95 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950/90 ${productCartQuantity > 0 ? "border-emerald-400 ring-2 ring-emerald-100/80 dark:ring-emerald-900/40" : "border-slate-200"}`}>
+                className={`group flex flex-col overflow-hidden rounded-2xl border bg-white/95 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-950/90 ${productCartQuantity > 0 ? "border-orange-400 ring-2 ring-orange-100/80 dark:ring-orange-900/40" : "border-slate-200"}`}>
                 <ProductImageGallery
                   productId={product._id}
                   title={product.title}
                   images={productImages}
                   className="aspect-square"
                 >
-                  <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex flex-col gap-1">
+                  <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex flex-col items-start gap-1">
                     {product.isRecommended && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
-                        <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
-                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      <span className="-ml-1.5 flex items-center rounded-r-full rounded-l-none border border-l-0 border-amber-200 bg-amber-50/95 pl-1.5 pr-3 py-0.5 shadow-sm backdrop-blur-[2px] dark:border-amber-900/30 dark:border-l-0 dark:bg-amber-950/80 transition-all duration-200 hover:pr-3.5">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5 drop-shadow-[0_1px_1px_rgba(230,115,0,0.35)] shrink-0">
+                          <defs>
+                            <linearGradient id={`gold-base-${product._id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor="#FFE853" />
+                              <stop offset="50%" stopColor="#FFB800" />
+                              <stop offset="100%" stopColor="#E67300" />
+                            </linearGradient>
+                            <linearGradient id={`gold-highlight-${product._id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+                              <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id={`ridge-grad-${product._id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.35" />
+                              <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0" />
+                              <stop offset="100%" stopColor="#000000" stopOpacity="0.25" />
+                            </linearGradient>
+                          </defs>
+                          <path
+                            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                            fill={`url(#gold-base-${product._id})`}
+                            stroke={`url(#gold-base-${product._id})`}
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M12 2L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2z"
+                            fill={`url(#ridge-grad-${product._id})`}
+                            stroke="none"
+                            style={{ mixBlendMode: 'overlay' }}
+                          />
+                          <path
+                            d="M12 2L9.19 8.63L2 9.24l5.46 4.73L5.82 21L12 17.27z"
+                            fill={`url(#gold-highlight-${product._id})`}
+                            stroke="none"
+                            style={{ mixBlendMode: 'overlay' }}
+                          />
                         </svg>
                       </span>
                     )}
-                    {discountPercent > 0 && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
+                    {discountPercent > 0 && <span className="rounded-md bg-orange-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
                     {isNewProduct && !discountPercent && <span className="rounded-md bg-sky-500 px-1.5 py-0.5 text-[9px] font-bold text-white">NEW</span>}
                     {isOutOfStock && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">OUT</span>}
                   </div>
@@ -1347,7 +1457,7 @@ rzp.open(); } catch (err: any) {
                   {(product.description || product.notes) && (
                     <button type="button"
                       onClick={() => setExpandedProductId(prev => prev === product._id ? null : product._id)}
-                      className="text-left text-[11px] font-semibold text-emerald-600 hover:underline">
+                      className="text-left text-[11px] font-semibold text-orange-600 hover:underline dark:text-orange-400">
                       {expandedProductId === product._id ? "Hide details" : "View details"}
                     </button>
                   )}
@@ -1360,7 +1470,7 @@ rzp.open(); } catch (err: any) {
                   {/* ADD / stepper */}
                   <div className="mt-auto pt-1">
                     {!requiresVariantSelection && productCartQuantity > 0 ? (
-                      <div className="flex items-center justify-between rounded-xl bg-emerald-600 px-2 py-1">
+                      <div className="flex items-center justify-between rounded-xl bg-orange-600 px-2 py-1">
                         <button type="button" onClick={() => setQty(buildCartItemKey(product._id), baseItem.quantity - 1)}
                           className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30">-</button>
                         <span className="text-sm font-bold text-white">{baseItem.quantity}</span>
@@ -1370,18 +1480,18 @@ rzp.open(); } catch (err: any) {
                     ) : (
                       <button type="button" disabled={isOutOfStock}
                         onClick={() => { if (requiresVariantSelection) { openVariantPopup(product._id); } else { addProduct(product._id); } }}
-                        className="w-full rounded-xl border-2 border-emerald-500 bg-white py-1 text-sm font-bold text-emerald-600 transition hover:bg-emerald-50 disabled:opacity-40 dark:bg-slate-900">
+                        className="w-full rounded-xl border-2 border-orange-400 bg-white py-1 text-sm font-bold text-orange-600 transition hover:bg-orange-50 disabled:opacity-40 dark:bg-slate-900">
                         {isOutOfStock ? "Out of stock" : (
                           <span className="flex flex-col items-center leading-tight">
                             <span>{requiresVariantSelection ? "Choose variant" : "ADD"}</span>
-                            {requiresVariantSelection && <span className="text-[9px] font-medium text-emerald-500">{normalizedVariantItems.length || normalizedVariants.reduce((s,v)=>s+v.options.length,0)} options</span>}
+                            {requiresVariantSelection && <span className="text-[9px] font-medium text-orange-500">{normalizedVariantItems.length || normalizedVariants.reduce((s,v)=>s+v.options.length,0)} options</span>}
                           </span>
                         )}
                       </button>
                     )}
                   </div>
                   {requiresVariantSelection && productCartQuantity > 0 && (
-                    <p className="text-center text-[10px] text-emerald-600">
+                    <p className="text-center text-[10px] text-orange-600">
                       {hasVariantLines ? `${productCartEntries.length} variants in cart` : `${productCartQuantity} in cart`}
                     </p>
                   )}
@@ -1445,11 +1555,11 @@ rzp.open(); } catch (err: any) {
         type="button"
         onClick={openCartAndScroll}
         aria-label="Open cart"
-        className="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
+        className="fixed bottom-4 right-4 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white sm:bottom-6 sm:right-6 sm:h-20 sm:w-20"
       >
-        <AppIcon name="cart" className="text-lg" />
+        <AppIcon name="cart" className="text-4xl sm:text-[46px]" />
         {cartCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white">
+          <span className="absolute right-0.5 top-0.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold leading-none text-white sm:right-1 sm:top-1 sm:h-7 sm:min-w-7 sm:text-[12px]">
             {cartCount > 99 ? "99+" : cartCount}
           </span>
         )}
@@ -1459,10 +1569,10 @@ rzp.open(); } catch (err: any) {
     {/* Backdrop */}
     {showCart && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]" onClick={() => setShowCart(false)} />}
 
-    {/* Cart Drawer � bottom on mobile/tablet, right on desktop */}
-    <div ref={cartRef} className={`fixed z-50 bg-white transition-transform duration-300 ease-in-out bottom-0 left-0 right-0 max-h-[88vh] rounded-t-3xl shadow-2xl dark:border-l dark:border-teal-900/40 dark:bg-gradient-to-b dark:from-slate-950 dark:to-slate-900 lg:bottom-0 lg:left-auto lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[460px] lg:flex-col lg:rounded-none lg:rounded-l-3xl ${showCart ? "translate-y-0 lg:translate-x-0 lg:translate-y-0" : "translate-y-full lg:translate-x-full lg:translate-y-0"}`}>
+    {/* Cart Drawer bottom on mobile/tablet, right on desktop */}
+    <div ref={cartRef} className={`fixed z-50 bg-white transition-transform duration-300 ease-in-out bottom-0 left-0 right-0 max-h-[88vh] rounded-t-3xl shadow-2xl dark:border-l dark:border-orange-900/40 dark:bg-gradient-to-b dark:from-slate-950 dark:to-slate-900 lg:bottom-0 lg:left-auto lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[460px] lg:flex-col lg:rounded-none lg:rounded-l-3xl ${showCart ? "translate-y-0 lg:translate-x-0 lg:translate-y-0" : "translate-y-full lg:translate-x-full lg:translate-y-0"}`}>
       <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-600 lg:hidden" />
-      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-4 border-b border-slate-200 backdrop-blur dark:border-teal-900/30 dark:bg-slate-950/95">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/95 px-5 py-4 border-b border-slate-200 backdrop-blur dark:border-orange-900/30 dark:bg-slate-950/95">
         <div>
           <div className="min-w-0">
                 <h1 className="truncate font-heading text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl dark:text-slate-100">
@@ -1470,8 +1580,8 @@ rzp.open(); } catch (err: any) {
                 </h1>
               </div>
         </div>
-        <button type="button" onClick={() => setShowCart(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors duration-200">
-          <AppIcon name="close" className="text-[18px]" />
+        <button type="button" onClick={() => setShowCart(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-md transition hover:from-rose-400 hover:to-red-500 dark:from-rose-500 dark:to-red-600">
+          <AppIcon name="close" className="text-[16px]" />
         </button>
       </div>
       <div
@@ -1484,7 +1594,7 @@ rzp.open(); } catch (err: any) {
       >
         <div ref={checkoutAnchorRef}>
           <h2 className="font-heading text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{t("store.checkout", "Checkout")}</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review your cart, enter delivery details, then pay.</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review Your Order</p>
         </div>
 
         {/* Order summary */}
@@ -1492,28 +1602,48 @@ rzp.open(); } catch (err: any) {
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">Add one or more products to cart.</p>
         ) : (
           <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white p-4 space-y-3 dark:border-slate-700 dark:from-slate-900 dark:to-slate-900">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Order Summary</p>
-              <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500 ring-1 ring-inset ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-700">
-                {cartEntries.length} item{cartEntries.length > 1 ? "s" : ""}
-              </span>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200/60 pb-2 dark:border-slate-800/60">
+              <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Item</p>
+              <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Total</p>
             </div>
             <div className="space-y-2">
               {cartEntries.map(({ cartItemId, product, item }) => (
                 <div key={cartItemId} className="rounded-xl border border-slate-200 bg-white/90 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950/70">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{product.title}</p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {item.variantId ? `${item.variantTitle} • Qty ${item.quantity}` : `Qty ${item.quantity}`}
-                      </p>
+                      {item.variantId && (
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{item.variantTitle}</p>
+                      )}
+                      
+                      <div className="mt-2">
+                        <div className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50/50 p-0.5 text-orange-700 dark:border-orange-950/30 dark:bg-orange-950/20 dark:text-orange-300">
+                          <button
+                            type="button"
+                            onClick={() => setQty(cartItemId, item.quantity - 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
+                            aria-label="Decrease quantity"
+                          >
+                            -
+                          </button>
+                          <span className="min-w-6 text-center text-xs font-bold">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQty(cartItemId, item.quantity + 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
+                            aria-label="Increase quantity"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">₹{item.unitPrice * item.quantity}</p>
+                    <div className="text-right flex flex-col items-end justify-between self-stretch min-h-[64px]">
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{(item.unitPrice * item.quantity).toLocaleString("en-IN")}</p>
                       <button
                         type="button"
                         onClick={() => removeProduct(cartItemId)}
-                        className="mt-1 text-xs font-semibold text-rose-600 transition hover:text-rose-500"
+                        className="text-xs font-semibold text-rose-600 transition hover:text-rose-500"
                       >
                         Remove
                       </button>
@@ -1546,14 +1676,13 @@ rzp.open(); } catch (err: any) {
             </div>
           </div>
         )}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm dark:border-teal-900/30 dark:bg-slate-950/70">
-          <div className="flex items-start gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-sm font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-200">
-              <AppIcon name="cart" />
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm dark:border-orange-900/30 dark:bg-slate-950/70">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-850 dark:bg-orange-950/60 dark:text-orange-300">
+              <AppIcon name="cart" className="text-lg" />
             </span>
-            <div className="space-y-1 pt-0.5">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Checkout & Payment</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Enter billing and shipping details below. Vendor settlement is processed via Razorpay Route after the platform charge is retained.</p>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Checkout & Payment</p>
             </div>
           </div>
 
@@ -1572,7 +1701,7 @@ rzp.open(); } catch (err: any) {
             <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 checked={shippingSameAsBilling}
                 onChange={(event) => setShippingSameAsBilling(event.target.checked)}
               />
@@ -1595,14 +1724,14 @@ rzp.open(); } catch (err: any) {
                 <legend className="px-1 text-sm font-bold text-slate-800 dark:text-slate-200">Payment Method</legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {allowsPrepaid && (
-                    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${paymentMethod === "prepaid" ? "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-200" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"}`}>
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${paymentMethod === "prepaid" ? "border-orange-300 bg-orange-50 text-orange-850 dark:border-orange-750 dark:bg-orange-950/50 dark:text-orange-200" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900"}`}>
                       <input
                         type="radio"
                         name="paymentMethod"
                         value="prepaid"
                         checked={paymentMethod === "prepaid"}
                         onChange={() => setPaymentMethod("prepaid")}
-                        className="h-4 w-4 text-teal-600 focus:ring-teal-500"
+                        className="h-4 w-4 text-orange-600 focus:ring-orange-500"
                       />
                       Pay Online
                     </label>
@@ -1630,7 +1759,7 @@ rzp.open(); } catch (err: any) {
             </label>
 
             <button type="submit" disabled={submitting || selectedItems.length === 0 || !billingContact.fullName.trim() || !String(billingContact.email || "").trim() || !billingContact.phone.number.trim()}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 dark:hover:from-emerald-500 dark:hover:via-teal-500 dark:hover:to-sky-500 mt-2">
+              className="w-full rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:hover:from-orange-500 dark:hover:via-amber-500 dark:hover:to-yellow-500 mt-2">
               {submitting ? "Placing order..." : paymentMethod === "cod" ? `Place COD Order (₹${grandTotal})` : `Pay & Place Order (₹${grandTotal})`}
             </button>
           </form>
@@ -1645,7 +1774,6 @@ rzp.open(); } catch (err: any) {
     {variantPopupProductId && (() => {
       const product = products.find(p => p._id === variantPopupProductId);
       if (!product) return null;
-      const vgs = getNormalizedVariantGroups(product);
       const selectedVariantEntries = Object.entries(popupVariantQuantities)
         .filter(([, entry]) => entry.quantity > 0)
         .sort(([, a], [, b]) => a.variantTitle.localeCompare(b.variantTitle));
@@ -1655,264 +1783,116 @@ rzp.open(); } catch (err: any) {
           <div className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-slate-950 sm:max-h-[calc(100vh-2rem)]" onClick={(e) => e.stopPropagation()}>
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-slate-800 sm:px-7 sm:py-5">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-teal-700 dark:text-teal-300">Select Variants</p>
+                <p className="text-[11px] font-bold uppercase text-orange-700 dark:text-orange-300">Select Variants</p>
                 <h3 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100 line-clamp-2">{product.title}</h3>
               </div>
-              <button type="button" onClick={() => setVariantPopupProductId(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white transition hover:from-emerald-400 hover:to-teal-500 dark:from-teal-500 dark:to-sky-500">
-                <AppIcon name="close" className="text-[11px]" />
+              <button type="button" onClick={() => setVariantPopupProductId(null)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-600 text-white transition hover:from-rose-400 hover:to-red-500 dark:from-rose-500 dark:to-red-600 shadow-md">
+                <AppIcon name="close" className="text-[16px]" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
-            <div className="grid gap-4">
-              <div className="min-h-0">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/40 sm:p-5">
-                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">Choose product variants</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-              {vgs.map(v => (
-                <div key={v.label}>
-                  <div className="mb-3">
-                    <div>
-                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{v.label}</p>
-                    </div>
-                  </div>
-                  <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-                    {v.options.map(opt => {
-                      const { price: optPrice, mrp: optMrp } = getVariantOptionPricing(product, v.label, opt);
-                      const optOut = Array.isArray(product.variantItems) && product.variantItems.length > 0
-                        ? !product.variantItems.some((item) => item.isActive !== false && item.attributes?.[v.label] === opt)
-                        : false;
-                      const isSelectedOption = popupVariants[v.label] === opt;
-                      const nextSelections = { ...popupVariants, [v.label]: opt };
-                      const optionMatchedVariant = hasCompleteVariantSelection(product, nextSelections)
-                        ? findMatchingVariant(product, nextSelections)
-                        : null;
-                      const optionDraft = optionMatchedVariant
-                        ? popupVariantQuantities[optionMatchedVariant.variantId]
-                        : null;
-                      const optionDraftQuantity = optionDraft?.quantity || 0;
-                      if (optionMatchedVariant && optionDraft && optionDraftQuantity > 0) {
-                        return (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => {
-                              setPopupVariants(nextSelections);
-                              setPopupVariantError("");
-                            }}
-                            className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3.5 text-left transition dark:border-emerald-800 dark:bg-emerald-950/20"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-[15px] font-semibold text-emerald-900 dark:text-emerald-200">{opt}</p>
-                                <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
-                                  {optPrice ? (
-                                    <VariantPriceLabel price={optPrice} mrp={optMrp} className="text-emerald-700/80 dark:text-emerald-300/80" />
-                                  ) : (
-                                    "Selected variant"
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      }
-                      return (<button key={opt} type="button" disabled={optOut}
-                        onClick={() => {
-                          setPopupVariants(nextSelections);
-                          setPopupVariantError("");
-                          if (!optionMatchedVariant || popupVariantQuantities[optionMatchedVariant.variantId]) return;
-                          setPopupVariantQuantity(optionMatchedVariant.variantId, {
-                            quantity: 1,
-                            selections: nextSelections,
-                            variantTitle: optionMatchedVariant.title || product.title,
-                            unitPrice: optionMatchedVariant.price,
-                          });
-                        }}
-                        className={`rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition disabled:opacity-40 ${isSelectedOption ? "border-emerald-400 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-200" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"}`}>
-                        <span className="block">{opt}</span>
-                        {optPrice ? (
-                          <span className="mt-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                            <VariantPriceLabel price={optPrice} mrp={optMrp} />
-                          </span>
-                        ) : null}
-                      </button>);
-                    })}
-                  </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+              <div className="rounded-[24px] border border-slate-200 bg-white/50 backdrop-blur-sm p-4 dark:border-slate-800 dark:bg-slate-950/40 sm:p-6 shadow-sm">
+                
+                {/* Heading inside the card */}
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-base font-bold text-slate-900 dark:text-slate-100">Choose Options</p>
                 </div>
-              ))}
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/60">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Selected variants</p>
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Adjust quantity right here before adding to cart.</p>
+
+                {/* Table Header Row */}
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pb-3 border-b border-slate-200/60 dark:border-slate-800/60 mb-2 px-3">
+                  <div className="flex-1 text-left">Variants</div>
+                  <div className="w-32 text-center">Quantity</div>
+                  <div className="w-24 text-right">Price</div>
+                </div>
+
+                {/* Variants List */}
+                <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  {getNormalizedVariantItems(product).map((variantItem) => {
+                    const qty = popupVariantQuantities[variantItem.variantId]?.quantity || 0;
+                    const selections = variantItem.attributes || {};
+                    const price = variantItem.price;
+                    const mrp = variantItem.mrp || product.mrp;
+
+                    return (
+                      <div
+                        key={variantItem.variantId}
+                        className="flex items-center justify-between py-3.5 px-3 hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all duration-200 rounded-2xl"
+                      >
+                        {/* Left Side: Variant Title / Description */}
+                        <div className="flex-1 text-left min-w-0 pr-4">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {variantItem.title}
+                          </p>
+                          {/* If it has other attributes than title itself */}
+                          {Object.entries(selections).length > 0 && 
+                            Object.values(selections).join(" / ") !== variantItem.title && (
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
+                                {Object.entries(selections)
+                                  .map(([label, val]) => `${label}: ${val}`)
+                                  .join(" | ")}
+                              </p>
+                            )}
                         </div>
-                        <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
-                          {selectedVariantEntries.length} selected
-                        </span>
-                      </div>
 
-                      <div className="mt-3 space-y-3">
-                        {selectedVariantEntries.length === 0 ? (
-                          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
-                            Choose a variant option to start adding combinations.
+                        {/* Center Side: Adding/decreasing controls */}
+                        <div className="w-32 flex justify-center shrink-0">
+                          <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-orange-500/20">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPopupVariantQuantity(variantItem.variantId, {
+                                  quantity: Math.max(0, qty - 1),
+                                  selections,
+                                  variantTitle: variantItem.title || product.title,
+                                  unitPrice: price,
+                                });
+                              }}
+                              disabled={qty === 0}
+                              className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
+                                qty === 0
+                                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-rose-500 dark:hover:text-rose-400"
+                              }`}
+                            >
+                              -
+                            </button>
+                            <span className={`min-w-8 text-center text-sm font-bold transition-colors ${qty === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-900 dark:text-white"}`}>
+                              {qty}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPopupVariantQuantity(variantItem.variantId, {
+                                  quantity: qty + 1,
+                                  selections,
+                                  variantTitle: variantItem.title || product.title,
+                                  unitPrice: price,
+                                });
+                              }}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-orange-500 dark:hover:text-orange-400 transition-all"
+                            >
+                              +
+                            </button>
                           </div>
-                        ) : (
-                          selectedVariantEntries.map(([variantId, draft]) => (
-                            <div key={variantId} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-900/50">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                    {draft.variantTitle || getVariantDisplayTitle(product, variantId, draft.selections)}
-                                  </p>
-                                  <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-                                    {Object.entries(draft.selections).map(([label, value]) => `${label}: ${value}`).join(" | ")}
-                                  </p>
-                                </div>
-                                <div className="shrink-0 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                  {(() => {
-                                    const matched = findMatchingVariant(product, draft.selections, variantId);
-                                    const unitMrp = matched?.mrp
-                                      ?? Object.entries(draft.selections).reduce<number | undefined>((found, [label, value]) => {
-                                        if (found) return found;
-                                        const key = getVariantPriceKey(label, value);
-                                        const variantMrp = product.variantMrps?.[key];
-                                        return typeof variantMrp === "number" && variantMrp > 0 ? variantMrp : found;
-                                      }, undefined)
-                                      ?? product.mrp;
-                                    return <VariantPriceLabel price={draft.unitPrice} mrp={unitMrp} />;
-                                  })()}
-                                </div>
-                              </div>
+                        </div>
 
-                              <div className="mt-3 flex items-center justify-end">
-                                <div className="inline-flex items-center gap-1 rounded-2xl border border-emerald-200 bg-white p-1 text-emerald-700 dark:border-emerald-900/60 dark:bg-slate-950 dark:text-emerald-300">
-                                  <button
-                                    type="button"
-                                    onClick={() => setPopupVariantQuantity(variantId, {
-                                      quantity: draft.quantity - 1,
-                                      selections: draft.selections,
-                                      variantTitle: draft.variantTitle,
-                                      unitPrice: draft.unitPrice,
-                                    })}
-                                    className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                  >
-                                    -
-                                  </button>
-                                  <span className="min-w-8 text-center text-sm font-bold">{draft.quantity}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setPopupVariantQuantity(variantId, {
-                                      quantity: draft.quantity + 1,
-                                      selections: draft.selections,
-                                      variantTitle: draft.variantTitle,
-                                      unitPrice: draft.unitPrice,
-                                    })}
-                                    className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="hidden min-h-0">
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/70 sm:p-5 xl:flex xl:max-h-[calc(100vh-15rem)] xl:flex-col">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-base font-semibold text-slate-900 dark:text-slate-100">Selected variants</p>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Fine-tune quantities before adding to cart.</p>
-                    </div>
-                    <span className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
-                      {selectedVariantEntries.length} selected
-                    </span>
-                  </div>
-
-                  <div className="mt-4 space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
-                    {selectedVariantEntries.length === 0 ? (
-                      <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-400">
-                        Choose a variant option to start adding combinations.
-                      </div>
-                    ) : (
-                      selectedVariantEntries.map(([variantId, draft]) => {
-                        const selectionSummary = Object.entries(draft.selections)
-                          .map(([label, value]) => `${label}: ${value}`)
-                          .join(" · ");
-                        return (
-                          <div key={variantId} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">
-                                  {draft.variantTitle || getVariantDisplayTitle(product, variantId, draft.selections)}
-                                </p>
-                                {selectionSummary ? (
-                                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{selectionSummary}</p>
-                                ) : null}
-                              </div>
-                              <div className="shrink-0 text-sm font-bold text-slate-900 dark:text-slate-100">
-                                {(() => {
-                                  const matched = findMatchingVariant(product, draft.selections, variantId);
-                                  const unitMrp = matched?.mrp
-                                    ?? Object.entries(draft.selections).reduce<number | undefined>((found, [label, value]) => {
-                                      if (found) return found;
-                                      const key = getVariantPriceKey(label, value);
-                                      const variantMrp = product.variantMrps?.[key];
-                                      return typeof variantMrp === "number" && variantMrp > 0 ? variantMrp : found;
-                                    }, undefined)
-                                    ?? product.mrp;
-                                  return <VariantPriceLabel price={draft.unitPrice} mrp={unitMrp} />;
-                                })()}
-                              </div>
-                            </div>
-
-                            <div className="mt-4 flex items-center justify-end">
-                              <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-                                <button
-                                  type="button"
-                                  onClick={() => setPopupVariantQuantity(variantId, {
-                                    quantity: draft.quantity - 1,
-                                    selections: draft.selections,
-                                    variantTitle: draft.variantTitle,
-                                    unitPrice: draft.unitPrice,
-                                  })}
-                                  className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800"
-                                >
-                                  -
-                                </button>
-                                <span className="min-w-10 text-center text-sm font-bold">{draft.quantity}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setPopupVariantQuantity(variantId, {
-                                    quantity: draft.quantity + 1,
-                                    selections: draft.selections,
-                                    variantTitle: draft.variantTitle,
-                                    unitPrice: draft.unitPrice,
-                                  })}
-                                  className="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800"
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
+                        {/* Right Side: Price */}
+                        <div className="w-24 text-right shrink-0">
+                          <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            ₹{price}
                           </div>
-                        );
-                      })
-                    )}
-                  </div>
+                          {mrp > price && (
+                            <div className="text-[11px] text-slate-400 line-through">
+                              ₹{mrp}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
+
               </div>
-            </div>
             </div>
             <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-950 sm:px-7">
               {popupVariantError && <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1.5">{popupVariantError}</p>}
@@ -1920,9 +1900,10 @@ rzp.open(); } catch (err: any) {
                 <button
                   type="button"
                   onClick={handlePopupAddToCart}
-                  className="mt-3 w-full rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-3.5 text-sm font-semibold text-white transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 dark:hover:from-emerald-500 dark:hover:via-teal-500 dark:hover:to-sky-500"
+                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:hover:from-orange-500 dark:hover:via-amber-500 dark:hover:to-yellow-500"
                 >
-                  Add to Cart
+                  <AppIcon name="cart" className="text-[18px]" />
+                  <span>Add to Cart</span>
                 </button>
               )}
             </div>
@@ -1931,13 +1912,12 @@ rzp.open(); } catch (err: any) {
       );
     })()}
     <footer className="space-y-3 py-4 text-center text-xs text-slate-400">
-      {seller.socialLinks?.some((s) => String(s.url || "").trim()) && (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Stay Connected</p>
+      {(seller.socialLinks?.some((s) => String(s.url || "").trim()) || seller.whatsappNumber || seller.callNumber) && (
+        <div className="space-y-2.5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">STAY CONNECTED</p>
           
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            
-            {seller.socialLinks.filter((s) => String(s.url || "").trim()).map((s, i) => (
+          <div className="flex flex-wrap items-center justify-center gap-3.5">
+            {seller.socialLinks?.filter((s) => String(s.url || "").trim()).map((s, i) => (
               <a
                 key={i}
                 href={s.url}
@@ -1945,24 +1925,24 @@ rzp.open(); } catch (err: any) {
                 rel="noreferrer"
                 title={s.platform}
                 aria-label={s.platform}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white shadow-sm transition hover:from-sky-400 hover:to-cyan-500 dark:from-cyan-500 dark:to-blue-500"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20"
               >
-                <AppIcon name={SOCIAL_ICONS[s.platform] || "link"} className="text-sm" />
+                {renderOriginalIcon(s.platform)}
               </a>
             ))}
-             {seller.whatsappNumber && (
-                <a href={`https://wa.me/${seller.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
-                  title="Chat on WhatsApp" aria-label="Chat on WhatsApp"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-300">
-                  <AppIcon name="whatsapp" className="text-sm" />
-                </a>
-              )}
-              {seller.callNumber && (
-                <a href={`tel:${seller.callNumber}`} title="Call Seller" aria-label="Call Seller"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-sky-100 dark:border-sky-900/50 dark:bg-sky-950/45 dark:text-sky-300">
-                  <AppIcon name="phone" className="text-sm" />
-                </a>
-              )}
+            {seller.whatsappNumber && (
+              <a href={`https://wa.me/${seller.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+                title="Chat on WhatsApp" aria-label="Chat on WhatsApp"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20">
+                {renderOriginalIcon("whatsapp")}
+              </a>
+            )}
+            {seller.callNumber && (
+              <a href={`tel:${seller.callNumber}`} title="Call Seller" aria-label="Call Seller"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20">
+                {renderOriginalIcon("call")}
+              </a>
+            )}
           </div>
         </div>
       )}
@@ -1989,7 +1969,7 @@ rzp.open(); } catch (err: any) {
         <div className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-card">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Store Policy</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-orange-700">Store Policy</p>
               <h3 className="mt-1 font-heading text-xl font-bold text-slate-900">{policyMeta[activePolicy].title}</h3>
             </div>
             <button

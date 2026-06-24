@@ -89,7 +89,7 @@ function SectionCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-600 dark:text-teal-300">
+            <p className="text-xs font-semibold uppercase tracking-wider text-teal-600 dark:text-teal-300">
               {eyebrow}
             </p>
           ) : null}
@@ -174,15 +174,15 @@ function ReviewActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className={`flex w-full transition disabled:cursor-not-allowed disabled:opacity-50 ${tone} ${
+      className={`flex w-full flex-col items-center justify-center text-center transition disabled:cursor-not-allowed disabled:opacity-50 ${tone} ${
         compact
-          ? "flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-center"
-          : "items-start gap-3 rounded-2xl border px-3.5 py-3 text-left"
+          ? "gap-1.5 rounded-xl border px-2 py-2.5"
+          : "gap-3 rounded-2xl border px-3.5 py-4"
       } ${className}`}
     >
       <span
         className={`flex shrink-0 items-center justify-center rounded-xl bg-white/80 shadow-sm dark:bg-slate-950/50 ${
-          compact ? "h-8 w-8" : "mt-0.5 h-9 w-9"
+          compact ? "h-8 w-8" : "h-9 w-9"
         }`}
       >
         {loading ? (
@@ -193,10 +193,12 @@ function ReviewActionButton({
           icon
         )}
       </span>
-      <span className={`min-w-0 ${compact ? "w-full" : "flex-1"}`}>
-        <span className={`block font-bold ${compact ? "text-[11px] leading-tight" : "text-sm"}`}>{label}</span>
-        {description && !compact ? (
-          <span className="mt-0.5 block text-xs font-medium opacity-80">{description}</span>
+      <span className="min-w-0 w-full mt-1">
+        <span className={`block font-bold leading-tight ${compact ? "text-[11px]" : "text-sm"}`}>{label}</span>
+        {description ? (
+          <span className={`mt-1 block font-medium opacity-80 leading-snug ${compact ? "text-[9px]" : "text-xs"}`}>
+            {description}
+          </span>
         ) : null}
       </span>
     </button>
@@ -263,7 +265,7 @@ function SellerReviewActions({
         <div className="rounded-2xl border border-amber-200/80 bg-amber-50/50 p-2.5 sm:p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
           <div className={`mb-2.5 gap-2 ${compact ? "space-y-2" : "mb-3 flex items-start justify-between"}`}>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-amber-800 dark:text-amber-300 sm:text-xs">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 sm:text-xs">
                 Step 1 · KYC review
               </p>
               {!compact ? (
@@ -282,7 +284,7 @@ function SellerReviewActions({
             <ReviewActionButton
               label="Verify KYC"
               description="Mark PAN and identity checks as verified"
-              icon={<AppIcon name="check" className="text-[16px] text-teal-600" />}
+              icon={<AppIcon name="check" className="text-[22px] text-teal-600" />}
               variant="success"
               onClick={onVerifyKyc}
               disabled={isKycVerified}
@@ -292,7 +294,7 @@ function SellerReviewActions({
             <ReviewActionButton
               label="Reject KYC"
               description="Send seller back to fix documents"
-              icon={<AppIcon name="inactive" className="text-[16px] text-rose-600" />}
+              icon={<AppIcon name="inactive" className="text-[22px] text-rose-600" />}
               variant="danger"
               onClick={onRejectKyc}
               disabled={isKycRejected}
@@ -305,7 +307,7 @@ function SellerReviewActions({
         <div className="rounded-2xl border border-teal-200/80 bg-teal-50/40 p-2.5 sm:p-3 dark:border-teal-900/50 dark:bg-teal-950/20">
           <div className={`gap-2 ${compact ? "mb-2.5 space-y-2" : "mb-3 flex items-start justify-between"}`}>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-teal-800 dark:text-teal-300 sm:text-xs">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 sm:text-xs">
                 Step 2 · Store decision
               </p>
               {!compact ? (
@@ -321,21 +323,21 @@ function SellerReviewActions({
             </span>
           </div>
           <div className="grid gap-2">
-            <ReviewActionButton
-              label="Approve store"
-              description="Allow seller to go live on the marketplace"
-              icon={<AppIcon name="active" className="text-[16px] text-teal-600" />}
-              variant="success"
-              onClick={onApprove}
-              disabled={approval === "approved"}
-              loading={busy("approve")}
-              compact={compact}
-            />
-            <div className={`grid gap-2 ${compact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
+            <div className="grid grid-cols-3 gap-2">
+              <ReviewActionButton
+                label="Approve store"
+                description="Allow seller to go live"
+                icon={<AppIcon name="active" className="text-[22px] text-teal-600" />}
+                variant="success"
+                onClick={onApprove}
+                disabled={approval === "approved"}
+                loading={busy("approve")}
+                compact={compact}
+              />
               <ReviewActionButton
                 label="Reject"
-                description="Decline this seller registration"
-                icon={<AppIcon name="inactive" className="text-[16px] text-rose-600" />}
+                description="Decline registration"
+                icon={<AppIcon name="inactive" className="text-[22px] text-rose-600" />}
                 variant="danger"
                 onClick={onReject}
                 disabled={approval === "rejected"}
@@ -344,8 +346,8 @@ function SellerReviewActions({
               />
               <ReviewActionButton
                 label="Pending"
-                description="Return seller to review queue"
-                icon={<AppIcon name="pending" className="text-[16px] text-slate-600" />}
+                description="Return to queue"
+                icon={<AppIcon name="pending" className="text-[22px] text-slate-600" />}
                 variant="secondary"
                 onClick={onPending}
                 disabled={approval === "pending"}
@@ -359,7 +361,7 @@ function SellerReviewActions({
 
       {seller.approvalStatus === "approved" ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-2.5 sm:p-3 dark:border-slate-700 dark:bg-slate-900/50">
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">Razorpay setup</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 sm:text-xs">Razorpay setup</p>
           {!compact ? (
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Retry linked account provisioning if Route onboarding failed.
@@ -369,7 +371,7 @@ function SellerReviewActions({
             <ReviewActionButton
               label={compact ? "Retry account" : "Retry linked account"}
               description="Re-trigger Razorpay Route onboarding"
-              icon={<AppIcon name="refresh" className="text-[16px] text-slate-600" />}
+              icon={<AppIcon name="refresh" className="text-[22px] text-slate-600" />}
               variant="secondary"
               onClick={onRetryLinkedAccount}
               loading={busy("retry-linked")}
@@ -457,14 +459,14 @@ function DocumentPreview({
           <img
             src={trimmed}
             alt={label}
-            className="h-36 w-full rounded-xl border border-slate-200 object-cover transition group-hover:opacity-90 dark:border-slate-700"
+            className="h-48 w-full rounded-xl border border-slate-200 bg-slate-100 dark:bg-slate-900/60 object-contain transition group-hover:opacity-90 dark:border-slate-700"
           />
           <span className="mt-2 inline-flex text-xs font-semibold text-teal-700 dark:text-teal-300">
             Open full image
           </span>
         </a>
       ) : (
-        <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white text-sm font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-950">
+        <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white text-sm font-semibold text-slate-400 dark:border-slate-700 dark:bg-slate-950">
           Not uploaded
         </div>
       )}
@@ -529,6 +531,17 @@ export function AdminPage() {
     void loadPlatformFinance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (selectedSeller) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedSeller]);
 
   useEffect(() => {
     if (error) showError(error);
@@ -1232,7 +1245,7 @@ export function AdminPage() {
                     </span>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-teal-700 dark:text-teal-300 sm:text-xs">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300 sm:text-xs">
                       Seller review
                     </p>
                     <h3 className="mt-0.5 font-heading text-lg font-bold leading-tight text-slate-900 dark:text-slate-100 sm:mt-1 sm:text-2xl">
@@ -1281,7 +1294,7 @@ export function AdminPage() {
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:space-y-4 sm:px-6 sm:py-5">
               <div className="sm:hidden">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Review actions</p>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Review actions</p>
                 <SellerReviewActionHandlers
                   seller={selectedSeller}
                   actionLoading={sellerActionLoading}
@@ -1292,7 +1305,7 @@ export function AdminPage() {
                   retryLinkedAccount={retryLinkedAccount}
                 />
                 <div className="my-3 border-t border-slate-200 dark:border-slate-800" />
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Seller details</p>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Seller details</p>
               </div>
               {loadingSellerDetail ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">

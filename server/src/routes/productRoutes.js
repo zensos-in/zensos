@@ -239,6 +239,18 @@ router.post("/", auth, async (req, res) => {
     } = req.body;
 
     const normalizedCategories = normalizeProductCategories({ category, categories });
+
+    // 🔍 DEBUG — remove after fixing
+    console.log("[POST /products] received body fields:", {
+      title,
+      price,
+      mrp,
+      variants: JSON.stringify(variants),
+      variantItemsCount: Array.isArray(variantItems) ? variantItems.length : "not array",
+      variantPrices: JSON.stringify(variantPrices),
+      variantMrps: JSON.stringify(variantMrps),
+    });
+
     const parsedVariants = Array.isArray(variants) ? variants : [];
     const normalizedVariantPrices = normalizeVariantPrices(variantPrices);
     const normalizedVariantMrps = normalizeVariantMrps(variantMrps);
@@ -507,9 +519,16 @@ router.put("/:productId", auth, async (req, res) => {
               nextVariantPrices,
               nextVariantMrps
             );
+      product.markModified("variantItems");
     }
-    if (variantPrices !== undefined) product.variantPrices = normalizeVariantPrices(variantPrices);
-    if (variantMrps !== undefined) product.variantMrps = normalizeVariantMrps(variantMrps);
+    if (variantPrices !== undefined) {
+      product.variantPrices = normalizeVariantPrices(variantPrices);
+      product.markModified("variantPrices");
+    }
+    if (variantMrps !== undefined) {
+      product.variantMrps = normalizeVariantMrps(variantMrps);
+      product.markModified("variantMrps");
+    }
     if (isRecommended !== undefined) product.isRecommended = isRecommended === true;
 
     if (variantItems === undefined && (variantPrices !== undefined || variantMrps !== undefined || Array.isArray(variants))) {
@@ -518,6 +537,7 @@ router.put("/:productId", auth, async (req, res) => {
         nextVariantPrices,
         nextVariantMrps
       );
+      product.markModified("variantItems");
     }
 
     await product.save();

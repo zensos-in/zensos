@@ -42,7 +42,14 @@ type AppIconName =
   | "moon"
   | "earnings"
   | "language"
-  | "visibility";
+  | "visibility"
+  | "kyc"
+  | "save"
+  | "rupee"
+  | "lock"
+  | "mail"
+  | "package"
+  | "truck";
 
 type IconProps = {
   className?: string;
@@ -351,6 +358,55 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
     <IconBase className={className}>
       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
       <circle cx="12" cy="12" r="3" />
+    </IconBase>
+  ),
+  kyc: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l7-2a1 1 0 0 1 .48 0l7 2A1 1 0 0 1 20 6z" />
+      <path d="m9 12 2 2 4-4" />
+    </IconBase>
+  ),
+  save: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+      <polyline points="17 21 17 13 7 13 7 21" />
+      <polyline points="7 3 7 8 15 8" />
+    </IconBase>
+  ),
+  rupee: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M6 3h12" />
+      <path d="M6 8h12" />
+      <path d="m6 13 8.5 8" />
+      <path d="M6 13h3a6 6 0 0 0 6-6V3" />
+    </IconBase>
+  ),
+  lock: ({ className }) => (
+    <IconBase className={className}>
+      <rect x="8" y="11" width="8" height="7" rx="1.5" />
+      <path d="M10 11V8a2 2 0 1 1 4 0v3" />
+    </IconBase>
+  ),
+  mail: ({ className }) => (
+    <IconBase className={className}>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="m3 6 9 7 9-7" />
+    </IconBase>
+  ),
+  package: ({ className }) => (
+    <IconBase className={className}>
+      <path d="m12 3 8 4.5-8 4.5L4 7.5 12 3Z" />
+      <path d="M4 7.5V16l8 5 8-5V7.5" />
+      <path d="M12 12v9" />
+      <path d="M8 5.5 16 10" />
+    </IconBase>
+  ),
+  truck: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12" />
+      <path d="M14 9h4l4 4v5h-8V9Z" />
+      <circle cx="6.5" cy="18" r="1.5" />
+      <circle cx="17.5" cy="18" r="1.5" />
     </IconBase>
   ),
 };
