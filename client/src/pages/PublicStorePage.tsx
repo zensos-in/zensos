@@ -326,7 +326,7 @@ function CategoryScrollRow({
           <AppIcon name="chevronRight" className="text-[16px]" />
         </button>
         <button type="button" onClick={onSeeAll}
-          className="shrink-0 text-xs font-semibold text-orange-600 hover:underline dark:text-orange-400">
+          className="shrink-0 text-xs font-semibold text-black hover:underline dark:text-white">
           See all →
         </button>
       </div>
@@ -1391,7 +1391,11 @@ rzp.open(); } catch (err: any) {
                 >
                   <div className="pointer-events-none absolute left-1.5 top-1.5 z-10 flex flex-col items-start gap-1">
                     {product.isRecommended && (
-                      <span className="-ml-1.5 flex items-center rounded-r-full rounded-l-none border border-l-0 border-amber-200 bg-amber-50/95 pl-1.5 pr-3 py-0.5 shadow-sm backdrop-blur-[2px] dark:border-amber-900/30 dark:border-l-0 dark:bg-amber-950/80 transition-all duration-200 hover:pr-3.5">
+                      <span className={`-ml-1.5 flex items-center rounded-r-full rounded-l-none pl-1.5 pr-3 py-0.5 transition-all duration-200 hover:pr-3.5 ${
+                        // Commented out star background and border color:
+                        // "border border-l-0 border-amber-200 bg-amber-50/95 shadow-sm backdrop-blur-[2px] dark:border-amber-900/30 dark:border-l-0 dark:bg-amber-950/80"
+                        ""
+                      }`}>
                         <svg viewBox="0 0 24 24" className="h-5 w-5 drop-shadow-[0_1px_1px_rgba(230,115,0,0.35)] shrink-0">
                           <defs>
                             <linearGradient id={`gold-base-${product._id}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1432,7 +1436,7 @@ rzp.open(); } catch (err: any) {
                         </svg>
                       </span>
                     )}
-                    {discountPercent > 0 && <span className="rounded-md bg-orange-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
+                    {discountPercent > 0 && <span className="rounded-md bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-tight">{discountPercent}%{"\n"}OFF</span>}
                     {isNewProduct && !discountPercent && <span className="rounded-md bg-sky-500 px-1.5 py-0.5 text-[9px] font-bold text-white">NEW</span>}
                     {isOutOfStock && <span className="rounded-md bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold text-white">OUT</span>}
                   </div>
@@ -1457,7 +1461,7 @@ rzp.open(); } catch (err: any) {
                   {(product.description || product.notes) && (
                     <button type="button"
                       onClick={() => setExpandedProductId(prev => prev === product._id ? null : product._id)}
-                      className="text-left text-[11px] font-semibold text-orange-600 hover:underline dark:text-orange-400">
+                      className="text-left text-[11px] font-normal text-orange-600 hover:underline dark:text-orange-400">
                       {expandedProductId === product._id ? "Hide details" : "View details"}
                     </button>
                   )}
@@ -1470,28 +1474,28 @@ rzp.open(); } catch (err: any) {
                   {/* ADD / stepper */}
                   <div className="mt-auto pt-1">
                     {!requiresVariantSelection && productCartQuantity > 0 ? (
-                      <div className="flex items-center justify-between rounded-xl bg-orange-600 px-2 py-1">
+                      <div className="flex items-center justify-center gap-3 rounded-full bg-[#f8f8f0] border border-[#333632] px-2 py-1 dark:border-[#f8f8f0]/40">
                         <button type="button" onClick={() => setQty(buildCartItemKey(product._id), baseItem.quantity - 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30">-</button>
-                        <span className="text-sm font-bold text-white">{baseItem.quantity}</span>
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-lg font-bold text-[#333632] hover:bg-[#333632]/10 transition dark:hover:bg-[#333632]/10">-</button>
+                        <span className="text-sm font-bold text-[#333632]">{baseItem.quantity}</span>
                         <button type="button" onClick={() => setQty(buildCartItemKey(product._id), baseItem.quantity + 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-lg font-bold text-white hover:bg-white/30">+</button>
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-lg font-bold text-[#333632] hover:bg-[#333632]/10 transition dark:hover:bg-[#333632]/10">+</button>
                       </div>
                     ) : (
                       <button type="button" disabled={isOutOfStock}
                         onClick={() => { if (requiresVariantSelection) { openVariantPopup(product._id); } else { addProduct(product._id); } }}
-                        className="w-full rounded-xl border-2 border-orange-400 bg-white py-1 text-sm font-bold text-orange-600 transition hover:bg-orange-50 disabled:opacity-40 dark:bg-slate-900">
+                        className="w-full rounded-full border border-[#333632] bg-white py-1.5 text-sm font-bold text-[#333632] transition hover:bg-[#f8f8f0] disabled:opacity-40 dark:bg-slate-900 dark:border-[#f8f8f0]/40 dark:text-[#f8f8f0] dark:hover:bg-[#f8f8f0] dark:hover:text-[#333632]">
                         {isOutOfStock ? "Out of stock" : (
                           <span className="flex flex-col items-center leading-tight">
                             <span>{requiresVariantSelection ? "Choose variant" : "ADD"}</span>
-                            {requiresVariantSelection && <span className="text-[9px] font-medium text-orange-500">{normalizedVariantItems.length || normalizedVariants.reduce((s,v)=>s+v.options.length,0)} options</span>}
+                            {requiresVariantSelection && <span className="text-[9px] font-medium text-[#333632]/80 dark:text-[#f8f8f0]/80">{normalizedVariantItems.length || normalizedVariants.reduce((s,v)=>s+v.options.length,0)} options</span>}
                           </span>
                         )}
                       </button>
                     )}
                   </div>
                   {requiresVariantSelection && productCartQuantity > 0 && (
-                    <p className="text-center text-[10px] text-orange-600">
+                    <p className="text-center text-[10px] text-[#333632]/80 dark:text-[#f8f8f0]/80">
                       {hasVariantLines ? `${productCartEntries.length} variants in cart` : `${productCartQuantity} in cart`}
                     </p>
                   )}
@@ -1609,45 +1613,46 @@ rzp.open(); } catch (err: any) {
             <div className="space-y-2">
               {cartEntries.map(({ cartItemId, product, item }) => (
                 <div key={cartItemId} className="rounded-xl border border-slate-200 bg-white/90 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950/70">
+                  {/* Top Row: Title + Price */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="break-words text-sm font-semibold text-slate-900 dark:text-slate-100">{product.title}</p>
                       {item.variantId && (
                         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{item.variantTitle}</p>
                       )}
-                      
-                      <div className="mt-2">
-                        <div className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50/50 p-0.5 text-orange-700 dark:border-orange-950/30 dark:bg-orange-950/20 dark:text-orange-300">
-                          <button
-                            type="button"
-                            onClick={() => setQty(cartItemId, item.quantity - 1)}
-                            className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
-                            aria-label="Decrease quantity"
-                          >
-                            -
-                          </button>
-                          <span className="min-w-6 text-center text-xs font-bold">{item.quantity}</span>
-                          <button
-                            type="button"
-                            onClick={() => setQty(cartItemId, item.quantity + 1)}
-                            className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
                     </div>
-                    <div className="text-right flex flex-col items-end justify-between self-stretch min-h-[64px]">
-                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{(item.unitPrice * item.quantity).toLocaleString("en-IN")}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100 shrink-0">₹{(item.unitPrice * item.quantity).toLocaleString("en-IN")}</p>
+                  </div>
+
+                  {/* Bottom Row: Stepper + Remove Button */}
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="inline-flex items-center gap-1 rounded-xl border border-orange-200 bg-orange-50/50 p-0.5 text-orange-700 dark:border-orange-950/30 dark:bg-orange-950/20 dark:text-orange-300">
                       <button
                         type="button"
-                        onClick={() => removeProduct(cartItemId)}
-                        className="text-xs font-semibold text-rose-600 transition hover:text-rose-500"
+                        onClick={() => setQty(cartItemId, item.quantity - 1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
+                        aria-label="Decrease quantity"
                       >
-                        Remove
+                        -
+                      </button>
+                      <span className="min-w-6 text-center text-xs font-bold">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQty(cartItemId, item.quantity + 1)}
+                        className="flex h-6 w-6 items-center justify-center rounded-lg text-sm font-bold hover:bg-orange-100/60 dark:hover:bg-orange-950/60 transition-colors"
+                        aria-label="Increase quantity"
+                      >
+                        +
                       </button>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeProduct(cartItemId)}
+                      className="text-xs font-semibold text-rose-600 transition hover:text-rose-500"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1667,7 +1672,7 @@ rzp.open(); } catch (err: any) {
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
-                <span>Platform charges ({platformCommissionPercentage}%)</span>
+                <span>Platform charges</span>
                 <span className="font-semibold text-slate-800">&#8377;{platformFee.toLocaleString("en-IN")}</span>
               </div>
               <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200 text-sm">
@@ -1759,7 +1764,7 @@ rzp.open(); } catch (err: any) {
             </label>
 
             <button type="submit" disabled={submitting || selectedItems.length === 0 || !billingContact.fullName.trim() || !String(billingContact.email || "").trim() || !billingContact.phone.number.trim()}
-              className="w-full rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:hover:from-orange-500 dark:hover:via-amber-500 dark:hover:to-yellow-500 mt-2">
+              className="w-full rounded-xl bg-gradient-to-r from-[#ff8c3a] to-[#ffd5b3] px-4 py-3.5 text-sm font-semibold text-[#333632] shadow-md transition hover:from-[#ff751f] hover:to-[#ffc8a5] hover:text-white disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8c3a] dark:text-[#333632] dark:hover:from-[#ff751f] dark:hover:to-[#ffc8a5] dark:hover:text-white mt-2">
               {submitting ? "Placing order..." : paymentMethod === "cod" ? `Place COD Order (₹${grandTotal})` : `Pay & Place Order (₹${grandTotal})`}
             </button>
           </form>
@@ -1787,7 +1792,7 @@ rzp.open(); } catch (err: any) {
                 <h3 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100 line-clamp-2">{product.title}</h3>
               </div>
               <button type="button" onClick={() => setVariantPopupProductId(null)} className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-red-600 text-white transition hover:from-rose-400 hover:to-red-500 dark:from-rose-500 dark:to-red-600 shadow-md">
-                <AppIcon name="close" className="text-[16px]" />
+                <AppIcon name="close" className="text-[22px]" />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
@@ -1799,10 +1804,10 @@ rzp.open(); } catch (err: any) {
                 </div>
 
                 {/* Table Header Row */}
-                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pb-3 border-b border-slate-200/60 dark:border-slate-800/60 mb-2 px-3">
-                  <div className="flex-1 text-left">Variants</div>
-                  <div className="w-32 text-center">Quantity</div>
-                  <div className="w-24 text-right">Price</div>
+                <div className="grid grid-cols-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 pb-3 border-b border-slate-200/60 dark:border-slate-800/60 mb-2 px-3">
+                  <div className="text-left">Variants</div>
+                  <div className="text-center">Quantity</div>
+                  <div className="text-right">Price</div>
                 </div>
 
                 {/* Variants List */}
@@ -1816,10 +1821,10 @@ rzp.open(); } catch (err: any) {
                     return (
                       <div
                         key={variantItem.variantId}
-                        className="flex items-center justify-between py-3.5 px-3 hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all duration-200 rounded-2xl"
+                        className="grid grid-cols-3 items-center py-3.5 px-3 hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all duration-200 rounded-2xl"
                       >
                         {/* Left Side: Variant Title / Description */}
-                        <div className="flex-1 text-left min-w-0 pr-4">
+                        <div className="text-left min-w-0 pr-4">
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
                             {variantItem.title}
                           </p>
@@ -1835,7 +1840,7 @@ rzp.open(); } catch (err: any) {
                         </div>
 
                         {/* Center Side: Adding/decreasing controls */}
-                        <div className="w-32 flex justify-center shrink-0">
+                        <div className="flex justify-center">
                           <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-orange-500/20">
                             <button
                               type="button"
@@ -1877,7 +1882,7 @@ rzp.open(); } catch (err: any) {
                         </div>
 
                         {/* Right Side: Price */}
-                        <div className="w-24 text-right shrink-0">
+                        <div className="text-right">
                           <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             ₹{price}
                           </div>
@@ -1900,7 +1905,7 @@ rzp.open(); } catch (err: any) {
                 <button
                   type="button"
                   onClick={handlePopupAddToCart}
-                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 dark:hover:from-orange-500 dark:hover:via-amber-500 dark:hover:to-yellow-500"
+                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-[#ff8c3a] to-[#ffd5b3] px-4 py-3.5 text-sm font-semibold text-[#333632] shadow-md transition hover:from-[#ff751f] hover:to-[#ffc8a5] hover:text-white disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8c3a] dark:text-[#333632] dark:hover:from-[#ff751f] dark:hover:to-[#ffc8a5] dark:hover:text-white"
                 >
                   <AppIcon name="cart" className="text-[18px]" />
                   <span>Add to Cart</span>

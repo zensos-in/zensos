@@ -174,7 +174,7 @@ function ReviewActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className={`flex w-full flex-col items-center justify-center text-center transition disabled:cursor-not-allowed disabled:opacity-50 ${tone} ${
+      className={`flex w-full flex-col items-center justify-start text-center transition disabled:cursor-not-allowed disabled:opacity-50 ${tone} ${
         compact
           ? "gap-1.5 rounded-xl border px-2 py-2.5"
           : "gap-3 rounded-2xl border px-3.5 py-4"
@@ -335,16 +335,6 @@ function SellerReviewActions({
                 compact={compact}
               />
               <ReviewActionButton
-                label="Reject"
-                description="Decline registration"
-                icon={<AppIcon name="inactive" className="text-[22px] text-rose-600" />}
-                variant="danger"
-                onClick={onReject}
-                disabled={approval === "rejected"}
-                loading={busy("reject")}
-                compact={compact}
-              />
-              <ReviewActionButton
                 label="Pending"
                 description="Return to queue"
                 icon={<AppIcon name="pending" className="text-[22px] text-slate-600" />}
@@ -352,6 +342,16 @@ function SellerReviewActions({
                 onClick={onPending}
                 disabled={approval === "pending"}
                 loading={busy("pending")}
+                compact={compact}
+              />
+              <ReviewActionButton
+                label="Reject"
+                description="Decline registration"
+                icon={<AppIcon name="inactive" className="text-[22px] text-rose-600" />}
+                variant="danger"
+                onClick={onReject}
+                disabled={approval === "rejected"}
+                loading={busy("reject")}
                 compact={compact}
               />
             </div>
