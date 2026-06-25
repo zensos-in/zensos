@@ -909,7 +909,7 @@ const emailError =
                     disabled={submitting || (isLastRegisterSection && !canSendOtp)}
                     loading={submitting}
                     fullWidth
-                    className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+                    className="border-none bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition"
                   >
                     {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
                   </Button>
@@ -920,7 +920,7 @@ const emailError =
                   disabled={submitting || !canSendOtp}
                   loading={submitting}
                   fullWidth
-                  className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+                  className="border-none bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition"
                 >
                   Send OTP
                 </Button>
@@ -962,7 +962,7 @@ const emailError =
                 disabled={submitting || !canVerifyOtp}
                 loading={submitting}
                 fullWidth
-                className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+                className="border-none bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition"
               >
                 {mode === "register"
                   ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
@@ -1194,7 +1194,7 @@ const emailError =
                 disabled={submitting || !canCompleteProfile}
                 loading={submitting}
                 fullWidth
-                className="sm:col-span-2 border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+                className="sm:col-span-2 border-none bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition"
               >
                 <AppIcon name="register" className="text-[10px]" /> Complete Setup & Go to Dashboard
               </Button>
