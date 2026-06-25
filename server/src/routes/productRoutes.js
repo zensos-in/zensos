@@ -239,6 +239,7 @@ router.post("/", auth, async (req, res) => {
     } = req.body;
 
     const normalizedCategories = normalizeProductCategories({ category, categories });
+
     const parsedVariants = Array.isArray(variants) ? variants : [];
     const normalizedVariantPrices = normalizeVariantPrices(variantPrices);
     const normalizedVariantMrps = normalizeVariantMrps(variantMrps);
@@ -247,10 +248,10 @@ router.post("/", auth, async (req, res) => {
       normalizedVariantItems.length > 0
         ? normalizedVariantItems
         : deriveVariantItemsFromLegacy(
-            parsedVariants,
-            normalizedVariantPrices,
-            normalizedVariantMrps
-          );
+          parsedVariants,
+          normalizedVariantPrices,
+          normalizedVariantMrps
+        );
     const hasVariantOptions = parsedVariants.some(
       (variant) => Array.isArray(variant?.options) && variant.options.length > 0
     );
@@ -503,13 +504,20 @@ router.put("/:productId", auth, async (req, res) => {
         nextVariantItems.length > 0
           ? nextVariantItems
           : deriveVariantItemsFromLegacy(
-              Array.isArray(variants) ? variants : product.variants,
-              nextVariantPrices,
-              nextVariantMrps
-            );
+            Array.isArray(variants) ? variants : product.variants,
+            nextVariantPrices,
+            nextVariantMrps
+          );
+      product.markModified("variantItems");
     }
-    if (variantPrices !== undefined) product.variantPrices = normalizeVariantPrices(variantPrices);
-    if (variantMrps !== undefined) product.variantMrps = normalizeVariantMrps(variantMrps);
+    if (variantPrices !== undefined) {
+      product.variantPrices = normalizeVariantPrices(variantPrices);
+      product.markModified("variantPrices");
+    }
+    if (variantMrps !== undefined) {
+      product.variantMrps = normalizeVariantMrps(variantMrps);
+      product.markModified("variantMrps");
+    }
     if (isRecommended !== undefined) product.isRecommended = isRecommended === true;
 
     if (variantItems === undefined && (variantPrices !== undefined || variantMrps !== undefined || Array.isArray(variants))) {
@@ -518,6 +526,7 @@ router.put("/:productId", auth, async (req, res) => {
         nextVariantPrices,
         nextVariantMrps
       );
+      product.markModified("variantItems");
     }
 
     await product.save();

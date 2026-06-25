@@ -154,9 +154,9 @@ function ImageUploadField({
           onChange={e => onChange(e.target.value)}
         />
         <label
-          className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-emerald-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60 ${uploading ? "pointer-events-none opacity-50" : ""}`}
+          className={`flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 text-orange-700 px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 dark:hover:bg-orange-950/60 ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
-          <AppIcon name={uploading ? "pending" : "upload"} className="text-[18px]" />
+          <AppIcon name={uploading ? "pending" : "upload"} className="text-[20px]" />
           {uploading ? "Uploading..." : "Upload"}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </label>
@@ -927,10 +927,13 @@ export function DashboardPage() {
         grouped.add(option);
         const key = getVariantPriceKey(variant.label, option);
         const fallbackKey = getVariantPriceKey("Variant", option);
-        const rawPrice = prod.variantPrices?.[key] ?? prod.variantPrices?.[fallbackKey];
         const matchedVariantItem = prod.variantItems?.find(
           (item) => item.variantId === `legacy:${key}` || item.variantId === `legacy:${fallbackKey}`,
         );
+        const rawPrice =
+          prod.variantPrices?.[key]
+          ?? prod.variantPrices?.[fallbackKey]
+          ?? matchedVariantItem?.price;
         const rawMrp =
           prod.variantMrps?.[key]
           ?? prod.variantMrps?.[fallbackKey]
@@ -974,6 +977,17 @@ export function DashboardPage() {
   async function handleSubmitProduct(e: FormEvent) {
     e.preventDefault(); setIsSubmittingProduct(true); setError(""); setSuccess("");
     try {
+      // Check for incomplete variant rows — user filled pack size but forgot selling price
+      const incompleteVariantRow = productForm.variants.find(
+        v => v.label.trim() && !Number(v.amount)
+      );
+      if (incompleteVariantRow) {
+        const label = incompleteVariantRow.label.trim() + (incompleteVariantRow.uom.trim() ? incompleteVariantRow.uom.trim() : "");
+        setError(`Variant "${label}": please enter the Selling Price (₹).`);
+        setIsSubmittingProduct(false);
+        return;
+      }
+
       // Build option string as "value uom" e.g. "500g" or just "500"
       const variantPayload = productForm.variants
         .filter(v => v.label.trim() && Number(v.amount) > 0)
@@ -1065,6 +1079,17 @@ export function DashboardPage() {
         isRecommended: productForm.isRecommended,
       };
 
+      // 🔍 DEBUG — open browser console (F12) to see this
+      console.log("[Product Save] payload:", {
+        hasVariants,
+        variantRows: productForm.variants,
+        variantPayload,
+        variantPrices,
+        variantMrps,
+        variantItemsCount: variantItems.length,
+        variants: payload.variants,
+      });
+
       if (editingProduct) {
         await api.put(`/products/${editingProduct._id}`, payload);
         setSuccess("Product updated.");
@@ -1089,7 +1114,11 @@ export function DashboardPage() {
       }
       setProductForm(emptyProductForm);
       await loadData();
-    } catch { setError(editingProduct ? "Could not update product." : "Could not create product."); }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const serverMessage = axiosErr?.response?.data?.message;
+      setError(serverMessage || (editingProduct ? "Could not update product." : "Could not create product."));
+    }
     finally { setIsSubmittingProduct(false); }
   }
 
@@ -1216,7 +1245,7 @@ export function DashboardPage() {
   return (
     <main className="mx-auto w-full max-w-7xl space-y-4 px-3 py-5 pb-20 sm:px-4 sm:py-8 sm:pb-24">
       {/* Header */}
-      <header className="flex flex-col gap-3 rounded-3xl border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-teal-900/40 dark:bg-gradient-to-br dark:from-slate-950/95 dark:via-slate-900/90 dark:to-slate-900/95">
+      <header className="flex flex-col gap-3 rounded-3xl border border-white/70 bg-gradient-to-br from-white via-orange-50/70 to-amber-50/60 p-4 shadow-card backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-6 dark:border-orange-900/40 dark:bg-gradient-to-br dark:from-slate-950/95 dark:via-slate-900/90 dark:to-slate-900/95">
         <div className="flex items-center gap-3">
           {seller?.businessLogo && (
             <img src={seller.businessLogo} alt="logo" className="h-10 w-10 rounded-xl object-contain border border-slate-200" />
@@ -1233,7 +1262,7 @@ export function DashboardPage() {
               target="_blank"
               rel="noreferrer"
               aria-label="Open public store in new tab"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 sm:flex-none"
             >
               <AppIcon name="store" className="text-[18px]" /> Open Store
             </a>
@@ -1243,7 +1272,7 @@ export function DashboardPage() {
               onClick={() => void handlePublishStore()}
               disabled={isPublishingStore || isPublishPending}
               aria-label="Publish store for approval"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition sm:flex-none"
             >
               {isPublishingStore ? <><AppIcon name="pending" className="text-[18px]" /> Sending...</> : isPublishPending ? <><AppIcon name="pending" className="text-[18px]" /> Pending Approval</> : <><AppIcon name="share" className="text-[18px]" /> {isPublishRejected ? "Publish Store Again" : "Publish Store"}</>}
             </button>
@@ -1259,7 +1288,7 @@ export function DashboardPage() {
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
-            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ffa366] to-[#ffeedd] text-[#333632] shadow-md" : "border border-emerald-100 bg-white/90 text-slate-600 hover:border-emerald-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-teal-700"}`}>
+            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ffa366] to-[#ffeedd] text-[#333632] shadow-md" : "border border-orange-100 bg-white/90 text-slate-600 hover:border-orange-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-orange-700"}`}>
             <AppIcon name={t.icon} className="text-[20px]" />
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
@@ -1290,10 +1319,10 @@ export function DashboardPage() {
                 label: "Active Products",
                 note: "Visible in store",
                 value: stats.activeProducts,
-                valueClass: "text-emerald-700",
+                valueClass: "text-orange-600",
                 icon: "active",
-                iconWrapClass: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300",
-                cardClass: "from-white via-emerald-50/80 to-teal-50/70",
+                iconWrapClass: "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300",
+                cardClass: "from-white via-orange-50/80 to-amber-50/70",
               },
               {
                 label: "Inactive Products",
@@ -1326,10 +1355,10 @@ export function DashboardPage() {
                 label: "Delivered",
                 note: "Completed orders",
                 value: stats.delivered,
-                valueClass: "text-teal-700",
+                valueClass: "text-orange-600",
                 icon: "check",
-                iconWrapClass: "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/45 dark:text-teal-300",
-                cardClass: "from-white via-teal-50/75 to-emerald-50/70",
+                iconWrapClass: "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-900/60 dark:bg-orange-950/45 dark:text-orange-300",
+                cardClass: "from-white via-amber-50/75 to-orange-50/70",
               },
             ].map((s) => (
               <article
@@ -1363,19 +1392,19 @@ export function DashboardPage() {
 
           {/* Row 2 — Revenue cards */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-emerald-50/70 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-orange-50/70 p-4 shadow-card dark:border-orange-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <p className="text-xs uppercase text-slate-500">Revenue — Last 7 Days</p>
-              <p className="mt-1 text-3xl font-bold text-teal-700">₹{stats.value7d.toLocaleString("en-IN")}</p>
+              <p className="mt-1 text-3xl font-bold text-orange-600">₹{stats.value7d.toLocaleString("en-IN")}</p>
             </article>
-            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-sky-50/70 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white to-amber-50/70 p-4 shadow-card dark:border-orange-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <p className="text-xs uppercase text-slate-500">Revenue — Last 30 Days</p>
-              <p className="mt-1 text-3xl font-bold text-teal-700">₹{stats.value30d.toLocaleString("en-IN")}</p>
+              <p className="mt-1 text-3xl font-bold text-orange-600">₹{stats.value30d.toLocaleString("en-IN")}</p>
             </article>
           </div>
 
           {/* Row 3 — QR card */}
           {storeUrl && isStoreApproved && (
-            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white via-emerald-50/60 to-sky-50/70 p-4 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+            <article className="rounded-2xl border border-white/70 bg-gradient-to-br from-white via-orange-50/60 to-amber-50/70 p-4 shadow-card dark:border-orange-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <div className="flex flex-col sm:flex-row items-center gap-5">
                 {/* QR */}
                 <div className="relative shrink-0">
@@ -1408,7 +1437,7 @@ export function DashboardPage() {
                     href={storeUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mb-3 block break-all text-sm font-semibold text-teal-700 hover:text-teal-600 hover:underline"
+                    className="mb-3 block break-all text-sm font-semibold text-orange-600 hover:text-orange-500 hover:underline"
                   >
                     {storeUrl}
                   </a>
@@ -1416,7 +1445,7 @@ export function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => void shareStoreLink()}
-                      className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500 transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2 text-sm font-semibold text-white hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 transition"
                     ><AppIcon name="share" className="text-[14px]" /> Share Store</button>
                     <button
                       type="button"
@@ -1497,7 +1526,7 @@ export function DashboardPage() {
                     onDrop={() => handleBannerDrop(i)}
                     onDragEnd={resetBannerDragState}
                     className={`flex flex-col gap-2 rounded-xl border p-2 transition ${dragOverBannerIndex === i
-                      ? "border-teal-300 ring-2 ring-teal-100 bg-white dark:bg-slate-800 dark:ring-teal-900/40"
+                      ? "border-orange-300 ring-2 ring-orange-100 bg-white dark:bg-slate-800 dark:ring-orange-900/40"
                       : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/60"
                       } ${draggedBannerIndex === i ? "opacity-70" : ""}`}
                   >
@@ -1511,7 +1540,7 @@ export function DashboardPage() {
                         <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{b.imageUrl}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
-                        <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
+                        <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
                           Position {i + 1}
                         </span>
                         <button
@@ -1540,7 +1569,7 @@ export function DashboardPage() {
                         setNewBannerUrl(""); setNewBannerTitle("");
                       }
                     }}
-                    className="w-full rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
+                    className="w-full rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-3 py-2 text-sm font-semibold text-white hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 transition"
                   >+ Add Banner</button>
                 </div>
               ) : (
@@ -1683,7 +1712,7 @@ export function DashboardPage() {
                   <input className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
                   <button
                     onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
-                    className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-sm font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition"
+                    className="rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-3 py-2 text-sm font-semibold text-white hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 transition"
                   >Add</button>
                 </div>
               </div>
@@ -1694,7 +1723,7 @@ export function DashboardPage() {
 
           <div className="lg:col-span-2">
             <button onClick={handleStoreSave} disabled={isSavingStore}
-              className="w-full rounded-2xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-teal-500 disabled:bg-teal-300 transition dark:bg-teal-700 dark:hover:bg-teal-600 dark:disabled:bg-teal-900/60">
+              className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-6 py-3 text-sm font-semibold text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition">
               {isSavingStore ? "Saving Store Options..." : "Save All Store Options"}
             </button>
           </div>
@@ -1754,7 +1783,7 @@ export function DashboardPage() {
                           key={tag}
                           type="button"
                           onClick={() => setProductForm(p => ({ ...p, categories: p.categories.filter((item) => item !== tag) }))}
-                          className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                          className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition"
                         >
                           <span className="max-w-[120px] truncate">{tag}</span>
                           <AppIcon name="close" className="text-[8px]" />
@@ -1809,7 +1838,7 @@ export function DashboardPage() {
                   {(showSuggestions || editingCategory) && (categorySuggestions.length > 0 || (productForm.categoryInput.trim() && !categories.includes(productForm.categoryInput.trim()))) && (
                     <ul className="absolute left-0 right-0 z-30 mt-1 w-full max-w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
                       {categorySuggestions.map(c => (
-                        <li key={c} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm transition bg-white hover:bg-teal-50">
+                        <li key={c} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm transition bg-white hover:bg-orange-50">
                           {categoryPendingDelete === c ? (
                             <>
                               <div className="min-w-0 flex-1 basis-full sm:basis-auto">
@@ -1841,7 +1870,7 @@ export function DashboardPage() {
                           ) : editingCategory === c ? (
                             <>
                               <input
-                                className="min-w-0 flex-1 rounded-lg border border-teal-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-teal-400"
+                                className="min-w-0 flex-1 rounded-lg border border-orange-200 bg-white px-2 py-1.5 text-sm text-slate-700 outline-none focus:border-orange-400"
                                 value={editingCategoryValue}
                                 autoFocus
                                 onChange={(event) => setEditingCategoryValue(event.target.value)}
@@ -1863,7 +1892,7 @@ export function DashboardPage() {
                                   event.preventDefault();
                                   await saveSellerCategory(c);
                                 }}
-                                className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-orange-600 transition hover:bg-orange-100"
                                 aria-label={`Save category ${c}`}
                               >
                                 <AppIcon name="check" className="text-[14px]" />
@@ -1893,7 +1922,7 @@ export function DashboardPage() {
                                   }));
                                   setShowSuggestions(false);
                                 }}
-                                className="text-left flex-1 text-slate-700 hover:text-teal-800"
+                                className="text-left flex-1 text-slate-700 hover:text-orange-700"
                               >
                                 {c}
                               </button>
@@ -1937,7 +1966,7 @@ export function DashboardPage() {
                             setCategories(prev => prev.includes(c) ? prev : [...prev, c]);
                             setShowSuggestions(false);
                           }}
-                          className="cursor-pointer px-4 py-2 text-sm font-semibold text-teal-700 bg-teal-50 border-t border-slate-100 hover:bg-teal-100 transition"
+                          className="cursor-pointer px-4 py-2 text-sm font-semibold text-orange-700 bg-orange-50 border-t border-slate-100 hover:bg-orange-100 transition"
                         >➕ Create "{productForm.categoryInput.trim()}"</li>
                       )}
                     </ul>
@@ -2171,7 +2200,7 @@ export function DashboardPage() {
                   </button>
                 )}
                 <button type="submit" disabled={isSubmittingProduct}
-                  className={`w-full inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${editingProduct ? "bg-amber-600 hover:bg-amber-500 sm:flex-1" : "bg-teal-600 hover:bg-teal-500"}`}>
+                  className={`w-full inline-flex items-center justify-center gap-1.5 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 ${editingProduct ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 sm:flex-1" : "bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 sm:flex-1"}`}>
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
                     : editingProduct ? <><AppIcon name="edit" className="text-[22px]" />Update Product</> : <><AppIcon name="products" className="text-[22px]" />Add Product</>}
@@ -2190,8 +2219,8 @@ export function DashboardPage() {
               </div>
               {/* Search bar with filter icon */}
               <div className="relative">
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-teal-600 dark:text-teal-400">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-orange-600 dark:text-orange-400">
                     <AppIcon name="search" className="text-[22px]" />
                   </span>
                   <input
@@ -2204,18 +2233,18 @@ export function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => { setCatalogCategory(""); setShowFilterDropdown(false); }}
-                      className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition"
+                      className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-lg font-bold text-orange-700 hover:bg-orange-100 hover:scale-105 active:scale-95 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-350 shadow-sm"
                     >
-                      <span className="max-w-[80px] truncate">{catalogCategory}</span>
-                      <AppIcon name="close" className="text-[8px]" />
+                      <span className="max-w-[180px] truncate">{catalogCategory}</span>
+                      <AppIcon name="close" className="text-[15px]" />
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => setShowFilterDropdown(v => !v)}
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${catalogCategory || showFilterDropdown
-                      ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
-                      : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
+                      ? "border-orange-350 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/60 dark:text-orange-300"
+                      : "border-orange-100 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
                       }`}
                     title="Filter by category"
                   >
@@ -2224,7 +2253,7 @@ export function DashboardPage() {
                 </div>
                 {/* Filter dropdown */}
                 {showFilterDropdown && categories.length > 0 && (
-                  <div className="absolute right-0 z-30 mt-1 w-48 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden dark:border-teal-900/40 dark:bg-slate-950">
+                  <div className="absolute right-0 z-30 mt-1 w-48 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden dark:border-orange-900/40 dark:bg-slate-950">
                     <p className="px-3 pt-2.5 pb-1 text-xs font-bold uppercase text-slate-400">Filter by Category</p>
                     <ul className="max-h-52 overflow-y-auto py-1">
                       {categories.map(c => (
@@ -2233,11 +2262,11 @@ export function DashboardPage() {
                             type="button"
                             onClick={() => { setCatalogCategory(prev => prev === c ? "" : c); setShowFilterDropdown(false); }}
                             className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${catalogCategory === c
-                              ? "bg-teal-50 font-semibold text-teal-800"
+                              ? "bg-orange-50 font-semibold text-orange-800"
                               : "text-slate-700 hover:bg-slate-50"
                               }`}
                           >
-                            <span className={`h-3.5 w-3.5 rounded-full border flex-shrink-0 ${catalogCategory === c ? "border-teal-500 bg-teal-500" : "border-slate-300"
+                            <span className={`h-3.5 w-3.5 rounded-full border flex-shrink-0 ${catalogCategory === c ? "border-orange-500 bg-orange-500" : "border-slate-300"
                               }`} />
                             {c}
                           </button>
@@ -2284,7 +2313,7 @@ export function DashboardPage() {
                               {getProductCategories(prod).map((tag) => (
                                 <span
                                   key={`${prod._id}-${tag}`}
-                                  className="inline-block rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700"
+                                  className="inline-block rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700"
                                 >
                                   {tag}
                                 </span>
@@ -2302,10 +2331,15 @@ export function DashboardPage() {
                               {prod.variants.flatMap(variant =>
                                 variant.options.map(option => {
                                   const priceKey = getVariantPriceKey(variant.label, option);
-                                  const variantPrice = prod.variantPrices?.[priceKey];
+                                  const fallbackItem = prod.variantItems?.find(
+                                    (item) => item.variantId === `legacy:${priceKey}`,
+                                  );
+                                  const variantPrice =
+                                    prod.variantPrices?.[priceKey]
+                                    ?? fallbackItem?.price;
                                   const variantMrp =
                                     prod.variantMrps?.[priceKey]
-                                    ?? prod.variantItems?.find((item) => item.variantId === `legacy:${priceKey}`)?.mrp;
+                                    ?? fallbackItem?.mrp;
                                   return (
                                     <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                                       {option}
@@ -2333,7 +2367,7 @@ export function DashboardPage() {
                           className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100 transition dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400"
                         ><AppIcon name="edit" className="text-[16px]" /> Edit</button>
                         <button onClick={() => handleToggleProduct(prod._id)}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50" : "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50"}`}>
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50" : "bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200/70 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50"}`}>
                           <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[16px]" />
                           {prod.isActive ? "Deactivate" : "Activate"}
                         </button>
@@ -2394,7 +2428,7 @@ export function DashboardPage() {
                   <label className="mt-2 block space-y-2">
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                       placeholder="------"
                       maxLength={6}
                       value={deleteProductOtp}
@@ -2421,7 +2455,7 @@ export function DashboardPage() {
                     setDeleteProductOtpSentTo("");
                   }}
                   disabled={isDeletingProduct || isSendingDeleteProductOtp}
-                  className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>
@@ -2429,11 +2463,11 @@ export function DashboardPage() {
                   <button
                     onClick={confirmDeleteProduct}
                     disabled={isDeletingProduct || deleteProductOtp.trim().length !== 6}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-rose-500 hover:to-red-500 disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-rose-500 hover:to-red-500 disabled:opacity-50"
                   >
                     {isDeletingProduct ? (
                       <>
-                        <AppIcon name="pending" className="text-[11px]" />
+                        <AppIcon name="pending" className="text-[16px] animate-spin" />
                         Verifying...
                       </>
                     ) : (
@@ -2444,7 +2478,7 @@ export function DashboardPage() {
                   <button
                     onClick={requestDeleteProductOtp}
                     disabled={isSendingDeleteProductOtp}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-teal-500 hover:to-sky-500 disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:opacity-50"
                   >
                     {isSendingDeleteProductOtp ? (
                       <>
@@ -2476,8 +2510,8 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               {ordersLastUpdated && (
-                <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+                  <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
                   Live · {timeAgo(ordersLastUpdated)}
                 </span>
               )}
@@ -2487,21 +2521,25 @@ export function DashboardPage() {
 
           {/* Search + filter bar */}
           <div className="relative mt-4">
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-teal-600 dark:text-teal-400">
+            <div className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/75">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-orange-500 dark:text-orange-400">
                 <AppIcon name="search" className="text-[22px]" />
               </span>
               <input className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" placeholder="Search by customer, product or category…" value={orderSearch} onChange={e => setOrderSearch(e.target.value)} />
               {(orderStatusFilter || orderCategoryFilter) && (
                 <button type="button" onClick={() => { setOrderStatusFilter(""); setOrderCategoryFilter(""); }}
-                  className="flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 hover:bg-teal-100 transition">
-                  {[orderStatusFilter && STATUS_LABEL[orderStatusFilter as OrderStatus], orderCategoryFilter].filter(Boolean).join(" ? ")} <AppIcon name="close" className="text-[8px]" />
+                  className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-lg font-bold text-orange-700 hover:bg-orange-100 hover:scale-105 active:scale-95 transition dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300 shadow-sm"
+                >
+                  <span className="max-w-[180px] truncate">
+                    {[orderStatusFilter && STATUS_LABEL[orderStatusFilter as OrderStatus], orderCategoryFilter].filter(Boolean).join(" • ")}
+                  </span>
+                  <AppIcon name="close" className="text-[15px]" />
                 </button>
               )}
               <button type="button" onClick={() => setShowOrderFilter(v => !v)}
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition shadow-sm ${(orderStatusFilter || orderCategoryFilter) || showOrderFilter
-                  ? "border-teal-300 bg-teal-100 text-teal-700 dark:border-teal-800 dark:bg-teal-900/60 dark:text-teal-300"
-                  : "border-teal-100 bg-teal-50 text-teal-600 hover:bg-teal-100 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400"
+                  ? "border-orange-300 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/60 dark:text-orange-300"
+                  : "border-orange-100 bg-orange-50 text-orange-500 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
                   }`}
               >
                 <AppIcon name="filter" className="text-[18px]" />
@@ -2513,7 +2551,7 @@ export function DashboardPage() {
                 <ul className="py-1 border-b border-slate-100">
                   {ORDER_STATUSES.map(s => (
                     <li key={s}><button type="button" onClick={() => { setOrderStatusFilter(prev => prev === s ? "" : s); setShowOrderFilter(false); }}
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderStatusFilter === s ? "bg-teal-50 font-semibold text-teal-800" : "text-slate-700 hover:bg-slate-50"}`}>
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderStatusFilter === s ? "bg-orange-50 font-semibold text-orange-800" : "text-slate-700 hover:bg-slate-50"}`}>
                       <span className={`h-2.5 w-2.5 rounded-full ${STATUS_DOT[s]}`} />{STATUS_LABEL[s]}
                     </button></li>
                   ))}
@@ -2523,8 +2561,8 @@ export function DashboardPage() {
                     <ul className="py-1 max-h-40 overflow-y-auto">
                       {categories.map(c => (
                         <li key={c}><button type="button" onClick={() => { setOrderCategoryFilter(prev => prev === c ? "" : c); setShowOrderFilter(false); }}
-                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderCategoryFilter === c ? "bg-teal-50 font-semibold text-teal-800" : "text-slate-700 hover:bg-slate-50"}`}>
-                          <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${orderCategoryFilter === c ? "border-teal-500 bg-teal-500" : "border-slate-300"}`} />{c}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition ${orderCategoryFilter === c ? "bg-orange-50 font-semibold text-orange-800" : "text-slate-700 hover:bg-slate-50"}`}>
+                          <span className={`h-3 w-3 rounded-full border flex-shrink-0 ${orderCategoryFilter === c ? "border-orange-500 bg-orange-500" : "border-slate-300"}`} />{c}
                         </button></li>
                       ))}
                     </ul></>
@@ -2580,7 +2618,7 @@ export function DashboardPage() {
                         <p className={`mt-1 text-sm font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-900 dark:text-slate-100"}`}>Order Value: ₹{order.amount + (order.deliveryCharge || 0)}</p>
                         {/* Actions */}
                         <div className="mt-3 flex gap-2">
-                          <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
+                          <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-orange-400 bg-orange-50/70 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
                           <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                             {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                           </select>
@@ -2644,7 +2682,7 @@ export function DashboardPage() {
                             </td>
                             {/* View Order */}
                             <td className="py-3">
-                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:from-emerald-400 hover:to-teal-500 transition whitespace-nowrap"><AppIcon name="visibility" className="text-[16px]" /> View Order</button>
+                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-full border border-orange-400 bg-orange-50/70 px-3.5 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50 whitespace-nowrap"><AppIcon name="visibility" className="text-[16px]" /> View Order</button>
                             </td>
                           </tr>
                         );
@@ -2696,7 +2734,7 @@ export function DashboardPage() {
                   {getOrderItems(viewingOrder).map((item, index) => (
                     <div key={`${item.productTitle}-${item.variantId}-${index}`}>
                       <p className="font-semibold text-slate-800">{item.productTitle}</p>
-                      {item.productCategory && <span className="inline-block mt-1 rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700">{item.productCategory}</span>}
+                      {item.productCategory && <span className="inline-block mt-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">{item.productCategory}</span>}
                       <p className="mt-1 text-xs text-slate-500">{item.variantTitle || Object.values(item.selectedVariants || {}).join(", ") || "Default"} · Qty {item.quantity} · ₹{item.lineTotal}</p>
                     </div>
                   ))}
@@ -2710,7 +2748,7 @@ export function DashboardPage() {
                 ))}
                 <div className="flex justify-between px-4 py-2.5 bg-slate-50">
                   <span className="text-sm font-bold text-slate-700">Grand Total</span>
-                  <span className="text-sm font-bold text-teal-700">₹{viewingOrder.amount + (viewingOrder.deliveryCharge || 0)}</span>
+                  <span className="text-sm font-bold text-orange-600">₹{viewingOrder.amount + (viewingOrder.deliveryCharge || 0)}</span>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-1">
@@ -2722,7 +2760,7 @@ export function DashboardPage() {
               {viewingOrder.paymentScreenshotUrl && (
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
                   <p className="text-xs font-bold uppercase text-slate-400 mb-1">Payment Proof</p>
-                  <a href={viewingOrder.paymentScreenshotUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-teal-700 underline">View Screenshot</a>
+                  <a href={viewingOrder.paymentScreenshotUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-orange-600 underline">View Screenshot</a>
                 </div>
               )}
               {viewingOrder.note && (
@@ -2755,7 +2793,7 @@ export function DashboardPage() {
       {/* Reports */}
       {tab === "reports" && (
         <div className="space-y-5 mb-16">
-          <section className="rounded-[30px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/70 to-sky-50/80 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+          <section className="rounded-[30px] border border-white/70 bg-gradient-to-br from-white via-orange-50/70 to-sky-50/80 p-5 shadow-card dark:border-orange-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase text-orange-500">Analytics overview</p>
@@ -2763,12 +2801,12 @@ export function DashboardPage() {
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Track order volume, revenue quality, and top-selling products in the same visual language as the rest of your dashboard.</p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="inline-flex rounded-2xl border border-white/80 bg-white/85 p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
+                <div className="inline-flex rounded-full border border-white/80 bg-white/85 p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
                   {[7, 30].map((d) => (
                     <button
                       key={d}
                       onClick={() => setReportDays(d)}
-                      className={reportDays === d ? "rounded-xl border border-orange-400 bg-orange-400/15 px-4 py-2 text-sm font-semibold text-orange-600 shadow-sm dark:text-orange-300" : "rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}
+                      className={reportDays === d ? "rounded-full border border-orange-500 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 shadow-sm dark:text-orange-350 dark:border-orange-800/80 dark:bg-orange-950/30" : "rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}
                     >
                       {d === 7 ? "Last 7 days" : "Last 30 days"}
                     </button>
@@ -2783,7 +2821,7 @@ export function DashboardPage() {
 
           {loadingReport ? (
             <div className="rounded-[28px] border border-white/70 bg-white/90 p-10 text-center shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-sky-500 text-white shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400 text-white shadow-sm">
                 <AppIcon name="pending" className="text-[24px]" />
               </div>
               <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Preparing your report...</p>
@@ -2803,15 +2841,15 @@ export function DashboardPage() {
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{report.totalOrders}</p>
                   <p className="mt-2 text-xs text-slate-500">{"Across the last " + reportDays + " days"}</p>
                 </article>
-                <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-emerald-50/80 to-teal-50/70 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+                <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-orange-50/80 to-amber-50/70 p-5 shadow-card dark:border-orange-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase text-slate-500">Total Revenue</p>
                       <p className="mt-1 text-xs text-slate-500">Value captured in period</p>
                     </div>
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-300"><AppIcon name="reports" className="text-[26px]" /></span>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-700 shadow-sm dark:border-orange-900/60 dark:bg-orange-950/50 dark:text-orange-300"><AppIcon name="reports" className="text-[26px]" /></span>
                   </div>
-                  <p className="mt-6 text-3xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">₹{report.totalRevenue.toLocaleString("en-IN")}</p>
+                  <p className="mt-6 text-3xl font-bold tracking-tight text-orange-600 dark:text-orange-400">₹{report.totalRevenue.toLocaleString("en-IN")}</p>
                   <p className="mt-2 text-xs text-slate-500">Revenue for the active range</p>
                 </article>
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-sky-50/75 to-cyan-50/70 p-5 shadow-card dark:border-teal-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
@@ -2866,7 +2904,7 @@ export function DashboardPage() {
                         const revenueWidth = Math.max(10, Math.min(100, (product.revenue / leaderRevenue) * 100));
                         const rankClass = index === 0 ? "bg-gradient-to-br from-orange-200 to-amber-100 text-orange-700" : index === 1 ? "bg-gradient-to-br from-sky-500 to-cyan-600 text-white" : "bg-gradient-to-br from-amber-400 to-orange-500 text-white";
                         return (
-                          <div key={product.title + "-" + index} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 transition hover:border-emerald-200 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-teal-800">
+                          <div key={product.title + "-" + index} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 transition hover:border-orange-200 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-orange-800">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-3">
@@ -2883,7 +2921,7 @@ export function DashboardPage() {
                               <div className="grid shrink-0 grid-cols-2 gap-3 lg:w-[230px]">
                                 <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
                                   <p className="text-[11px] font-semibold uppercase text-slate-500">Revenue</p>
-                                  <p className="mt-1 text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{product.revenue.toLocaleString("en-IN")}</p>
+                                  <p className="mt-1 text-sm font-bold text-orange-600 dark:text-orange-400">₹{product.revenue.toLocaleString("en-IN")}</p>
                                 </div>
                                 <div className="rounded-2xl border border-white/80 bg-white px-3 py-2 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
                                   <p className="text-[11px] font-semibold uppercase text-slate-500">Share</p>
@@ -2899,7 +2937,7 @@ export function DashboardPage() {
                 </article>
 
                 <div className="space-y-4">
-                  <article className="rounded-[28px] border border-white/70 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 p-5 text-white shadow-card dark:border-teal-900/35">
+                  <article className="rounded-[28px] border border-white/70 bg-gradient-to-br from-slate-900 via-slate-900 to-orange-950 p-5 text-white shadow-card dark:border-orange-900/35">
                     <p className="text-xs font-semibold uppercase text-orange-400">Performance snapshot</p>
                     <h3 className="mt-2 font-heading text-xl font-bold">Revenue concentration</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">{reportTopProduct ? reportTopProduct.title + " contributes " + reportTopProductRevenueShare + "% of your total revenue in this range." : "Your next order will start shaping this report."}</p>
@@ -2952,15 +2990,15 @@ export function DashboardPage() {
           ) : earningsData ? (
             <>
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <article className="rounded-3xl border border-white/70 bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-card">
-                  <p className="text-xs font-semibold uppercase text-emerald-100">Gross Sales</p>
-                  <p className="mt-2 font-heading text-2xl font-bold">₹{earningsData.summary.grossRevenue.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-emerald-200 mt-1">Product plus delivery before platform charges</p>
+                <article className="rounded-3xl border border-orange-400 bg-orange-50/70 p-5 shadow-card dark:border-orange-800/80 dark:bg-orange-950/30">
+                  <p className="text-xs font-semibold uppercase text-orange-600 dark:text-orange-400">Gross Sales</p>
+                  <p className="mt-2 font-heading text-2xl font-bold text-orange-700 dark:text-orange-300">₹{earningsData.summary.grossRevenue.toLocaleString("en-IN")}</p>
+                  <p className="text-[10px] text-orange-600/85 dark:text-orange-400/80 mt-1">Product plus delivery before platform charges</p>
                 </article>
-                <article className="rounded-3xl border border-white/70 bg-gradient-to-br from-teal-600 to-sky-600 p-5 text-white shadow-card">
-                  <p className="text-xs font-semibold uppercase text-teal-100">Net Earnings</p>
-                  <p className="mt-2 font-heading text-2xl font-bold">₹{earningsData.summary.netEarnings.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-teal-200 mt-1">Vendor payable after platform charges</p>
+                <article className="rounded-3xl border border-orange-400 bg-orange-50/70 p-5 shadow-card dark:border-orange-800/80 dark:bg-orange-950/30">
+                  <p className="text-xs font-semibold uppercase text-orange-600 dark:text-orange-400">Net Earnings</p>
+                  <p className="mt-2 font-heading text-2xl font-bold text-orange-700 dark:text-orange-300">₹{earningsData.summary.netEarnings.toLocaleString("en-IN")}</p>
+                  <p className="text-[10px] text-orange-600/85 dark:text-orange-400/80 mt-1">Vendor payable after platform charges</p>
                 </article>
                 <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
                   <p className="text-xs font-semibold uppercase text-slate-400">Platform Charges</p>
@@ -3018,7 +3056,7 @@ export function DashboardPage() {
                               <td className="py-3 px-2 text-right font-semibold">₹{Number(order.productAmount || 0).toLocaleString("en-IN")}</td>
                               <td className="py-3 px-2 text-right">₹{Number(order.deliveryCharge || 0).toLocaleString("en-IN")}</td>
                               <td className="py-3 px-2 text-right text-rose-600">₹{Number(order.platformFee || 0).toLocaleString("en-IN")}</td>
-                              <td className="py-3 px-2 text-right font-bold text-emerald-600">₹{Number(order.netVendorEarning || 0).toLocaleString("en-IN")}</td>
+                              <td className="py-3 px-2 text-right font-bold text-orange-600">₹{Number(order.netVendorEarning || 0).toLocaleString("en-IN")}</td>
                               <td className="py-3 px-2 capitalize">{String(order.settlementStatus || "unsettled").replace(/_/g, " ")}</td>
                               <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{order.settlementDate ? new Date(order.settlementDate).toLocaleDateString("en-IN") : "-"}</td>
                             </tr>
@@ -3060,11 +3098,11 @@ export function DashboardPage() {
                                 <span className="capitalize">{log.purpose.replace(/_/g, " ")}</span>
                               </td>
                               <td className="py-3 px-2">
-                                <span className={`inline-block rounded-full px-2 py-0.5 font-bold uppercase text-[9px] ${log.type === "credit" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
+                                <span className={`inline-block rounded-full px-2 py-0.5 font-bold uppercase text-[9px] ${log.type === "credit" ? "bg-orange-50 text-orange-700 border border-orange-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
                                   {log.type}
                                 </span>
                               </td>
-                              <td className={`py-3 px-2 text-right font-bold font-mono ${log.type === "credit" ? "text-emerald-600" : "text-rose-600"}`}>
+                              <td className={`py-3 px-2 text-right font-bold font-mono ${log.type === "credit" ? "text-orange-600" : "text-rose-600"}`}>
                                 {log.type === "credit" ? "+" : "-"}₹{(log.amountPaise / 100).toLocaleString("en-IN")}
                               </td>
                             </tr>
@@ -3091,7 +3129,7 @@ export function DashboardPage() {
                 href={storeUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="block truncate text-sm font-semibold text-teal-700 hover:text-teal-600 hover:underline"
+                className="block truncate text-sm font-semibold text-orange-600 hover:text-orange-500 hover:underline"
                 title={storeUrl}
               >
                 {storeUrl}
@@ -3131,11 +3169,11 @@ export function DashboardPage() {
             }
             if (rzpStatus === "active") {
               return (
-                <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 dark:border-emerald-800/50 dark:bg-emerald-950/40">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white text-sm">✓</span>
+                <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 dark:border-orange-800/50 dark:bg-orange-950/40">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm">✓</span>
                   <div>
-                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Payout Account Active</p>
-                    <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-400">
+                    <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Payout Account Active</p>
+                    <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-400">
                       Your Razorpay linked account is verified and active. When a customer pays, your full order amount is transferred directly to your linked account.
                     </p>
                   </div>
@@ -3185,11 +3223,11 @@ export function DashboardPage() {
           <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50 text-teal-600 shadow-sm dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
-                  <AppIcon name="profile" className="text-[18px]" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
+                  <AppIcon name="profile" className="text-[26px]" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase text-teal-600">Registered details</p>
+                  <p className="text-xs font-semibold uppercase text-orange-600">Registered details</p>
                   <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-white">Seller profile</h3>
                 </div>
               </div>
@@ -3235,19 +3273,19 @@ export function DashboardPage() {
             {/* Business Identity */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-teal-100 bg-teal-50 text-teal-600 shadow-sm dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
-                  <span className="text-[18px]">🏢</span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
+                  <AppIcon name="brand" className="text-[26px]" />
                 </span>
                 Business Identity
               </h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1 sm:col-span-2">
                   <span className="text-sm font-semibold text-slate-700">Business name *</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-50" value={profileName} onChange={e => setProfileName(e.target.value)} required />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-50" value={profileName} onChange={e => setProfileName(e.target.value)} required />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Business category</span>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-teal-400" value={profileCategory} onChange={e => setProfileCategory(e.target.value)}>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-orange-400" value={profileCategory} onChange={e => setProfileCategory(e.target.value)}>
                     <option value="">— Select category —</option>
                     {profileCategoryOptions.map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -3256,12 +3294,12 @@ export function DashboardPage() {
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">GST number</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="22AAAAA0000A1Z5" value={profileGST} onChange={e => setProfileGST(e.target.value)} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="22AAAAA0000A1Z5" value={profileGST} onChange={e => setProfileGST(e.target.value)} />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">PAN details</span>
                   <input
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none focus:ring-2 dark:bg-slate-900 dark:text-slate-100 ${profilePAN && profilePANError ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50 dark:border-rose-700" : "border-slate-200 focus:border-teal-400 focus:ring-teal-50 dark:border-slate-700"}`}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none focus:ring-2 dark:bg-slate-900 dark:text-slate-100 ${profilePAN && profilePANError ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50 dark:border-rose-700" : "border-slate-200 focus:border-orange-400 focus:ring-orange-50 dark:border-slate-700"}`}
                     placeholder="ABCDE1234F"
                     maxLength={10}
                     value={profilePAN}
@@ -3281,12 +3319,12 @@ export function DashboardPage() {
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">PAN holder legal name *</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Name exactly as on PAN" value={profilePANHolderName} onChange={e => setProfilePANHolderName(e.target.value)} required />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Name exactly as on PAN" value={profilePANHolderName} onChange={e => setProfilePANHolderName(e.target.value)} required />
                   {profilePANHolderNameError ? <span className="text-xs text-rose-600">{profilePANHolderNameError}</span> : null}
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Business type</span>
-                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={profileBusinessType} onChange={e => setProfileBusinessType(e.target.value)}>
+                  <select className="w-full rounded-xl border border-slate-200 px-3 pr-10 py-2.5 text-sm outline-none focus:border-orange-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value={profileBusinessType} onChange={e => setProfileBusinessType(e.target.value)}>
                     <option value="individual">Individual / Proprietorship</option>
                     <option value="partnership">Partnership</option>
                     <option value="company">Private / Public Company</option>
@@ -3295,7 +3333,7 @@ export function DashboardPage() {
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Business email</span>
-                  <input type="email" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="shop@example.com" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} />
+                  <input type="email" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="shop@example.com" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} />
                 </label>
               </div>
             </article>
@@ -3303,31 +3341,31 @@ export function DashboardPage() {
             {/* Bank & Payments */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400">
-                  <span className="text-[18px] font-bold">₹</span>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
+                  <AppIcon name="rupee" className="text-[26px]" />
                 </span>
                 Bank & Payments
               </h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">UPI ID</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="yourname@upi" value={profileUpi} onChange={e => setProfileUpi(e.target.value)} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="yourname@upi" value={profileUpi} onChange={e => setProfileUpi(e.target.value)} />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Account holder name</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="Name as per bank account" value={profileBankAccountName} onChange={e => setProfileBankAccountName(e.target.value)} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="Name as per bank account" value={profileBankAccountName} onChange={e => setProfileBankAccountName(e.target.value)} />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Bank name</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="HDFC Bank" value={profileBankName} onChange={e => setProfileBankName(e.target.value)} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="HDFC Bank" value={profileBankName} onChange={e => setProfileBankName(e.target.value)} />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Account number</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="123456789012" value={profileBankAccountNumber} onChange={e => setProfileBankAccountNumber(e.target.value.replace(/\D/g, ""))} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="123456789012" value={profileBankAccountNumber} onChange={e => setProfileBankAccountNumber(e.target.value.replace(/\D/g, ""))} />
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold text-slate-700">IFSC code</span>
-                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none focus:border-teal-400" placeholder="HDFC0001234" value={profileBankIfsc} onChange={e => setProfileBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))} />
+                  <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none focus:border-orange-400" placeholder="HDFC0001234" value={profileBankIfsc} onChange={e => setProfileBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))} />
                 </label>
               </div>
             </article>
@@ -3336,7 +3374,7 @@ export function DashboardPage() {
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-600 shadow-sm dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
-                  <AppIcon name="phone" className="text-[18px]" />
+                  <AppIcon name="phone" className="text-[26px]" />
                 </span>
                 Contact Details
               </h3>
@@ -3349,15 +3387,15 @@ export function DashboardPage() {
                 <div className="space-y-1">
                   <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
                   <div className="flex gap-2">
-                    <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" value={storeWhatsapp.countryCode} readOnly disabled placeholder="+91" />
-                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeWhatsapp.number} onChange={e => setStoreWhatsapp(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                    <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" value={storeWhatsapp.countryCode} readOnly disabled placeholder="+91" />
+                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="9876543210" value={storeWhatsapp.number} onChange={e => setStoreWhatsapp(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <span className="text-sm font-semibold text-slate-700">Call number</span>
                   <div className="flex gap-2">
-                    <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" value={storeCall.countryCode} readOnly disabled placeholder="+91" />
-                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400" placeholder="9876543210" value={storeCall.number} onChange={e => setStoreCall(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                    <input className="w-20 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" value={storeCall.countryCode} readOnly disabled placeholder="+91" />
+                    <input className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400" placeholder="9876543210" value={storeCall.number} onChange={e => setStoreCall(p => ({ ...p, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                   </div>
                 </div>
               </div>
@@ -3367,14 +3405,14 @@ export function DashboardPage() {
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-100 bg-violet-50 text-violet-600 shadow-sm dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
-                  <AppIcon name="location" className="text-[18px]" />
+                  <AppIcon name="location" className="text-[26px]" />
                 </span>
                 Business Address
               </h3>
               <AddressFields
                 value={profileAddress}
                 onChange={setProfileAddress}
-                inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-400"
+                inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400"
                 gridClassName="grid gap-3 sm:grid-cols-2"
               />
             </article>
@@ -3383,7 +3421,7 @@ export function DashboardPage() {
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-1 flex items-center gap-2.5 dark:text-white">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 text-amber-600 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
-                  <span className="text-[18px]">🪺</span>
+                  <AppIcon name="kyc" className="text-[26px]" />
                 </span>
                 KYC Documents
               </h3>
@@ -3423,15 +3461,25 @@ export function DashboardPage() {
             </article>
 
             <button type="submit" disabled={isSavingProfile || !isProfileFormValid}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-3 text-sm font-semibold text-white transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 shadow-sm">
-              {isSavingProfile ? "Saving…" : "💾 Save Profile"}
+              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-3 text-base font-semibold text-white transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 shadow-sm">
+              {isSavingProfile ? (
+                <>
+                  <AppIcon name="pending" className="text-[22px] animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <AppIcon name="save" className="text-[22px]" />
+                  Save Profile
+                </>
+              )}
             </button>
           </form>
 
           <article className="mt-8 rounded-3xl border border-white/70 bg-white/90 p-6 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
             <div className="mb-5 flex items-start gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-sm">
-                <AppIcon name="pending" className="text-[22px]" />
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-sm">
+                <AppIcon name="pending" className="text-[26px]" />
               </span>
               <div>
                 <p className="text-xs font-semibold uppercase text-amber-600">Account protection</p>
@@ -3481,8 +3529,8 @@ export function DashboardPage() {
               <div className="relative w-full max-w-md rounded-[28px] border border-white/70 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="p-6">
                   <div className="mb-4 flex items-center gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-sm">
-                      <AppIcon name="trash" className="text-[14px]" />
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-sm">
+                      <AppIcon name="trash" className="text-[22px]" />
                     </span>
                     <div>
                       <p className="text-xs font-semibold uppercase text-amber-500">Protected delete</p>
@@ -3519,7 +3567,7 @@ export function DashboardPage() {
                       <label className="mt-2 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                         <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                           placeholder="------"
                           maxLength={6}
                           value={deleteStoreOtp}
@@ -3557,7 +3605,7 @@ export function DashboardPage() {
                       >
                         {isDeletingStore ? (
                           <>
-                            <AppIcon name="pending" className="text-[11px]" />
+                            <AppIcon name="pending" className="text-[16px] animate-spin" />
                             Verifying...
                           </>
                         ) : (
@@ -3568,11 +3616,11 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteStoreOtp}
                         disabled={isSendingDeleteStoreOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-teal-500 hover:to-sky-500 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:opacity-50"
                       >
                         {isSendingDeleteStoreOtp ? (
                           <>
-                            <AppIcon name="pending" className="text-[11px]" />
+                            <AppIcon name="pending" className="text-[16px] animate-spin" />
                             Sending...
                           </>
                         ) : (
@@ -3592,8 +3640,8 @@ export function DashboardPage() {
               <div className="relative w-full max-w-md rounded-[28px] border border-white/70 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <div className="p-6">
                   <div className="mb-4 flex items-center gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 text-white shadow-sm">
-                      <AppIcon name="trash" className="text-[14px]" />
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 text-white shadow-sm">
+                      <AppIcon name="trash" className="text-[22px]" />
                     </span>
                     <div>
                       <p className="text-xs font-semibold uppercase text-rose-500">Protected delete</p>
@@ -3634,7 +3682,7 @@ export function DashboardPage() {
                       <label className="mt-2 block space-y-2">
                         <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Enter the 6-digit OTP</span>
                         <input
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                           placeholder="------"
                           maxLength={6}
                           value={deleteProfileOtp}
@@ -3672,7 +3720,7 @@ export function DashboardPage() {
                       >
                         {isDeletingProfile ? (
                           <>
-                            <AppIcon name="pending" className="text-[11px]" />
+                            <AppIcon name="pending" className="text-[16px] animate-spin" />
                             Verifying...
                           </>
                         ) : (
@@ -3683,11 +3731,11 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteProfileOtp}
                         disabled={isSendingDeleteProfileOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-teal-600 to-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-teal-500 hover:to-sky-500 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:opacity-50"
                       >
                         {isSendingDeleteProfileOtp ? (
                           <>
-                            <AppIcon name="pending" className="text-[11px]" />
+                            <AppIcon name="pending" className="text-[16px] animate-spin" />
                             Sending...
                           </>
                         ) : (
@@ -3737,7 +3785,7 @@ export function DashboardPage() {
             <button
               type="submit"
               disabled={isSavingPolicies}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+              className="w-full rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
             >
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>

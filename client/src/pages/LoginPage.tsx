@@ -82,12 +82,12 @@ function ImageUploadField({
     <div className="space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
-          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-        <label className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 shadow-sm px-4 py-2.5 text-sm font-semibold transition hover:bg-emerald-100 sm:w-auto dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400 dark:hover:bg-teal-950/60 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
+        <label className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-orange-100 bg-orange-50/70 text-orange-700 shadow-sm px-4 py-2.5 text-sm font-semibold transition hover:bg-orange-100 sm:w-auto dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 dark:hover:bg-orange-950/60 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
           <AppIcon name={uploading ? "pending" : "upload"} className="text-[18px]" />
           {uploading ? "Uploading..." : "Upload"}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -481,7 +481,7 @@ const emailError =
 
       {/* ── Left: Hero ─────────────────────────────────────────────── */}
       <section className="order-2 space-y-6 text-center lg:order-1 lg:space-y-7 lg:text-left">
-        <div className="inline-flex items-center rounded-2xl border border-teal-100 bg-white/85 px-4 py-2 shadow-sm dark:border-teal-900/40 dark:bg-slate-950/80">
+        <div className="inline-flex items-center rounded-2xl border border-orange-100 bg-white/85 px-4 py-2 shadow-sm dark:border-orange-900/40 dark:bg-slate-950/80">
           <ZensosLogo size="md" alt="Zensos" />
         </div>
         <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl dark:text-slate-100">
@@ -519,9 +519,9 @@ const emailError =
                 <div
                   className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-bold transition-all duration-300 ${
                     i < currentStepIndex
-                      ? "border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      ? "border-orange-100 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
                       : i === currentStepIndex
-                      ? "border-teal-200 bg-teal-50 text-teal-600 ring-4 ring-teal-100/50 shadow-sm dark:border-teal-800/50 dark:bg-teal-950/50 dark:text-teal-300 dark:ring-teal-950/60"
+                      ? "border-orange-200 bg-orange-50 text-orange-600 ring-4 ring-orange-100/50 shadow-sm dark:border-orange-800/50 dark:bg-orange-950/50 dark:text-orange-300 dark:ring-orange-950/60"
                       : "border-slate-100 bg-slate-50 text-slate-400 shadow-sm dark:border-slate-800/50 dark:bg-slate-900/40"
                   }`}
                 >
@@ -529,7 +529,7 @@ const emailError =
                 </div>
                 <span
                   className={`text-[10px] font-semibold tracking-wide ${
-                    i === currentStepIndex ? "text-teal-700" : "text-slate-400"
+                    i === currentStepIndex ? "text-orange-700" : "text-slate-400"
                   }`}
                 >
                   {s.label}
@@ -538,7 +538,7 @@ const emailError =
               {i < activeSteps.length - 1 && (
                 <div
                   className={`mt-5 h-0.5 w-8 rounded transition-all duration-300 ${
-                    i < currentStepIndex ? "bg-teal-400" : "bg-slate-200 dark:bg-slate-850"
+                    i < currentStepIndex ? "bg-orange-400" : "bg-slate-200 dark:bg-slate-850"
                   }`}
                 />
               )}
@@ -584,7 +584,7 @@ const emailError =
             {mode === "register" && (
               <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/70">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase text-teal-700">
+                  <p className="text-xs font-semibold uppercase text-orange-700">
                     Step {registerSectionIndex + 1} of {registerSections.length}
                   </p>
                 </div>
@@ -598,9 +598,9 @@ const emailError =
                       }}
                       className={`min-h-10 rounded-xl border px-2 py-2 text-center text-[11px] font-semibold transition ${
                         index === registerSectionIndex
-                          ? "border-teal-500 bg-white text-teal-700 shadow-sm dark:bg-slate-950"
+                          ? "border-orange-500 bg-white text-orange-700 shadow-sm dark:bg-slate-950"
                           : index < registerSectionIndex
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            ? "border-orange-200 bg-orange-50 text-orange-700"
                             : "border-slate-200 bg-white/70 text-slate-400"
                       }`}
                     >
@@ -621,14 +621,14 @@ const emailError =
                 <span className="text-sm font-semibold text-slate-700">Phone number *</span>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
                   <input
-                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                     value={phone.countryCode}
                     readOnly
                     disabled
                     placeholder="+91"
                   />
                   <input
-                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50 sm:text-sm"
+                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
                     placeholder="9876543210"
                     value={phone.number}
                     onChange={(e) => setPhone((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
@@ -645,7 +645,7 @@ const emailError =
                 </span>
                 <input
                   type="email"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50 sm:text-sm"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -670,7 +670,7 @@ const emailError =
                   <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Business name *</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="Star Astro Academy"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
@@ -681,7 +681,7 @@ const emailError =
                   <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Business category *</span>
                     <select
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       value={businessCategory}
                       onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
                       required={registerSection === "business"}
@@ -695,7 +695,7 @@ const emailError =
                     <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
                       <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
                       <input
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                         value={businessCategoryOther}
                         onChange={(e) => setBusinessCategoryOther(e.target.value)}
                         placeholder="Type your business category"
@@ -713,7 +713,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">UPI ID</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="seller@okaxis"
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
@@ -722,7 +722,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Account holder name *</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="Name as per bank account"
                       value={bankAccountName}
                       required={registerSection === "bank"}
@@ -732,7 +732,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Bank name *</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="HDFC Bank"
                       value={bankName}
                       required={registerSection === "bank"}
@@ -742,7 +742,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Account number *</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="123456789012"
                       value={bankAccountNumber}
                       required={registerSection === "bank"}
@@ -752,7 +752,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">IFSC code *</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="HDFC0001234"
                       value={bankIfsc}
                       required={registerSection === "bank"}
@@ -770,7 +770,7 @@ const emailError =
                     <AddressFields
                       value={businessAddress}
                       onChange={setBusinessAddress}
-                      inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       required={registerSection === "address"}
                     />
                   </div>
@@ -779,15 +779,15 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
+                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                     </div>
                   </label>
                   <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Call number</span>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
+                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                     </div>
                   </label>
 
@@ -795,7 +795,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="22AAAAA0000A1Z5"
                       value={businessGST}
                       onChange={(e) => setBusinessGST(e.target.value)}
@@ -813,7 +813,7 @@ const emailError =
                       className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${
                         pan && panError
                           ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50"
-                          : "border-slate-200 focus:border-teal-400 focus:ring-teal-50"
+                          : "border-slate-200 focus:border-orange-500 focus:ring-orange-50"
                       }`}
                       placeholder="ABCDE1234F"
                       maxLength={10}
@@ -830,7 +830,7 @@ const emailError =
                   <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">PAN holder legal name <span className="text-rose-500">*</span></span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                       placeholder="Name exactly as on PAN"
                       value={panHolderName}
                       onChange={(e) => setPanHolderName(e.target.value)}
@@ -878,7 +878,7 @@ const emailError =
                         type="checkbox"
                         checked={Boolean(policyChecks[String(index)])}
                         onChange={(e) => setPolicyChecks((prev) => ({ ...prev, [String(index)]: e.target.checked }))}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                       />
                       <span>{item}</span>
                     </label>
@@ -886,7 +886,7 @@ const emailError =
                   <button
                     type="button"
                     onClick={() => setShowTermsModal(true)}
-                    className="text-left text-sm font-semibold text-teal-700 underline underline-offset-2"
+                    className="text-left text-sm font-semibold text-orange-700 underline underline-offset-2"
                   >
                     View full Terms & Conditions
                   </button>
@@ -909,6 +909,7 @@ const emailError =
                     disabled={submitting || (isLastRegisterSection && !canSendOtp)}
                     loading={submitting}
                     fullWidth
+                    className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
                   >
                     {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
                   </Button>
@@ -919,6 +920,7 @@ const emailError =
                   disabled={submitting || !canSendOtp}
                   loading={submitting}
                   fullWidth
+                  className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
                 >
                   Send OTP
                 </Button>
@@ -944,7 +946,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">6-digit OTP *</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="------"
                   maxLength={6}
                   value={otp}
@@ -959,8 +961,8 @@ const emailError =
                 type="submit"
                 disabled={submitting || !canVerifyOtp}
                 loading={submitting}
-                variant="success"
                 fullWidth
+                className="border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
               >
                 {mode === "register"
                   ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
@@ -1000,7 +1002,7 @@ const emailError =
               <label className="block space-y-1 sm:col-span-2">
                 <span className="text-sm font-semibold text-slate-700">Business name *</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="Star Astro Academy"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
@@ -1010,7 +1012,7 @@ const emailError =
               <label className="block space-y-1 sm:col-span-2">
                 <span className="text-sm font-semibold text-slate-700">Business category *</span>
                 <select
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   value={businessCategory}
                   onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
                   required
@@ -1024,7 +1026,7 @@ const emailError =
                 <label className="block space-y-1 sm:col-span-2">
                   <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
                   <input
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                     value={businessCategoryOther}
                     onChange={(e) => setBusinessCategoryOther(e.target.value)}
                     placeholder="Type your business category"
@@ -1046,7 +1048,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">UPI ID</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="seller@okaxis"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
@@ -1055,7 +1057,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Account holder name</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="Name as per bank account"
                   value={bankAccountName}
                   onChange={(e) => setBankAccountName(e.target.value)}
@@ -1064,7 +1066,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Bank name</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="HDFC Bank"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
@@ -1073,7 +1075,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Account number</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="123456789012"
                   value={bankAccountNumber}
                   onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
@@ -1082,7 +1084,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">IFSC code</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="HDFC0001234"
                   value={bankIfsc}
                   onChange={(e) => setBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))}
@@ -1091,14 +1093,14 @@ const emailError =
               <AddressFields
                 value={businessAddress}
                 onChange={setBusinessAddress}
-                inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                 required
               />
               {/* GST */}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="22AAAAA0000A1Z5"
                   value={businessGST}
                   onChange={(e) => setBusinessGST(e.target.value)}
@@ -1110,7 +1112,7 @@ const emailError =
                   className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${
                     pan && panError
                       ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50"
-                      : "border-slate-200 focus:border-teal-400 focus:ring-teal-50"
+                      : "border-slate-200 focus:border-orange-500 focus:ring-orange-50"
                   }`}
                   placeholder="ABCDE1234F"
                   maxLength={10}
@@ -1123,7 +1125,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">PAN holder legal name *</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="Name exactly as on PAN"
                   value={panHolderName}
                   onChange={(e) => setPanHolderName(e.target.value)}
@@ -1142,7 +1144,7 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Business logo URL</span>
                 <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                   placeholder="https://..."
                   value={businessLogo}
                   onChange={(e) => setBusinessLogo(e.target.value)}
@@ -1152,16 +1154,16 @@ const emailError =
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
+                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                 </div>
               </label>
               {/* Call number */}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Call number</span>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
+                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                 </div>
               </label>
               <div className="sm:col-span-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -1172,7 +1174,7 @@ const emailError =
                       type="checkbox"
                       checked={Boolean(policyChecks[String(index)])}
                       onChange={(e) => setPolicyChecks((prev) => ({ ...prev, [String(index)]: e.target.checked }))}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                     />
                     <span>{item}</span>
                   </label>
@@ -1180,7 +1182,7 @@ const emailError =
                 <button
                   type="button"
                   onClick={() => setShowTermsModal(true)}
-                  className="text-left text-sm font-semibold text-teal-700 underline underline-offset-2"
+                  className="text-left text-sm font-semibold text-orange-700 underline underline-offset-2"
                 >
                   View full Terms & Conditions
                 </button>
@@ -1191,9 +1193,8 @@ const emailError =
                 type="submit"
                 disabled={submitting || !canCompleteProfile}
                 loading={submitting}
-                variant="success"
                 fullWidth
-                className="sm:col-span-2"
+                className="sm:col-span-2 border-none bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white shadow-md hover:from-orange-400 hover:via-amber-400 hover:to-yellow-300 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
               >
                 <AppIcon name="register" className="text-[10px]" /> Complete Setup & Go to Dashboard
               </Button>
