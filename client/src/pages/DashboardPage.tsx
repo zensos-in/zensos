@@ -1262,7 +1262,7 @@ export function DashboardPage() {
               target="_blank"
               rel="noreferrer"
               aria-label="Open public store in new tab"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-orange-650 hover:to-amber-500 sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] sm:flex-none"
             >
               <AppIcon name="store" className="text-[18px]" /> Open Store
             </a>
@@ -1272,7 +1272,7 @@ export function DashboardPage() {
               onClick={() => void handlePublishStore()}
               disabled={isPublishingStore || isPublishPending}
               aria-label="Publish store for approval"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 transition sm:flex-none"
             >
               {isPublishingStore ? <><AppIcon name="pending" className="text-[18px]" /> Sending...</> : isPublishPending ? <><AppIcon name="pending" className="text-[18px]" /> Pending Approval</> : <><AppIcon name="share" className="text-[18px]" /> {isPublishRejected ? "Publish Store Again" : "Publish Store"}</>}
             </button>
@@ -1445,7 +1445,7 @@ export function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => void shareStoreLink()}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2 text-sm font-semibold text-white hover:from-orange-650 hover:to-amber-500 transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
                     ><AppIcon name="share" className="text-[14px]" /> Share Store</button>
                     <button
                       type="button"
@@ -1569,7 +1569,7 @@ export function DashboardPage() {
                         setNewBannerUrl(""); setNewBannerTitle("");
                       }
                     }}
-                    className="w-full rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-sm font-semibold text-white hover:from-orange-650 hover:to-amber-500 transition"
+                    className="w-full rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-3 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
                   >+ Add Banner</button>
                 </div>
               ) : (
@@ -1712,7 +1712,7 @@ export function DashboardPage() {
                   <input className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
                   <button
                     onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
-                    className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-sm font-semibold text-white hover:from-orange-650 hover:to-amber-500 transition"
+                    className="rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-3 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
                   >Add</button>
                 </div>
               </div>
@@ -1723,7 +1723,7 @@ export function DashboardPage() {
 
           <div className="lg:col-span-2">
             <button onClick={handleStoreSave} disabled={isSavingStore}
-              className="w-full rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 px-6 py-3 text-sm font-semibold text-white shadow-md hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 transition">
+              className="w-full rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-6 py-3 text-sm font-semibold text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 transition">
               {isSavingStore ? "Saving Store Options..." : "Save All Store Options"}
             </button>
           </div>
@@ -2200,7 +2200,7 @@ export function DashboardPage() {
                   </button>
                 )}
                 <button type="submit" disabled={isSubmittingProduct}
-                  className={`w-full inline-flex items-center justify-center gap-1.5 rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 ${editingProduct ? "bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 sm:flex-1" : "bg-gradient-to-r from-orange-500 to-amber-400 hover:from-orange-650 hover:to-amber-500 sm:flex-1"}`}>
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] hover:from-[#ff8c3a] hover:to-[#ffd5b3] px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:from-slate-300 disabled:to-slate-300 sm:flex-1">
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
                     : editingProduct ? <><AppIcon name="edit" className="text-[22px]" />Update Product</> : <><AppIcon name="products" className="text-[22px]" />Add Product</>}
@@ -2478,7 +2478,7 @@ export function DashboardPage() {
                   <button
                     onClick={requestDeleteProductOtp}
                     disabled={isSendingDeleteProductOtp}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-650 hover:to-amber-500 disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
                   >
                     {isSendingDeleteProductOtp ? (
                       <>
@@ -2821,7 +2821,7 @@ export function DashboardPage() {
 
           {loadingReport ? (
             <div className="rounded-[28px] border border-white/70 bg-white/90 p-10 text-center shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400 text-white shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] text-white shadow-sm">
                 <AppIcon name="pending" className="text-[24px]" />
               </div>
               <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Preparing your report...</p>
@@ -2915,7 +2915,7 @@ export function DashboardPage() {
                                   </div>
                                 </div>
                                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                  <div className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300" style={{ width: String(revenueWidth) + "%" }} />
+                                  <div className="h-full rounded-full bg-gradient-to-r from-[#ff751f] to-[#ffc8a5]" style={{ width: String(revenueWidth) + "%" }} />
                                 </div>
                               </div>
                               <div className="grid shrink-0 grid-cols-2 gap-3 lg:w-[230px]">
@@ -2950,7 +2950,7 @@ export function DashboardPage() {
                         <span className="self-start sm:self-auto rounded-full border border-orange-400/40 px-3 py-1 text-xs font-semibold" style={{ backgroundColor: "rgba(251,146,60,0.15)", color: "#fed7aa" }}>{"Last " + reportDays + " days"}</span>
                       </div>
                       <div className="mt-4 h-2 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
-                        <div className="h-full rounded-full bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#ff751f] to-[#ffc8a5]" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
                       </div>
                     </div>
                   </article>
@@ -3170,7 +3170,7 @@ export function DashboardPage() {
             if (rzpStatus === "active") {
               return (
                 <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 dark:border-orange-800/50 dark:bg-orange-950/40">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm">✓</span>
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] text-white text-sm">✓</span>
                   <div>
                     <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Payout Account Active</p>
                     <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-400">
@@ -3461,7 +3461,7 @@ export function DashboardPage() {
             </article>
 
             <button type="submit" disabled={isSavingProfile || !isProfileFormValid}
-              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-3 text-base font-semibold text-white transition hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 shadow-sm">
+              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-3 text-base font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 shadow-sm">
               {isSavingProfile ? (
                 <>
                   <AppIcon name="pending" className="text-[22px] animate-spin" />
@@ -3616,7 +3616,7 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteStoreOtp}
                         disabled={isSendingDeleteStoreOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-650 hover:to-amber-500 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
                       >
                         {isSendingDeleteStoreOtp ? (
                           <>
@@ -3731,7 +3731,7 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteProfileOtp}
                         disabled={isSendingDeleteProfileOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-650 hover:to-amber-500 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
                       >
                         {isSendingDeleteProfileOtp ? (
                           <>
@@ -3785,7 +3785,7 @@ export function DashboardPage() {
             <button
               type="submit"
               disabled={isSavingPolicies}
-              className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-orange-650 hover:to-amber-500 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300"
+              className="w-full rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
             >
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>
@@ -3795,7 +3795,5 @@ export function DashboardPage() {
     </main>
   );
 }
-
-
 
 

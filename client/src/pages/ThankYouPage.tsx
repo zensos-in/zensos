@@ -130,7 +130,7 @@ export function ThankYouPage() {
           </div>
 
           {/* Check circle */}
-          <div className="relative z-10 mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400 shadow-xl shadow-orange-500/30">
+          <div className="relative z-10 mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] shadow-xl shadow-orange-500/30">
             <AppIcon name="check" className="text-[32px] text-white" />
           </div>
 
@@ -237,7 +237,7 @@ export function ThankYouPage() {
                   <div key={index} className="relative flex items-start gap-3.5">
                     <span
                       className={`relative z-10 flex h-[2.125rem] w-[2.125rem] shrink-0 items-center justify-center rounded-xl border-2 ${step.done
-                          ? "border-orange-500 bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400 text-white"
+                          ? "border-[#ff751f] bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] text-white"
                           : "border-orange-200 bg-white text-orange-500 dark:border-orange-800/70 dark:bg-slate-900 dark:text-orange-400"
                         }`}
                     >
