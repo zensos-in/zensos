@@ -240,17 +240,6 @@ router.post("/", auth, async (req, res) => {
 
     const normalizedCategories = normalizeProductCategories({ category, categories });
 
-    // 🔍 DEBUG — remove after fixing
-    console.log("[POST /products] received body fields:", {
-      title,
-      price,
-      mrp,
-      variants: JSON.stringify(variants),
-      variantItemsCount: Array.isArray(variantItems) ? variantItems.length : "not array",
-      variantPrices: JSON.stringify(variantPrices),
-      variantMrps: JSON.stringify(variantMrps),
-    });
-
     const parsedVariants = Array.isArray(variants) ? variants : [];
     const normalizedVariantPrices = normalizeVariantPrices(variantPrices);
     const normalizedVariantMrps = normalizeVariantMrps(variantMrps);
@@ -259,10 +248,10 @@ router.post("/", auth, async (req, res) => {
       normalizedVariantItems.length > 0
         ? normalizedVariantItems
         : deriveVariantItemsFromLegacy(
-            parsedVariants,
-            normalizedVariantPrices,
-            normalizedVariantMrps
-          );
+          parsedVariants,
+          normalizedVariantPrices,
+          normalizedVariantMrps
+        );
     const hasVariantOptions = parsedVariants.some(
       (variant) => Array.isArray(variant?.options) && variant.options.length > 0
     );
@@ -515,10 +504,10 @@ router.put("/:productId", auth, async (req, res) => {
         nextVariantItems.length > 0
           ? nextVariantItems
           : deriveVariantItemsFromLegacy(
-              Array.isArray(variants) ? variants : product.variants,
-              nextVariantPrices,
-              nextVariantMrps
-            );
+            Array.isArray(variants) ? variants : product.variants,
+            nextVariantPrices,
+            nextVariantMrps
+          );
       product.markModified("variantItems");
     }
     if (variantPrices !== undefined) {
