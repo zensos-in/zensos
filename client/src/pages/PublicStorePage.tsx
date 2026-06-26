@@ -1559,11 +1559,11 @@ rzp.open(); } catch (err: any) {
         type="button"
         onClick={openCartAndScroll}
         aria-label="Open cart"
-        className="fixed bottom-4 right-4 z-30 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white sm:bottom-6 sm:right-6 sm:h-20 sm:w-20"
+        className="fixed bottom-4 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
       >
-        <AppIcon name="cart" className="text-4xl sm:text-[46px]" />
+        <AppIcon name="cart" className="text-[25px] sm:text-[32px]" />
         {cartCount > 0 && (
-          <span className="absolute right-0.5 top-0.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold leading-none text-white sm:right-1 sm:top-1 sm:h-7 sm:min-w-7 sm:text-[12px]">
+          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white sm:-right-1 sm:-top-1 sm:h-6 sm:min-w-6 sm:text-[11px]">
             {cartCount > 99 ? "99+" : cartCount}
           </span>
         )}
@@ -1764,7 +1764,7 @@ rzp.open(); } catch (err: any) {
             </label>
 
             <button type="submit" disabled={submitting || selectedItems.length === 0 || !billingContact.fullName.trim() || !String(billingContact.email || "").trim() || !billingContact.phone.number.trim()}
-              className="w-full rounded-xl bg-gradient-to-r from-[#ff8c3a] to-[#ffd5b3] px-4 py-3.5 text-sm font-semibold text-[#333632] shadow-md transition hover:from-[#ff751f] hover:to-[#ffc8a5] hover:text-white disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8c3a] dark:text-[#333632] dark:hover:from-[#ff751f] dark:hover:to-[#ffc8a5] dark:hover:text-white mt-2">
+              className="w-full rounded-xl bg-[#ff751f] px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#ff8c3a] disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff751f] mt-2">
               {submitting ? "Placing order..." : paymentMethod === "cod" ? `Place COD Order (₹${grandTotal})` : `Pay & Place Order (₹${grandTotal})`}
             </button>
           </form>
@@ -1905,7 +1905,7 @@ rzp.open(); } catch (err: any) {
                 <button
                   type="button"
                   onClick={handlePopupAddToCart}
-                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-[#ff8c3a] to-[#ffd5b3] px-4 py-3.5 text-sm font-semibold text-[#333632] shadow-md transition hover:from-[#ff751f] hover:to-[#ffc8a5] hover:text-white disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff8c3a] dark:text-[#333632] dark:hover:from-[#ff751f] dark:hover:to-[#ffc8a5] dark:hover:text-white"
+                  className="mt-3 flex items-center justify-center gap-2 w-full rounded-2xl bg-[#ff751f] px-4 py-3.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#ff8c3a] disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ff751f]"
                 >
                   <AppIcon name="cart" className="text-[18px]" />
                   <span>Add to Cart</span>
@@ -1930,7 +1930,7 @@ rzp.open(); } catch (err: any) {
                 rel="noreferrer"
                 title={s.platform}
                 aria-label={s.platform}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20"
+                className="inline-flex items-center justify-center transition hover:-translate-y-0.5 hover:opacity-90 active:scale-95 duration-200 focus:outline-none"
               >
                 {renderOriginalIcon(s.platform)}
               </a>
@@ -1938,13 +1938,13 @@ rzp.open(); } catch (err: any) {
             {seller.whatsappNumber && (
               <a href={`https://wa.me/${seller.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
                 title="Chat on WhatsApp" aria-label="Chat on WhatsApp"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20">
+                className="inline-flex items-center justify-center transition hover:-translate-y-0.5 hover:opacity-90 active:scale-95 duration-200 focus:outline-none">
                 {renderOriginalIcon("whatsapp")}
               </a>
             )}
             {seller.callNumber && (
               <a href={`tel:${seller.callNumber}`} title="Call Seller" aria-label="Call Seller"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-white via-[#ffeedd]/70 to-[#ffa366]/20 border border-[#ffa366]/35 shadow-md transition hover:-translate-y-0.5 hover:from-[#ffa366]/25 hover:to-[#ffeedd]/35 focus:outline-none dark:border-orange-950/30 dark:from-slate-950 dark:via-slate-900/60 dark:to-orange-950/20">
+                className="inline-flex items-center justify-center transition hover:-translate-y-0.5 hover:opacity-90 active:scale-95 duration-200 focus:outline-none">
                 {renderOriginalIcon("call")}
               </a>
             )}

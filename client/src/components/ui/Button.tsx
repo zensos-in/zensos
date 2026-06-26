@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { AppIcon } from "./AppIcon";
 
-type Variant = "primary" | "secondary" | "success" | "danger";
+type Variant = "primary" | "secondary" | "success" | "danger" | "brand";
 
 const variantClasses: Record<Variant, string> = {
   primary:
@@ -12,6 +12,8 @@ const variantClasses: Record<Variant, string> = {
     "border border-teal-600 bg-teal-600 text-white shadow-sm hover:-translate-y-0.5 hover:bg-teal-500 dark:border-teal-500 dark:bg-teal-500 dark:hover:bg-teal-400",
   danger:
     "border border-rose-600 bg-rose-600 text-white shadow-sm hover:-translate-y-0.5 hover:bg-rose-500 dark:border-rose-500 dark:bg-rose-500 dark:hover:bg-rose-400",
+  brand:
+    "border border-[#ff751f] bg-[#ff751f] text-white shadow-sm hover:-translate-y-0.5 hover:border-[#ff8c3a] hover:bg-[#ff8c3a] disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:border-[#ff751f] dark:bg-[#ff751f] dark:hover:border-[#ff8c3a] dark:hover:bg-[#ff8c3a] dark:disabled:border-slate-800 dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500",
 };
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
