@@ -21,6 +21,8 @@ type AppIconName =
   | "edit"
   | "trash"
   | "cart"
+  | "play"
+  | "pause"
   | "pending"
   | "check"
   | "active"
@@ -201,6 +203,17 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
       <path d="M5 7h14" />
       <path d="M9 7V5h6v2" />
       <path d="M7 7l1 12h8l1-12" />
+    </IconBase>
+  ),
+  play: ({ className }) => (
+    <IconBase className={className}>
+      <polygon points="6 3 20 12 6 21 6 3" />
+    </IconBase>
+  ),
+  pause: ({ className }) => (
+    <IconBase className={className}>
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+      <rect x="6" y="4" width="4" height="16" rx="1" />
     </IconBase>
   ),
   cart: ({ className }) => (

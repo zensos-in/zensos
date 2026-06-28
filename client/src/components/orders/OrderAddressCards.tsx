@@ -31,12 +31,12 @@ function AddressCard({
   return (
     <div className={`rounded-xl bg-slate-50 dark:bg-slate-900/80 ${compact ? "p-2.5" : "p-3"}`}>
       <p
-        className={`inline-flex items-center gap-2 font-bold uppercase tracking-wider text-slate-400 mb-1 ${
+        className={`inline-flex items-center gap-2 font-bold uppercase tracking-wider text-slate-400 mb-1.5 ${
           compact ? "text-[10px]" : "text-xs"
         }`}
       >
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-teal-500 dark:to-sky-500">
-          <AppIcon name="location" className="text-[8px]" />
+        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
+          <AppIcon name="location" className="text-[13px]" />
         </span>
         {title}
       </p>

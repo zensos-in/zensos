@@ -598,10 +598,10 @@ const emailError =
                       }}
                       className={`min-h-10 rounded-xl border px-2 py-2 text-center text-[11px] font-semibold transition ${
                         index === registerSectionIndex
-                          ? "border-orange-500 bg-white text-orange-700 shadow-sm dark:bg-slate-950"
+                          ? "border-orange-500 bg-white text-orange-700 shadow-sm dark:border-orange-500 dark:bg-slate-950 dark:text-orange-400"
                           : index < registerSectionIndex
-                            ? "border-orange-200 bg-orange-50 text-orange-700"
-                            : "border-slate-200 bg-white/70 text-slate-400"
+                            ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-400"
+                            : "border-slate-200 bg-white/70 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-500"
                       }`}
                     >
                       {item.label}
@@ -619,7 +619,7 @@ const emailError =
               {/* Phone */}
               <label className={`space-y-1 ${mode === "register" && registerSection !== "contact" ? "hidden" : "block"}`}>
                 <span className="text-sm font-semibold text-slate-700">Phone number *</span>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+                <div className="grid grid-cols-[80px_1fr] gap-2">
                   <input
                     className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
                     value={phone.countryCode}
@@ -778,14 +778,14 @@ const emailError =
                   {/* WhatsApp */}
                   <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+                    <div className="grid grid-cols-[80px_1fr] gap-2">
                       <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
                       <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                     </div>
                   </label>
                   <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
                     <span className="text-sm font-semibold text-slate-700">Call number</span>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+                    <div className="grid grid-cols-[80px_1fr] gap-2">
                       <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
                       <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
                     </div>
@@ -902,14 +902,14 @@ const emailError =
                     disabled={submitting || isFirstRegisterSection}
                     onClick={() => goToRegisterSection(registerSectionIndex - 1)}
                   >
-                    <AppIcon name="chevronLeft" className="text-[10px]" /> Back
+                    {"<- Back"}
                   </Button>
                   <Button
                     type="submit"
                     disabled={submitting || (isLastRegisterSection && !canSendOtp)}
                     loading={submitting}
                     fullWidth
-                    className="border-none bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
+                    variant="brand"
                   >
                     {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
                   </Button>
@@ -920,7 +920,7 @@ const emailError =
                   disabled={submitting || !canSendOtp}
                   loading={submitting}
                   fullWidth
-                  className="border-none bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
+                  variant="brand"
                 >
                   Send OTP
                 </Button>
@@ -962,7 +962,7 @@ const emailError =
                 disabled={submitting || !canVerifyOtp}
                 loading={submitting}
                 fullWidth
-                className="border-none bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
+                variant="brand"
               >
                 {mode === "register"
                   ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
@@ -980,7 +980,7 @@ const emailError =
                   setOtp("");
                 }}
               >
-                <AppIcon name="chevronLeft" className="text-[10px]" /> Back
+                {"<- Back"}
               </Button>
             </form>
           </>
@@ -1153,7 +1153,7 @@ const emailError =
               {/* WhatsApp */}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+                <div className="grid grid-cols-[80px_1fr] gap-2">
                   <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
                   <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                 </div>
@@ -1161,7 +1161,7 @@ const emailError =
               {/* Call number */}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700">Call number</span>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[96px_minmax(0,1fr)]">
+                <div className="grid grid-cols-[80px_1fr] gap-2">
                   <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
                   <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
                 </div>
@@ -1194,7 +1194,8 @@ const emailError =
                 disabled={submitting || !canCompleteProfile}
                 loading={submitting}
                 fullWidth
-                className="sm:col-span-2 border-none bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
+                variant="brand"
+                className="sm:col-span-2"
               >
                 <AppIcon name="register" className="text-[10px]" /> Complete Setup & Go to Dashboard
               </Button>

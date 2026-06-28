@@ -837,6 +837,14 @@ export function DashboardPage() {
   const [catalogCategory, setCatalogCategory] = useState("");
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
+  // ── Product catalog pagination state
+  const [catalogPage, setCatalogPage] = useState(1);
+  const [catalogLimit, setCatalogLimit] = useState(5);
+
+  useEffect(() => {
+    setCatalogPage(1);
+  }, [catalogSearch, catalogCategory]);
+
   // ── Category autocomplete state
   const [categorySuggestions, setCategorySuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1262,7 +1270,7 @@ export function DashboardPage() {
               target="_blank"
               rel="noreferrer"
               aria-label="Open public store in new tab"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-[#ff8c3a] sm:flex-none"
             >
               <AppIcon name="store" className="text-[18px]" /> Open Store
             </a>
@@ -1272,7 +1280,7 @@ export function DashboardPage() {
               onClick={() => void handlePublishStore()}
               disabled={isPublishingStore || isPublishPending}
               aria-label="Publish store for approval"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 transition sm:flex-none"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#ff8c3a] disabled:bg-slate-300 transition sm:flex-none"
             >
               {isPublishingStore ? <><AppIcon name="pending" className="text-[18px]" /> Sending...</> : isPublishPending ? <><AppIcon name="pending" className="text-[18px]" /> Pending Approval</> : <><AppIcon name="share" className="text-[18px]" /> {isPublishRejected ? "Publish Store Again" : "Publish Store"}</>}
             </button>
@@ -1288,7 +1296,7 @@ export function DashboardPage() {
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
-            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "bg-gradient-to-r from-[#ffa366] to-[#ffeedd] text-[#333632] shadow-md" : "border border-orange-100 bg-white/90 text-slate-600 hover:border-orange-300 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-orange-700"}`}>
+            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "border border-orange-200 bg-orange-50 text-orange-700 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400" : "border border-slate-200 bg-white/90 text-slate-600 hover:border-orange-200 hover:bg-orange-50/50 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:border-orange-900/30 dark:hover:bg-orange-950/20"}`}>
             <AppIcon name={t.icon} className="text-[20px]" />
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
@@ -1445,7 +1453,7 @@ export function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => void shareStoreLink()}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
                     ><AppIcon name="share" className="text-[14px]" /> Share Store</button>
                     <button
                       type="button"
@@ -1569,7 +1577,7 @@ export function DashboardPage() {
                         setNewBannerUrl(""); setNewBannerTitle("");
                       }
                     }}
-                    className="w-full rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-3 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
+                    className="w-full rounded-lg bg-[#ff751f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
                   >+ Add Banner</button>
                 </div>
               ) : (
@@ -1712,7 +1720,7 @@ export function DashboardPage() {
                   <input className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
                   <button
                     onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
-                    className="rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-3 py-2 text-sm font-semibold text-white hover:from-[#ff8c3a] hover:to-[#ffd5b3] transition"
+                    className="rounded-lg bg-[#ff751f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
                   >Add</button>
                 </div>
               </div>
@@ -1723,7 +1731,7 @@ export function DashboardPage() {
 
           <div className="lg:col-span-2">
             <button onClick={handleStoreSave} disabled={isSavingStore}
-              className="w-full rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-6 py-3 text-sm font-semibold text-white shadow-md hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 transition">
+              className="w-full rounded-2xl bg-[#ff751f] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#ff8c3a] disabled:bg-slate-300 transition">
               {isSavingStore ? "Saving Store Options..." : "Save All Store Options"}
             </button>
           </div>
@@ -2200,7 +2208,7 @@ export function DashboardPage() {
                   </button>
                 )}
                 <button type="submit" disabled={isSubmittingProduct}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] hover:from-[#ff8c3a] hover:to-[#ffd5b3] px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:from-slate-300 disabled:to-slate-300 sm:flex-1">
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-[#ff751f] hover:bg-[#ff8c3a] px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:bg-slate-300 sm:flex-1">
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
                     : editingProduct ? <><AppIcon name="edit" className="text-[22px]" />Update Product</> : <><AppIcon name="products" className="text-[22px]" />Add Product</>}
@@ -2210,8 +2218,8 @@ export function DashboardPage() {
           </article>
 
           {/* Product catalog */}
-          <div className="h-full min-w-0">
-            <article className="min-w-0 h-full flex flex-col rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+          <div className="xl:self-start min-w-0">
+            <article className="min-w-0 flex flex-col rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               {/* Catalog header + search */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h2 className="font-heading text-xl font-bold text-slate-900">Product Catalog</h2>
@@ -2287,107 +2295,243 @@ export function DashboardPage() {
               </div>
               {loading && <p className="mt-4 text-sm text-slate-500">Loading...</p>}
               {!loading && products.length === 0 && <p className="mt-4 text-sm text-slate-500">No products yet.</p>}
-              <div className="mt-3 flex-1 overflow-y-auto space-y-3 pr-1">
-                {products
-                  .filter(prod => {
-                    const q = catalogSearch.trim().toLowerCase();
-                    const categoryText = getProductCategories(prod).join(" ").toLowerCase();
-                    const matchSearch = !q || prod.title.toLowerCase().includes(q) || categoryText.includes(q) || (prod.category || "").toLowerCase().includes(q);
-                    const matchCat = productMatchesCategory(prod, catalogCategory);
-                    return matchSearch && matchCat;
-                  })
-                  .map(prod => (
-                    <div key={prod._id} className={`rounded-2xl border p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
-                      {/* Image + Info row */}
-                      <div className="flex items-start gap-2 flex-1 min-w-0">
-                        {getProductImages(prod)[0] && <img src={getProductImages(prod)[0]} alt="" className="h-12 w-12 lg:h-16 lg:w-16 rounded-lg object-cover shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-800 truncate break-words dark:text-slate-100">{prod.title}</p>
-                          {getProductCategories(prod).length > 0 ? (
-                            <div className="mt-0.5 flex flex-wrap gap-1">
-                              {prod.isRecommended && (
-                                <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                                  Recommended
-                                </span>
-                              )}
-                              {getProductCategories(prod).map((tag) => (
-                                <span
-                                  key={`${prod._id}-${tag}`}
-                                  className="inline-block rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
-                          <div className="flex gap-2 mt-1">
-                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{prod.price}</span>
-                            {prod.mrp > 0 && prod.mrp > prod.price && (
-                              <span className="text-xs text-slate-400 line-through self-center">₹{prod.mrp}</span>
+              
+              {!loading && products.length > 0 && (() => {
+                const filtered = products.filter(prod => {
+                  const q = catalogSearch.trim().toLowerCase();
+                  const categoryText = getProductCategories(prod).join(" ").toLowerCase();
+                  const matchSearch = !q || prod.title.toLowerCase().includes(q) || categoryText.includes(q) || (prod.category || "").toLowerCase().includes(q);
+                  const matchCat = productMatchesCategory(prod, catalogCategory);
+                  return matchSearch && matchCat;
+                });
+                
+                const total = filtered.length;
+                const totalPages = Math.ceil(total / catalogLimit) || 1;
+                
+                // Ensure page is within range if list gets filtered down
+                const currentPage = Math.max(1, Math.min(catalogPage, totalPages));
+                if (currentPage !== catalogPage && totalPages > 0) {
+                  setTimeout(() => setCatalogPage(currentPage), 0);
+                }
+                
+                const startIdx = total === 0 ? 0 : (currentPage - 1) * catalogLimit + 1;
+                const endIdx = Math.min(currentPage * catalogLimit, total);
+                const paginated = filtered.slice((currentPage - 1) * catalogLimit, currentPage * catalogLimit);
+
+                return (
+                  <>
+                    <div className="mt-3 max-h-[460px] overflow-y-auto space-y-3 pr-1">
+                      {paginated.map(prod => (
+                        <div key={prod._id} className={`rounded-2xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
+                          {/* Left Side: Image + Name/Category stacked */}
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {getProductImages(prod)[0] ? (
+                              <img 
+                                src={getProductImages(prod)[0]} 
+                                alt="" 
+                                className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl object-cover shrink-0" 
+                              />
+                            ) : (
+                              <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl bg-slate-100 dark:bg-slate-850 flex items-center justify-center shrink-0">
+                                <AppIcon name="products" className="text-slate-400 text-2xl" />
+                              </div>
                             )}
-                          </div>
-                          {prod.variants.some(v => v.options.length > 0) && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {prod.variants.flatMap(variant =>
-                                variant.options.map(option => {
-                                  const priceKey = getVariantPriceKey(variant.label, option);
-                                  const fallbackItem = prod.variantItems?.find(
-                                    (item) => item.variantId === `legacy:${priceKey}`,
-                                  );
-                                  const variantPrice =
-                                    prod.variantPrices?.[priceKey]
-                                    ?? fallbackItem?.price;
-                                  const variantMrp =
-                                    prod.variantMrps?.[priceKey]
-                                    ?? fallbackItem?.mrp;
-                                  return (
-                                    <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                      {option}
-                                      {variantPrice ? (
-                                        <>
-                                          {" · ₹"}
-                                          {variantPrice}
-                                          {variantMrp && variantMrp > variantPrice ? (
-                                            <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
-                                          ) : null}
-                                        </>
-                                      ) : null}
+                            
+                            <div className="flex-1 min-w-0">
+                              {/* Name (Up) */}
+                              <p className="font-semibold text-slate-800 truncate break-words dark:text-slate-100">
+                                {prod.title}
+                              </p>
+                              
+                              {/* Category (Down) */}
+                              {getProductCategories(prod).length > 0 ? (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {prod.isRecommended && (
+                                    <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
+                                      Recommended
                                     </span>
-                                  );
-                                })
+                                  )}
+                                  {getProductCategories(prod).map((tag) => (
+                                    <span
+                                      key={`${prod._id}-${tag}`}
+                                      className="inline-block rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : null}
+                              
+                              {/* Variant selection prices */}
+                              {prod.variants.some(v => v.options.length > 0) && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {prod.variants.flatMap(variant =>
+                                    variant.options.map(option => {
+                                      const priceKey = getVariantPriceKey(variant.label, option);
+                                      const fallbackItem = prod.variantItems?.find(
+                                        (item) => item.variantId === `legacy:${priceKey}`,
+                                      );
+                                      const variantPrice =
+                                        prod.variantPrices?.[priceKey]
+                                        ?? fallbackItem?.price;
+                                      const variantMrp =
+                                        prod.variantMrps?.[priceKey]
+                                        ?? fallbackItem?.mrp;
+                                      return (
+                                        <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                          {option}
+                                          {variantPrice ? (
+                                            <>
+                                              {" · ₹"}
+                                              {variantPrice}
+                                              {variantMrp && variantMrp > variantPrice ? (
+                                                <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
+                                              ) : null}
+                                            </>
+                                          ) : null}
+                                        </span>
+                                      );
+                                    })
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
+                          </div>
+
+                          {/* Right Side: Price + Actions */}
+                          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 shrink-0">
+                            {/* Price (Next) */}
+                            <div className="flex flex-col items-start sm:items-end text-left sm:text-right shrink-0 min-w-[60px]">
+                              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">₹{prod.price}</span>
+                              {prod.mrp > 0 && prod.mrp > prod.price && (
+                                <span className="text-xs text-slate-400 line-through">₹{prod.mrp}</span>
+                              )}
+                            </div>
+
+                            {/* Action buttons (Edit, Active/Deactive, Delete) */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* Edit button */}
+                              <button
+                                onClick={() => handleStartEdit(prod)}
+                                className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 transition dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400"
+                                title="Edit Product"
+                              >
+                                <AppIcon name="edit" className="text-[18px]" />
+                              </button>
+                              
+                              {/* Active / Deactivate Toggle */}
+                              <button 
+                                onClick={() => handleToggleProduct(prod._id)}
+                                className={`h-9 w-9 inline-flex items-center justify-center rounded-xl border transition ${
+                                  prod.isActive 
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50" 
+                                    : "bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                }`}
+                                title={prod.isActive ? "Deactivate Product" : "Activate Product"}
+                              >
+                                <AppIcon name={prod.isActive ? "pause" : "play"} className="text-[18px]" />
+                              </button>
+                              
+                              {/* Delete button */}
+                              <button 
+                                onClick={() => handleDeleteProduct(prod)}
+                                className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
+                                title="Delete Product"
+                              >
+                                <AppIcon name="trash" className="text-[18px]" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {total === 0 && (
+                        <p className="py-4 text-center text-sm text-slate-400">No products match your search / filter.</p>
+                      )}
+                    </div>
+
+                    {/* Pagination Footer */}
+                    {total > 0 && (
+                      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-slate-500">
+                        {/* Left: Range Info */}
+                        <div>
+                          Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{startIdx}</span> to{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{endIdx}</span> of{" "}
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{total}</span> products
+                        </div>
+
+                        {/* Middle: Items per page select dropdown */}
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={catalogLimit}
+                            onChange={(e) => {
+                              setCatalogLimit(Number(e.target.value));
+                              setCatalogPage(1);
+                            }}
+                            className="min-w-[125px] rounded-xl border border-orange-100 bg-orange-50/50 pl-3 pr-9 py-1.5 text-xs font-semibold text-slate-700 outline-none hover:bg-orange-50 hover:border-orange-200 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-350"
+                          >
+                            <option value={5}>5 per page</option>
+                            <option value={10}>10 per page</option>
+                            <option value={20}>20 per page</option>
+                            <option value={50}>50 per page</option>
+                          </select>
+                        </div>
+
+                        {/* Right: Page controls */}
+                        <div className="flex items-center gap-1.5">
+                          {/* Previous Button */}
+                          <button
+                            type="button"
+                            disabled={currentPage === 1}
+                            onClick={() => setCatalogPage((p) => Math.max(1, p - 1))}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                          >
+                            <AppIcon name="chevronLeft" className="text-[14px]" />
+                          </button>
+
+                          {/* Page buttons */}
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                            if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) {
+                              return (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  onClick={() => setCatalogPage(p)}
+                                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition ${
+                                    p === currentPage
+                                      ? "border-[#ff751f] bg-[#ff751f] text-white"
+                                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              );
+                            }
+                            if (p === 2 || p === totalPages - 1) {
+                              return (
+                                <span key={p} className="px-1 text-slate-400">
+                                  ...
+                                </span>
+                              );
+                            }
+                            return null;
+                          })}
+
+                          {/* Next Button */}
+                          <button
+                            type="button"
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCatalogPage((p) => Math.min(totalPages, p + 1))}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                          >
+                            <AppIcon name="chevronRight" className="text-[14px]" />
+                          </button>
                         </div>
                       </div>
-                      {/* Action buttons — bottom on mobile, right column on desktop */}
-                      <div className="flex flex-row flex-wrap gap-2 sm:flex-col sm:gap-1.5 sm:shrink-0 sm:self-center">
-                        <button
-                          onClick={() => handleStartEdit(prod)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100 transition dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400"
-                        ><AppIcon name="edit" className="text-[16px]" /> Edit</button>
-                        <button onClick={() => handleToggleProduct(prod._id)}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${prod.isActive ? "bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50" : "bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200/70 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50"}`}>
-                          <AppIcon name={prod.isActive ? "pending" : "check"} className="text-[16px]" />
-                          {prod.isActive ? "Deactivate" : "Activate"}
-                        </button>
-                        <button onClick={() => handleDeleteProduct(prod)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
-                        ><AppIcon name="close" className="text-[16px]" /> Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                {!loading && products.filter(p => {
-                  const q = catalogSearch.trim().toLowerCase();
-                  const categoryText = getProductCategories(p).join(" ").toLowerCase();
-                  return (
-                    (!q || p.title.toLowerCase().includes(q) || categoryText.includes(q) || (p.category || "").toLowerCase().includes(q))
-                    && productMatchesCategory(p, catalogCategory)
-                  );
-                }).length === 0 && products.length > 0 && (
-                    <p className="py-4 text-center text-sm text-slate-400">No products match your search / filter.</p>
-                  )}
-              </div>
+                    )}
+                  </>
+                );
+              })()}
             </article>
 
           </div>
@@ -2478,7 +2622,7 @@ export function DashboardPage() {
                   <button
                     onClick={requestDeleteProductOtp}
                     disabled={isSendingDeleteProductOtp}
-                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff751f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff8c3a] disabled:opacity-50"
                   >
                     {isSendingDeleteProductOtp ? (
                       <>
@@ -2710,7 +2854,9 @@ export function DashboardPage() {
                 <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses[viewingOrder.paymentStatus]}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[viewingOrder.paymentStatus]}`} />{STATUS_LABEL[viewingOrder.paymentStatus]}
                 </span>
-                <button onClick={() => setViewingOrder(null)} className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white transition hover:from-rose-400 hover:to-red-500 shadow-sm"><AppIcon name="close" className="text-[14px]" /></button>
+                <button onClick={() => setViewingOrder(null)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white transition hover:from-rose-400 hover:to-red-500 shadow-sm">
+                  <AppIcon name="close" className="text-[18px]" />
+                </button>
               </div>
             </div>
             <div className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-4 sm:px-6">
@@ -2821,7 +2967,7 @@ export function DashboardPage() {
 
           {loadingReport ? (
             <div className="rounded-[28px] border border-white/70 bg-white/90 p-10 text-center shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] text-white shadow-sm">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ff751f] text-white shadow-sm">
                 <AppIcon name="pending" className="text-[24px]" />
               </div>
               <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">Preparing your report...</p>
@@ -2915,7 +3061,7 @@ export function DashboardPage() {
                                   </div>
                                 </div>
                                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                                  <div className="h-full rounded-full bg-gradient-to-r from-[#ff751f] to-[#ffc8a5]" style={{ width: String(revenueWidth) + "%" }} />
+                                  <div className="h-full rounded-full bg-[#ff751f]" style={{ width: String(revenueWidth) + "%" }} />
                                 </div>
                               </div>
                               <div className="grid shrink-0 grid-cols-2 gap-3 lg:w-[230px]">
@@ -2950,7 +3096,7 @@ export function DashboardPage() {
                         <span className="self-start sm:self-auto rounded-full border border-orange-400/40 px-3 py-1 text-xs font-semibold" style={{ backgroundColor: "rgba(251,146,60,0.15)", color: "#fed7aa" }}>{"Last " + reportDays + " days"}</span>
                       </div>
                       <div className="mt-4 h-2 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
-                        <div className="h-full rounded-full bg-gradient-to-r from-[#ff751f] to-[#ffc8a5]" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
+                        <div className="h-full rounded-full bg-[#ff751f]" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
                       </div>
                     </div>
                   </article>
@@ -3170,7 +3316,7 @@ export function DashboardPage() {
             if (rzpStatus === "active") {
               return (
                 <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4 dark:border-orange-800/50 dark:bg-orange-950/40">
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff751f] to-[#ffc8a5] text-white text-sm">✓</span>
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#ff751f] text-white text-sm">✓</span>
                   <div>
                     <p className="text-sm font-bold text-orange-800 dark:text-orange-300">Payout Account Active</p>
                     <p className="mt-0.5 text-xs text-orange-700 dark:text-orange-400">
@@ -3373,7 +3519,7 @@ export function DashboardPage() {
             {/* Contact Details */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-sky-600 shadow-sm dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
                   <AppIcon name="phone" className="text-[26px]" />
                 </span>
                 Contact Details
@@ -3404,7 +3550,7 @@ export function DashboardPage() {
             {/* Business Address */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
               <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-100 bg-violet-50 text-violet-600 shadow-sm dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
                   <AppIcon name="location" className="text-[26px]" />
                 </span>
                 Business Address
@@ -3419,8 +3565,8 @@ export function DashboardPage() {
 
             {/* KYC Documents */}
             <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
-              <h3 className="font-heading text-lg font-bold text-slate-900 mb-1 flex items-center gap-2.5 dark:text-white">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 text-amber-600 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
+              <h3 className="font-heading text-lg font-bold text-slate-900 mb-4 flex items-center gap-2.5 dark:text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-orange-200 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400">
                   <AppIcon name="kyc" className="text-[26px]" />
                 </span>
                 KYC Documents
@@ -3461,7 +3607,7 @@ export function DashboardPage() {
             </article>
 
             <button type="submit" disabled={isSavingProfile || !isProfileFormValid}
-              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-3 text-base font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300 shadow-sm">
+              className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-[#ff751f] px-4 py-3 text-base font-semibold text-white transition hover:bg-[#ff8c3a] disabled:bg-slate-300 shadow-sm">
               {isSavingProfile ? (
                 <>
                   <AppIcon name="pending" className="text-[22px] animate-spin" />
@@ -3601,7 +3747,7 @@ export function DashboardPage() {
                       <button
                         onClick={confirmDeleteStore}
                         disabled={isDeletingStore || deleteStoreOtp.trim().length !== 6}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:from-amber-500 hover:to-orange-500 disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff751f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff8c3a] disabled:opacity-50"
                       >
                         {isDeletingStore ? (
                           <>
@@ -3616,7 +3762,7 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteStoreOtp}
                         disabled={isSendingDeleteStoreOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff751f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff8c3a] disabled:opacity-50"
                       >
                         {isSendingDeleteStoreOtp ? (
                           <>
@@ -3731,7 +3877,7 @@ export function DashboardPage() {
                       <button
                         onClick={requestDeleteProfileOtp}
                         disabled={isSendingDeleteProfileOtp}
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-[#ff751f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff8c3a] disabled:opacity-50"
                       >
                         {isSendingDeleteProfileOtp ? (
                           <>
@@ -3785,7 +3931,7 @@ export function DashboardPage() {
             <button
               type="submit"
               disabled={isSavingPolicies}
-              className="w-full rounded-xl bg-gradient-to-r from-[#ff751f] to-[#ffc8a5] px-4 py-2.5 text-sm font-semibold text-white transition hover:from-[#ff8c3a] hover:to-[#ffd5b3] disabled:from-slate-300 disabled:to-slate-300"
+              className="w-full rounded-xl bg-[#ff751f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff8c3a] disabled:bg-slate-300"
             >
               {isSavingPolicies ? "Saving..." : "Save Policies"}
             </button>
