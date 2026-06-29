@@ -22,6 +22,19 @@ const mockRazorpay = {
   orders: {
     create: async (options) => {
       const orderId = `order_${Math.random().toString(36).substring(2, 12)}`;
+      // Reflect any embedded Route transfers back in the response, mirroring Razorpay's shape
+      const mockTransfers = (options.transfers || []).map((t) => ({
+        id: `trf_${Math.random().toString(36).substring(2, 12)}`,
+        entity: "transfer",
+        source: orderId,
+        recipient: t.account,
+        amount: t.amount,
+        currency: t.currency || "INR",
+        on_hold: t.on_hold ? 1 : 0,
+        notes: t.notes || {},
+        status: "pending",
+        created_at: Math.floor(Date.now() / 1000),
+      }));
       return {
         id: orderId,
         entity: "order",
@@ -33,6 +46,7 @@ const mockRazorpay = {
         status: "created",
         attempts: 0,
         notes: options.notes || {},
+        ...(mockTransfers.length > 0 ? { transfers: { items: mockTransfers } } : {}),
         created_at: Math.floor(Date.now() / 1000),
       };
     }

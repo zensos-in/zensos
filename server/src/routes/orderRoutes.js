@@ -371,6 +371,7 @@ router.post("/", async (req, res) => {
 
     let grandTotalPaise = 0;
     const createdSubOrders = [];
+    const transfersForOrder = []; // Route transfers to be embedded in the Razorpay order
     const platformFeePercentage = await getPlatformCommissionPercentage();
 
     // 3. Group by Seller & calculate server-side splits in integer paise
@@ -451,6 +452,21 @@ router.post("/", async (req, res) => {
       });
 
       createdSubOrders.push(subOrder);
+
+      // Embed a Route transfer for sellers with an active Razorpay linked account.
+      // Notes carry the sub_order_id so the transfer.processed webhook can reconcile.
+      if (seller.razorpayAccountId && seller.razorpayAccountStatus === "active" && vendorAmountPaise > 0) {
+        transfersForOrder.push({
+          account: seller.razorpayAccountId,
+          amount: vendorAmountPaise,
+          currency: "INR",
+          on_hold: 0,
+          notes: {
+            sub_order_id: subOrder._id.toString(),
+            seller_id: sellerIdStr,
+          },
+        });
+      }
     }
 
     if (normalizedPaymentMethod === "cod") {
@@ -471,11 +487,16 @@ router.post("/", async (req, res) => {
     }
 
     // 4. Create Razorpay unified Order
-    const rpOrder = await razorpay.orders.create({
+    // Embed per-seller Route transfers so Razorpay auto-splits to linked accounts on capture.
+    const rpOrderPayload = {
       amount: grandTotalPaise,
       currency: "INR",
       receipt: parentOrder._id.toString(),
-    });
+    };
+    if (transfersForOrder.length > 0) {
+      rpOrderPayload.transfers = transfersForOrder;
+    }
+    const rpOrder = await razorpay.orders.create(rpOrderPayload);
 
     // 5. Update ParentOrder and Sub-Orders with Razorpay reference IDs
     parentOrder.razorpayOrderId = rpOrder.id;
@@ -483,8 +504,16 @@ router.post("/", async (req, res) => {
     parentOrder.subOrders = createdSubOrders.map((o) => o._id);
     await parentOrder.save();
 
+    // Sellers whose transfer was embedded in the order — Razorpay handles the split on capture.
+    const embeddedSellerIds = new Set(transfersForOrder.map((t) => t.notes.seller_id));
+
     for (const subOrder of createdSubOrders) {
       subOrder.razorpayOrderId = rpOrder.id;
+      // "pending" signals the transfer is in-flight via Razorpay Route;
+      // the transfer.processed webhook will flip it to "processed" with the real transferId.
+      if (embeddedSellerIds.has(subOrder.seller.toString())) {
+        subOrder.transferStatus = "pending";
+      }
       await subOrder.save();
     }
 
