@@ -210,7 +210,10 @@ async function handlePaymentCaptured(payment) {
         subOrder.paymentStatus = "paid";
         await subOrder.save();
       }
-      await processSubOrderTransfer(subOrder, parentOrder.razorpayPaymentId || razorpayPaymentId);
+      // Skip sub-orders whose transfer is already handled by order-level Route embed
+      if (subOrder.transferStatus !== "pending" && subOrder.transferStatus !== "processed") {
+        await processSubOrderTransfer(subOrder, parentOrder.razorpayPaymentId || razorpayPaymentId);
+      }
     }
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
     return;
@@ -223,7 +226,12 @@ async function handlePaymentCaptured(payment) {
   for (const subOrder of parentOrder.subOrders) {
     subOrder.paymentStatus = "paid";
     await subOrder.save();
-    await processSubOrderTransfer(subOrder, razorpayPaymentId);
+    // Sub-orders with transferStatus "pending" have their Route transfer embedded in the
+    // Razorpay order — Razorpay auto-fires the split on capture and the transfer.processed
+    // webhook reconciles it. Only trigger a manual Route transfer for the rest.
+    if (subOrder.transferStatus !== "pending") {
+      await processSubOrderTransfer(subOrder, razorpayPaymentId);
+    }
   }
 
   await trySendOrderConfirmationForParentOrder(parentOrder._id);
@@ -248,16 +256,39 @@ async function handlePaymentFailed(payment) {
 
 async function handleTransferProcessed(transfer) {
   const transferId = transfer.id;
-  console.log(`[transfer.processed] Transfer ID: ${transferId}`);
+  const subOrderId = transfer.notes?.sub_order_id;
+  console.log(`[transfer.processed] Transfer ID: ${transferId}, sub-order hint: ${subOrderId || "none"}`);
 
-  const subOrder = await Order.findOne({ transferId });
-  if (subOrder) {
-    subOrder.transferStatus = "processed";
-    subOrder.settlementStatus = "processed";
-    subOrder.settlementReferenceIds = Array.from(
-      new Set([...(subOrder.settlementReferenceIds || []), transferId].filter(Boolean))
-    );
-    await subOrder.save();
+  // Primary path: order-level transfers embed sub_order_id in notes for direct lookup
+  let subOrder = null;
+  if (subOrderId) {
+    subOrder = await Order.findById(subOrderId);
+  }
+
+  // Fallback: post-payment Route transfers are matched by the stored transferId field
+  if (!subOrder) {
+    subOrder = await Order.findOne({ transferId });
+  }
+
+  if (!subOrder) {
+    console.warn(`[transfer.processed] No sub-order found for transfer ${transferId}`);
+    return;
+  }
+
+  subOrder.transferId = transferId;
+  subOrder.transferStatus = "processed";
+  subOrder.settlementStatus = "processed";
+  subOrder.settlementReferenceIds = Array.from(
+    new Set([...(subOrder.settlementReferenceIds || []), transferId].filter(Boolean))
+  );
+  await subOrder.save();
+
+  // Record ledger entries (both helpers are idempotent — safe to call on webhook retries)
+  const seller = await Seller.findById(subOrder.seller);
+  if (seller) {
+    const transferAmountPaise = transfer.amount || getVendorTransferAmountPaise(subOrder);
+    await recordVendorTransferLedger({ subOrder, seller, transferId, transferAmountPaise });
+    await recordPlatformCommissionLedger({ subOrder, status: "settled" });
   }
 }
 
