@@ -19,6 +19,7 @@ app.use(helmet());
 // CORS configuration to allow specific origins
 const allowedOrigins = [
   "https://zensos.vercel.app",
+  "https://www.zensos.in",
   "http://localhost:5173",
 ];
 
@@ -28,7 +29,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     const isAllowed = allowedOrigins.includes(origin) ||
-                      origin.startsWith("https://zensos.vercel.app") ||
+                      origin.startsWith("https://zensos.vercel.app") || origin.startsWith("https://www.zensos.in") ||
                       origin.startsWith("http://localhost:");
 
     if (isAllowed) {
