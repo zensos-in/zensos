@@ -10,6 +10,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PublicStorePage } from "./pages/PublicStorePage";
 import { ThankYouPage } from "./pages/ThankYouPage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
+import { TermsOfUsePage } from "./pages/TermsOfUsePage";
+import { RefundPolicyPage } from "./pages/RefundPolicyPage";
 
 function AppShell() {
   const location = useLocation();
@@ -52,6 +55,9 @@ function AppShell() {
           <Route path="/thank-you" element={<ThankYouPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsOfUsePage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route
             path="/dashboard"
             element={
