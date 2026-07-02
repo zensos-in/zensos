@@ -939,7 +939,7 @@ export function AdminPage() {
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
               </div>
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[22px]" />
+                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[28px]" />
               </span>
             </div>
             <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{item.value}</p>
@@ -1123,7 +1123,7 @@ export function AdminPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/80">
-              <tr className="text-xs uppercase tracking-[0.12em] text-slate-500">
+              <tr className="text-xs uppercase text-slate-500">
                 <th className="px-4 py-3">Business</th>
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Registered</th>

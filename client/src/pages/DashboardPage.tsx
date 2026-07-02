@@ -1518,10 +1518,10 @@ export function DashboardPage() {
               <div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-800/60">
                 <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 w-full">📐 Recommended Banner Size</p>
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
-                  🖥️ Desktop — <span className="font-bold">1200 × 400 px</span>
+                  🖥️ Desktop — <span className="font-bold">1200 × 260 px</span>
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
-                  📱 Mobile — <span className="font-bold">600 × 300 px</span>
+                  📱 Mobile — <span className="font-bold">400 × 200 px</span>
                 </span>
               </div>
               <div className="space-y-2">
