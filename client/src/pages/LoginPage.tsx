@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { ZensosLogo } from "../components/ZensosLogo";
@@ -105,11 +105,14 @@ function ImageUploadField({
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { sendOtp, verifyOtp, register } = useAuth();
   const { t } = useI18n();
   const { showError } = useToast();
 
-  const [mode, setMode] = useState<Mode>("login");
+  // Auto-select tab from ?tab=register URL param
+  const initialMode = searchParams.get("tab") === "register" ? "register" : "login";
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [step, setStep] = useState<Step>("contact");
   const [registerSection, setRegisterSection] = useState<RegisterSection>("contact");
 
