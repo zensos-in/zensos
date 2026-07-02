@@ -9,6 +9,7 @@ const {
   calculatePlatformFeePaise,
   getPlatformCommissionPercentage,
 } = require("../utils/platformSettings");
+const { processSubOrderTransfer } = require("../utils/settlement");
 
 const router = express.Router();
 const validStatuses = ["pending", "paid", "delivered", "cancelled"];
@@ -582,15 +583,33 @@ router.post("/verify-payment", async (req, res) => {
       await parentOrder.save();
     }
 
-    // Update all sub-orders
+    // Mark all sub-orders paid, then immediately trigger Route transfers.
+    // Sub-orders with transferStatus "pending" have their transfer already embedded
+    // in the Razorpay order (auto-processed on capture via order-level Route embed).
+    // Sub-orders with "untransferred" or "failed" need a post-payment transfer call.
+    // "processed" sub-orders are skipped by hasProcessedTransfer() inside the function.
     const updatedOrders = [];
+    const transferPromises = [];
     for (const subOrder of parentOrder.subOrders) {
       if (subOrder.paymentStatus !== "paid" && subOrder.paymentStatus !== "delivered") {
         subOrder.paymentStatus = "paid";
         await subOrder.save();
       }
       updatedOrders.push({ _id: subOrder._id, paymentStatus: subOrder.paymentStatus });
+
+      // Only trigger a manual transfer when the order-level embed didn't cover this seller
+      if (subOrder.transferStatus !== "pending" && subOrder.transferStatus !== "processed") {
+        transferPromises.push(
+          processSubOrderTransfer(subOrder, razorpay_payment_id).catch((err) =>
+            console.error(`[verify-payment] Transfer error for sub-order ${subOrder._id}:`, err.message)
+          )
+        );
+      }
     }
+
+    // Run transfers concurrently; errors are caught per-transfer so one failure
+    // does not block the others or the payment-verified response to the client.
+    await Promise.all(transferPromises);
 
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
