@@ -98,17 +98,17 @@ export function LandingPage() {
             ) : (
               /* White version over dark hero background */
               <img
-                src={ZENSOS_LOGO_LIGHT}
+                src="/zensos-logo-1.png"
                 alt="ZENSOS"
-                className="h-11 w-auto object-contain brightness-0 invert"
-                style={{ maxWidth: "9.5rem" }}
+                className="h-11 w-auto object-contain"
+                style={{ maxWidth: "9.5rem", filter: "brightness(1.3) contrast(1.1)" }}
               />
             )}
           </button>
 
           {/* Desktop Nav */}
           <div className="hidden items-center gap-8 md:flex">
-            {[["Features", "features"], ["How It Works", "how-it-works"], ["Community", "community"], ["Pricing", "pricing"]].map(([label, id]) => (
+            {[["Features", "features"], ["How It Works", "how-it-works"], ["Value Added Services", "value-added-services"], ["Pricing", "pricing"]].map(([label, id]) => (
               <button key={id} onClick={() => scrollTo(id)}
                 className="text-sm font-semibold transition-colors hover:text-orange-500"
                 style={{ color: scrolled ? "#1e293b" : "#fff", textShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.3)" }}>
@@ -127,7 +127,7 @@ export function LandingPage() {
             <Link to="/login?tab=register"
               className="rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
               style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Start Free →
+              Sign Up →
             </Link>
             {/* Mobile hamburger */}
             <button onClick={() => setMenuOpen(!menuOpen)} className="ml-1 flex md:hidden flex-col gap-1.5 p-1">
@@ -150,7 +150,7 @@ export function LandingPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register" className="mt-1 block rounded-xl py-3 text-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Register Free →
+              Sign Up →
             </Link>
           </div>
         )}
@@ -175,27 +175,27 @@ export function LandingPage() {
             <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
               style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
               <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
-              The Future of E-Commerce
+              Your Next-Level Online Store
             </div>
 
             <h1 className="mb-6 text-5xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Build Your<br />
+              Get Your<br />
               <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg,#ff751f,#ffb347)" }}>
                 Online Store.
               </span>
               <br />
-              <span className="text-slate-300">Sell Directly.</span>
+              <span className="text-slate-300">up & running in under 10 minutes!</span>
             </h1>
 
             <p className="mb-8 text-lg leading-relaxed text-slate-400 sm:text-xl lg:max-w-xl">
-              Super-easy, plug-n-play e-commerce platform. Get paid instantly with <strong className="text-orange-400">0% commission</strong>. Setup in under 10 minutes.
+              Super-easy, plug-n-play e-commerce platform <br />with <strong className="text-orange-400">0% commission</strong>
             </p>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <button onClick={() => navigate("/login?tab=register")}
                 className="group flex w-full items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-2xl transition-all hover:scale-105 hover:shadow-orange-500/40 sm:w-auto"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)", boxShadow: "0 8px 32px rgba(255,117,31,0.45)" }}>
-                Start Selling Free
+                Get Started
                 <svg className="transition-transform group-hover:translate-x-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
               <button onClick={() => scrollTo("how-it-works")}
@@ -208,7 +208,7 @@ export function LandingPage() {
 
             {/* Trust badges */}
             <div className="mt-10 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
-              {[["🚫", "Zero Commission"], ["⚡", "Instant Payouts"], ["🔒", "Secure Payments"]].map(([icon, text]) => (
+              {[["💸", "Zero Commission"], ["👑", "100% Ownership"], ["🛡️", "Secured Payment"]].map(([icon, text]) => (
                 <div key={text} className="flex items-center gap-2 text-sm font-medium text-slate-400">
                   <span>{icon}</span>{text}
                 </div>
@@ -255,21 +255,21 @@ export function LandingPage() {
             <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
               style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Why ZENSOS</span>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Everything You Need to<br /><span style={{ color: "#ff751f" }}>Sell & Succeed</span>
+              Everything You Need to<br /><span style={{ color: "#ff751f" }}>Start & Scale</span> Your Online Store
             </h2>
             <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
-              A high-performance selling platform built for modern entrepreneurs. No middlemen, no hidden fees.
+              A high-performance selling platform built for modern entrepreneurs. No middlemen, no hidden fees. Keep 100% of what you earn.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: "🚫", title: "Zero Commission", desc: "Keep 100% of every sale. We never take a cut from your hard-earned revenue.", color: "#ff751f" },
-              { icon: "⚡", title: "Instant Payouts", desc: "Money lands in your account the moment a customer pays. No waiting, no delays.", color: "#6366f1" },
-              { icon: "🏪", title: "Your Own Store", desc: "Get a beautiful branded storefront with your own URL in under 10 minutes.", color: "#10b981" },
-              { icon: "📱", title: "Mobile First", desc: "Your store looks stunning on every device — phones, tablets, and desktops.", color: "#f59e0b" },
-              { icon: "🔒", title: "Secure Payments", desc: "Bank-grade encryption and multiple payment gateways your customers trust.", color: "#ef4444" },
-              { icon: "📊", title: "Live Analytics", desc: "Real-time dashboard showing sales, visitors, and revenue with beautiful charts.", color: "#8b5cf6" },
+              { icon: "💰", title: "Zero Commission", desc: "Keep 100% of every sale. We never take a cut from your hard-earned revenue.", color: "#ff751f" },
+              { icon: "⚡", title: "Direct Payments", desc: "Don't have to worry about a payment gateway. We've got you covered.", color: "#6366f1" },
+              { icon: "🛒", title: "Exclusive Storefront", desc: "Get a dedicated storefront exclusively for your business in under 10 minutes.", color: "#10b981" },
+              { icon: "📲", title: "Mobile First", desc: "Your store looks stunning on every device — phones, tablets, and desktops.", color: "#f59e0b" },
+              { icon: "🔐", title: "Secure Payments", desc: "Bank-grade encryption and multiple payment gateways your customers trust.", color: "#ef4444" },
+              { icon: "📊", title: "Real-time Insights", desc: "Monitor sales, visitors, revenue, and top-selling products with a powerful dashboard.", color: "#8b5cf6" },
             ].map(({ icon, title, desc, color }, i) => (
               <div key={title}
                 className={`group rounded-2xl p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg cursor-default ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
@@ -298,7 +298,7 @@ export function LandingPage() {
             <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
               style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1" }}>How It Works</span>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Up & Selling in<br /><span style={{ color: "#ff751f" }}>3 Simple Steps</span>
+              Up & Running in<br /><span style={{ color: "#ff751f" }}>3 Simple Steps</span>
             </h2>
           </div>
 
@@ -329,7 +329,7 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ STATS ════════════════════ */}
-      <section className="py-20 sm:py-24" style={{ background: "linear-gradient(135deg,#0b183f 0%,#0f2157 100%)" }}>
+      {/* <section className="py-20 sm:py-24" style={{ background: "linear-gradient(135deg,#0b183f 0%,#0f2157 100%)" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={statsSection.ref}
             className={`text-center mb-14 transition-all duration-700 ${statsSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
@@ -355,28 +355,28 @@ export function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* ════════════════════ COMMUNITY ════════════════════ */}
-      <section id="community" className="py-20 sm:py-28 bg-white">
+      {/* ════════════════════ Value Added Services ════════════════════ */}
+      <section id="value-added-services" className="py-20 sm:py-28 bg-white">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             <div ref={communitySection.ref}
               className={`transition-all duration-700 ${communitySection.inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
               <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-4"
-                style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Seller Community</span>
+                style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Value Added Services</span>
               <h2 className="mb-5 text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-                A Caring Community<br />to Help You <span style={{ color: "#ff751f" }}>Stay on Track</span>
+                More Than a Platform.<br /><span style={{ color: "#ff751f" }}>Your Growth Partner.</span>
               </h2>
               <p className="mb-7 text-lg leading-relaxed text-slate-500">
-                Join thousands of smart business owners who are reclaiming their profits with ZENSOS. Get support, share strategies, and grow together with a passionate seller community.
+                Take your online store to the next level with our value added services. Beyond our e-commerce tool, we offer services tailored to help your brand grow online. Let our experts handle the heavy lifting while you focus on selling.
               </p>
               <div className="mb-8 grid grid-cols-2 gap-4">
                 {[
-                  { icon: "🤝", text: "Peer support groups" },
-                  { icon: "📚", text: "Seller playbooks & guides" },
-                  { icon: "🎓", text: "Weekly live workshops" },
-                  { icon: "💬", text: "Direct seller chat" },
+                  { icon: "🎨", text: "Store Design Support" },
+                  { icon: "📣", text: "Digital Marketing" },
+                  { icon: "📦", text: "Product Packaging Design" },
+                  { icon: "📈", text: "Growth Strategies" },
                 ].map(({ icon, text }) => (
                   <div key={text} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(255,117,31,0.06)" }}>
                     <span className="text-xl">{icon}</span>
@@ -387,7 +387,7 @@ export function LandingPage() {
               <button onClick={() => navigate("/login?tab=register")}
                 className="rounded-2xl px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-105"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-                Join Now For Free →
+                Let's Build Together →
               </button>
             </div>
             <div className={`transition-all duration-700 delay-200 ${communitySection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
@@ -476,13 +476,13 @@ export function LandingPage() {
         <div ref={ctaSection.ref} className="mx-auto max-w-4xl px-5 text-center sm:px-8">
           <div className={`transition-all duration-700 ${ctaSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <h2 className="mb-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
-              Start Selling Directly <span style={{ color: "#ff751f" }}>Today</span>
+              Zero-effort Ecosystem for<br /><span style={{ color: "#ff751f" }}>Next-level Selling</span>
             </h2>
             <p className="mb-10 text-lg text-slate-400">
-              Join thousands of smart business owners reclaiming their profits. Setup takes less than 10 minutes.
+              by Shankara Online Solutions
             </p>
 
-            {subscribed ? (
+            {/* {subscribed ? (
               <div className="mx-auto max-w-md rounded-2xl p-6" style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)" }}>
                 <p className="text-lg font-bold text-green-400">🎉 You're on the list! We'll be in touch soon.</p>
               </div>
@@ -501,7 +501,7 @@ export function LandingPage() {
                   Subscribe
                 </button>
               </form>
-            )}
+            )} */}
 
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <button onClick={() => navigate("/login?tab=register")}
@@ -512,7 +512,7 @@ export function LandingPage() {
               <button onClick={() => scrollTo("pricing")}
                 className="rounded-2xl border px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10"
                 style={{ borderColor: "rgba(255,255,255,0.25)" }}>
-                Check Plans
+                Check Pricing
               </button>
             </div>
           </div>
@@ -520,24 +520,24 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ FOOTER ════════════════════ */}
-      <footer className="border-t py-16" style={{ background: "#0b183f", borderColor: "rgba(255,255,255,0.08)" }}>
+      <footer className="border-t py-10" style={{ background: "#0b183f", borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="lg:col-span-1">
               <div className="mb-5">
                 {/* Real ZENSOS logo — white/inverted for dark footer */}
                 <img
-                  src={ZENSOS_LOGO_LIGHT}
+                  src="/zensos-logo-1.png"
                   alt="ZENSOS"
-                  className="h-10 w-auto object-contain brightness-0 invert"
-                  style={{ maxWidth: "9rem" }}
+                  className="h-10 w-auto object-contain"
+                  style={{ maxWidth: "9rem", filter: "brightness(1.3) contrast(1.1)" }}
                 />
               </div>
               <p className="mb-5 text-sm leading-relaxed text-slate-400">
-                The future of e-commerce. Build your store, sell directly, get paid instantly.
+                Super-easy, plug-n-play e-commerce platform with 0% commission
               </p>
-              <div className="flex gap-3">
+              {/* <div className="flex gap-3">
                 {[
                   { label: "Twitter", path: "M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" },
                   { label: "LinkedIn", path: "M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z M4 6a2 2 0 100-4 2 2 0 000 4z" },
@@ -551,46 +551,47 @@ export function LandingPage() {
                     </svg>
                   </a>
                 ))}
-              </div>
+              </div> */}
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">Product</h4>
-              <ul className="space-y-3">
-                {[["Features", "features"], ["How It Works", "how-it-works"], ["Pricing", "pricing"], ["Community", "community"]].map(([label, id]) => (
+              <h4 className="mb-5 text-base font-extrabold uppercase tracking-widest" style={{ color: "#ff751f" }}>Product</h4>
+              <ul className="space-y-1.5">
+                {[["Features", "features"], ["How It Works", "how-it-works"], ["Pricing", "pricing"], ["Value Added Services", "value-added-services"]].map(([label, id]) => (
                   <li key={label}>
-                    <button onClick={() => scrollTo(id)} className="text-sm text-slate-400 transition-colors hover:text-orange-400">{label}</button>
+                    <button onClick={() => scrollTo(id)} className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>{label}</button>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Support */}
+            {/* Other Links */}
             <div>
-              <h4 className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">Support</h4>
-              <ul className="space-y-3">
-                {["Product Help", "Learn & Care", "Partner With Us", "Community Forum"].map((item) => (
-                  <li key={item}><a href="#" className="text-sm text-slate-400 transition-colors hover:text-orange-400">{item}</a></li>
-                ))}
+              <h4 className="mb-5 text-base font-extrabold uppercase tracking-widest" style={{ color: "#ff751f" }}>Other Links</h4>
+              <ul className="space-y-1.5">
+                <li><Link to="/privacy-policy" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>Privacy Policy</Link></li>
+                <li><Link to="/terms" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>Terms of Use</Link></li>
+                <li><Link to="/refund-policy" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>Refund Policy</Link></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h4 className="mb-5 text-xs font-bold uppercase tracking-widest text-slate-400">Company</h4>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-sm text-slate-400 transition-colors hover:text-orange-400">About Us</a></li>
-                <li><a href="#" className="text-sm text-slate-400 transition-colors hover:text-orange-400">Careers</a></li>
-                <li><a href="#" className="text-sm text-slate-400 transition-colors hover:text-orange-400">News & Press</a></li>
-                <li><Link to="/privacy-policy" className="text-sm text-slate-400 transition-colors hover:text-orange-400">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="text-sm text-slate-400 transition-colors hover:text-orange-400">Terms of Use</Link></li>
-                <li><Link to="/refund-policy" className="text-sm text-slate-400 transition-colors hover:text-orange-400">Refund Policy</Link></li>
+              <h4 className="mb-5 text-base font-extrabold uppercase tracking-widest" style={{ color: "#ff751f" }}>Company</h4>
+              <ul className="space-y-1.5">
+                <li><a href="https://shankaraonline.com/about/" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400">About Us</a></li>
+                <li className="pt-2">
+                  <div className="flex gap-2">
+                    <button onClick={() => window.location.href = 'mailto:naik@shankaraonline.com'} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</button>
+                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}>Sign Up</button>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row"
+          <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t pt-5 sm:flex-row"
             style={{ borderColor: "rgba(255,255,255,0.08)" }}>
             <p className="text-sm text-slate-500">© 2026 ZENSOS. All rights reserved. Powered by ZENSOS.</p>
             <div className="flex gap-1.5 items-center">
