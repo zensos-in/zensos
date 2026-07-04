@@ -330,7 +330,7 @@ export function LandingPage() {
                 { text: "Upload ID proof and address proof for KYC", color: "#ff751f" },
                 { text: "Set up your store with a business logo and banners", color: "#ff751f" },
                 { text: "Update Contact Information", color: "#ff751f" },
-              ].map(({ text, color }, i) => (
+              ].map(({ text }, i) => (
                 <div key={i} className="flex items-center gap-5 group">
                   <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
@@ -361,7 +361,7 @@ export function LandingPage() {
                 { text: "Assign product category and manage your product catalog", color: "#ff751f" },
                 { text: "Options to have multiple variants of the same product", color: "#ff751f" },
                 { text: "Highlight recommended products for your customers", color: "#ff751f" },
-              ].map(({ text, color }, i) => (
+              ].map(({ text }, i) => (
                 <div key={i} className="flex items-center gap-5 group">
                   <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
@@ -405,7 +405,7 @@ export function LandingPage() {
                 { text: "Manage orders and track your sales", color: "#ff751f" },
                 { text: "Reports and analytics to measure your business performance", color: "#ff751f" },
                 { text: "Add Social links for customers to stay connected", color: "#ff751f" },
-              ].map(({ text, color }, i) => (
+              ].map(({ text }, i) => (
                 <div key={i} className="flex items-center gap-5 group">
                   <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
