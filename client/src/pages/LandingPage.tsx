@@ -50,7 +50,7 @@ export function LandingPage() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  // const [email, setEmail] = useState("");
   // const [subscribed, setSubscribed] = useState(false);
 
   // Sections for scroll animation
