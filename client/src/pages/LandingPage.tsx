@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ZensosLogo, ZENSOS_LOGO_LIGHT } from "../components/ZensosLogo";
+import { ZensosLogo, } from "../components/ZensosLogo";
 import heroDashboard from "../assets/hero_dashboard.png";
 import howItWorks from "../assets/how_it_works.png";
 import communitySellers from "../assets/community_sellers.png";
@@ -23,27 +23,27 @@ function useInView(threshold = 0.15) {
 }
 
 // ─── Animated counter ───────────────────────────────────────────────────────
-function Counter({ target, suffix = "", prefix = "" }: { target: number; suffix?: string; prefix?: string }) {
-  const [count, setCount] = useState(0);
-  const { ref, inView } = useInView(0.5);
-  useEffect(() => {
-    if (!inView) return;
-    let start = 0;
-    const duration = 1800;
-    const step = Math.ceil(target / (duration / 16));
-    const timer = setInterval(() => {
-      start = Math.min(start + step, target);
-      setCount(start);
-      if (start >= target) clearInterval(timer);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [inView, target]);
-  return (
-    <div ref={ref} className="text-5xl font-black text-orange-500 tabular-nums">
-      {prefix}{count}{suffix}
-    </div>
-  );
-}
+// function Counter({ target, suffix = "", prefix = "" }: { target: number; suffix?: string; prefix?: string }) {
+//   const [count, setCount] = useState(0);
+//   const { ref, inView } = useInView(0.5);
+//   useEffect(() => {
+//     if (!inView) return;
+//     let start = 0;
+//     const duration = 1800;
+//     const step = Math.ceil(target / (duration / 16));
+//     const timer = setInterval(() => {
+//       start = Math.min(start + step, target);
+//       setCount(start);
+//       if (start >= target) clearInterval(timer);
+//     }, 16);
+//     return () => clearInterval(timer);
+//   }, [inView, target]);
+//   return (
+//     <div ref={ref} className="text-5xl font-black text-orange-500 tabular-nums">
+//       {prefix}{count}{suffix}
+//     </div>
+//   );
+// }
 
 // ─── Main Landing Page ───────────────────────────────────────────────────────
 export function LandingPage() {
@@ -51,12 +51,12 @@ export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
+  // const [subscribed, setSubscribed] = useState(false);
 
   // Sections for scroll animation
   const featuresSection = useInView();
   const howSection = useInView();
-  const statsSection = useInView();
+  // const statsSection = useInView();
   const communitySection = useInView();
   const pricingSection = useInView();
   const ctaSection = useInView();
@@ -67,10 +67,10 @@ export function LandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) { setSubscribed(true); setEmail(""); }
-  };
+  // const handleSubscribe = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (email) { setSubscribed(true); setEmail(""); }
+  // };
 
   const scrollTo = (id: string) => {
     setMenuOpen(false);
