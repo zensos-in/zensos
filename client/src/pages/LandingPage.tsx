@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ZensosLogo, } from "../components/ZensosLogo";
-import heroDashboard from "../assets/hero_dashboard.png";
-import howItWorks from "../assets/how_it_works.png";
+import storefront from "../assets/Storefront.png";
+import registerYourStore from "../assets/Register Your Store.png";
+import addProductsImage from "../assets/Add Products & Product Catelog image.png";
 import communitySellers from "../assets/community_sellers.png";
+import orders from "../assets/orders.png";
 
 // ─── Intersection observer hook for scroll animations ───────────────────────
 function useInView(threshold = 0.15) {
@@ -91,17 +92,21 @@ export function LandingPage() {
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          {/* Logo — uses real brand asset; white-tinted version on dark hero */}
+          {/* Logo — white version on dark hero, dark version on scrolled white navbar */}
           <button onClick={() => scrollTo("hero")} className="focus:outline-none">
             {scrolled ? (
-              <ZensosLogo size="lg" alt="ZENSOS" />
-            ) : (
-              /* White version over dark hero background */
               <img
-                src="/zensos-logo-1.png"
+                src="/zensos-logo.png"
                 alt="ZENSOS"
                 className="h-11 w-auto object-contain"
-                style={{ maxWidth: "9.5rem", filter: "brightness(1.3) contrast(1.1)" }}
+                style={{ maxWidth: "9.5rem" }}
+              />
+            ) : (
+              <img
+                src="/ZENSOS Final Version (2).png"
+                alt="ZENSOS"
+                className="h-11 w-auto object-contain"
+                style={{ maxWidth: "9.5rem" }}
               />
             )}
           </button>
@@ -125,7 +130,7 @@ export function LandingPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register"
-              className="rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100"
+              className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
               style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
               Sign Up →
             </Link>
@@ -169,26 +174,26 @@ export function LandingPage() {
           <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
         </div>
 
-        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:py-24">
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-12 lg:py-24">
           {/* Left: Text */}
-          <div className="text-center lg:text-left">
+          <div className="lg:col-span-6 text-center lg:text-left">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
               style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
               <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
               Your Next-Level Online Store
             </div>
 
-            <h1 className="mb-6 text-5xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mb-6 text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl">
               Get Your<br />
               <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg,#ff751f,#ffb347)" }}>
-                Online Store.
+                Online Store
               </span>
               <br />
-              <span className="text-slate-300">up & running in under 10 minutes!</span>
+              <span className="text-slate-300">up &amp; running in<br className="lg:hidden" /> under 10 minutes!</span>
             </h1>
 
             <p className="mb-8 text-lg leading-relaxed text-slate-400 sm:text-xl lg:max-w-xl">
-              Super-easy, plug-n-play e-commerce platform <br />with <strong className="text-orange-400">0% commission</strong>
+              Super-easy, plug-n-play e-commerce platform <span className="lg:block">with <strong className="text-orange-400">0% commission</strong></span>
             </p>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
@@ -207,7 +212,7 @@ export function LandingPage() {
             </div>
 
             {/* Trust badges */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 lg:justify-start">
               {[["💸", "Zero Commission"], ["👑", "100% Ownership"], ["🛡️", "Secured Payment"]].map(([icon, text]) => (
                 <div key={text} className="flex items-center gap-2 text-sm font-medium text-slate-400">
                   <span>{icon}</span>{text}
@@ -217,12 +222,10 @@ export function LandingPage() {
           </div>
 
           {/* Right: Hero image */}
-          <div className="relative flex items-center justify-center">
+          <div className="lg:col-span-6 relative flex items-center justify-center w-full">
             <div className="relative">
-              {/* Glow behind image */}
-              <div className="absolute inset-0 rounded-3xl blur-3xl opacity-40" style={{ background: "radial-gradient(circle,#ff751f,#6366f1)" }} />
-              <img src={heroDashboard} alt="ZENSOS Dashboard" className="relative z-10 w-full max-w-xl rounded-3xl shadow-2xl ring-1 ring-white/10" />
-              {/* Floating stat cards */}
+              <img src={storefront} alt="ZENSOS Storefront" className="relative z-10 w-full lg:w-auto max-w-4xl lg:h-[550px] 3xl -translate-y-6 lg:-translate-y-12" />
+              {/* Floating stat cards (Commented out)
               <div className="absolute -left-6 top-8 z-20 hidden rounded-2xl p-4 shadow-2xl sm:block"
                 style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <p className="text-xs text-slate-300 font-medium">Today's Revenue</p>
@@ -235,6 +238,7 @@ export function LandingPage() {
                 <p className="text-2xl font-black text-white">142</p>
                 <p className="text-xs text-orange-400 font-semibold mt-0.5">⚡ Live updates</p>
               </div>
+              */}
             </div>
           </div>
         </div>
@@ -248,16 +252,16 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ FEATURE STRIP ════════════════════ */}
-      <section id="features" className="py-20 sm:py-28" style={{ background: "#fff7f0" }}>
+      <section id="features" className="py-10 sm:py-14" style={{ background: "#fff7f0" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={featuresSection.ref}
-            className={`text-center mb-14 transition-all duration-700 ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            className={`text-center mb-8 transition-all duration-700 ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
               style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Why ZENSOS</span>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Everything You Need to<br /><span style={{ color: "#ff751f" }}>Start & Scale</span> Your Online Store
+              Everything You Need to <span className="lg:block"><span style={{ color: "#ff751f" }}>Start & Scale</span> Your Online Store</span>
             </h2>
-            <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
               A high-performance selling platform built for modern entrepreneurs. No middlemen, no hidden fees. Keep 100% of what you earn.
             </p>
           </div>
@@ -272,18 +276,22 @@ export function LandingPage() {
               { icon: "📊", title: "Real-time Insights", desc: "Monitor sales, visitors, revenue, and top-selling products with a powerful dashboard.", color: "#8b5cf6" },
             ].map(({ icon, title, desc, color }, i) => (
               <div key={title}
-                className={`group rounded-2xl p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg cursor-default ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+                className={`group rounded-2xl p-7 transition-all duration-500 hover:-translate-y-1 cursor-default ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
                 style={{
                   background: "rgba(255,255,255,0.9)",
-                  border: "1px solid rgba(255,117,31,0.08)",
+                  border: "1px solid rgba(255,117,31,0.1)",
+                  boxShadow: "0 4px 18px rgba(255,117,31,0.15), 0 1px 4px rgba(0,0,0,0.06)",
                   transitionDelay: `${i * 80}ms`,
-                }}>
+                }}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 28px rgba(255,117,31,0.28), 0 2px 8px rgba(0,0,0,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 18px rgba(255,117,31,0.15), 0 1px 4px rgba(0,0,0,0.06)")}>
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl transition-transform group-hover:scale-110"
                   style={{ background: `${color}18` }}>
                   {icon}
                 </div>
                 <h3 className="mb-2 text-lg font-bold" style={{ color: "#0b183f" }}>{title}</h3>
-                <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                <p className="text-sm leading-relaxed text-slate-600">{desc}</p>
+
               </div>
             ))}
           </div>
@@ -291,10 +299,10 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ HOW IT WORKS ════════════════════ */}
-      <section id="how-it-works" className="py-20 sm:py-28 bg-white">
+      <section id="how-it-works" className="py-20 sm:py-16" style={{ background: "#ffffff" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={howSection.ref}
-            className={`text-center mb-16 transition-all duration-700 ${howSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            className={`text-center mb-8 transition-all duration-700 ${howSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
               style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1" }}>How It Works</span>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
@@ -302,24 +310,111 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
-            <div className={`transition-all duration-700 delay-100 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
-              <img src={howItWorks} alt="How ZENSOS works" className="w-full rounded-3xl shadow-xl" />
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+            {/* Left Column: Image */}
+            <div className={`order-2 lg:order-1 lg:col-span-7 transition-all duration-700 delay-100 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
+              {/* IMAGE LOCATION: Custom image loaded */}
+              <img src={registerYourStore} alt="Register Your Store on ZENSOS" className="w-full" />
             </div>
-            <div className={`space-y-8 transition-all duration-700 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
+
+            {/* Right Column: Steps list */}
+            <div className={`order-1 lg:order-2 lg:col-span-5 space-y-5 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
+              <div className="mb-4">
+                <h3 className="flex items-center gap-3 text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
+                  <span className="text-3xl">🏪</span> Create Your Store
+                </h3>
+              </div>
+
               {[
-                { step: "01", title: "Create Your Store", desc: "Sign up, pick a name, upload your logo — your branded storefront is live instantly. No tech skills needed.", color: "#ff751f" },
-                { step: "02", title: "Add Your Products", desc: "Add products with photos, prices, and descriptions. Supports digital goods, physical products, and services.", color: "#6366f1" },
-                { step: "03", title: "Get Paid Instantly", desc: "Share your store link anywhere. When customers buy, money goes straight to you — 100%, no commission.", color: "#10b981" },
-              ].map(({ step, title, desc, color }) => (
-                <div key={step} className="flex gap-5 group">
-                  <div className="shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black text-white shadow-lg transition-transform group-hover:scale-110"
-                    style={{ background: `linear-gradient(135deg,${color},${color}cc)` }}>
-                    {step}
+                { text: "Register with your basic details", color: "#ff751f" },
+                { text: "Upload ID proof and address proof for KYC", color: "#ff751f" },
+                { text: "Set up your store with a business logo and banners", color: "#ff751f" },
+                { text: "Update Contact Information", color: "#ff751f" },
+              ].map(({ text, color }, i) => (
+                <div key={i} className="flex items-center gap-5 group">
+                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                    style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
+                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="mb-1.5 text-xl font-bold" style={{ color: "#0b183f" }}>{title}</h3>
-                    <p className="text-sm leading-relaxed text-slate-500">{desc}</p>
+                    <p className="text-lg font-bold text-slate-500">{text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Second Row: Text Left, Image Right */}
+          <div className="mt-12 lg:mt-16 grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+            {/* Left Column: Steps list */}
+            <div className={`lg:col-span-5 space-y-5 lg:order-1 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
+              <div className="mb-4">
+                <h3 className="text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
+                  Add Your Products
+                </h3>
+              </div>
+
+              {[
+                { text: "Add products with images, description and additional notes", color: "#ff751f" },
+                { text: "Assign product category and manage your product catalog", color: "#ff751f" },
+                { text: "Options to have multiple variants of the same product", color: "#ff751f" },
+                { text: "Highlight recommended products for your customers", color: "#ff751f" },
+              ].map(({ text, color }, i) => (
+                <div key={i} className="flex items-center gap-5 group">
+                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                    style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
+                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-slate-500">{text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Column: Image */}
+            <div className={`lg:col-span-7 lg:order-2 transition-all duration-700 delay-100 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
+              {/* IMAGE LOCATION: Custom image loaded */}
+              <img src={addProductsImage} alt="Add Your Products on ZENSOS" className="w-full" />
+            </div>
+          </div>
+
+          {/* Third Row: Image Left, Text Right */}
+          <div className="mt-12 lg:mt-16 grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+            {/* Left Column: Image */}
+            <div className={`order-2 lg:order-1 lg:col-span-7 transition-all duration-700 delay-100 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
+              {/* IMAGE LOCATION: Custom image loaded */}
+              <img src={orders} alt="your order details" className="w-full" />
+            </div>
+
+            {/* Right Column: Steps list */}
+            <div className={`order-1 lg:order-2 lg:col-span-5 space-y-5 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
+              <div className="mb-4">
+                <h3 className="text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
+                  Publish Your Store <br />& Get Orders
+                </h3>
+              </div>
+
+              {[
+                { text: "Set up delivery charges and payment methods", color: "#ff751f" },
+                { text: "Set up your store policies", color: "#ff751f" },
+                { text: "Manage orders and track your sales", color: "#ff751f" },
+                { text: "Reports and analytics to measure your business performance", color: "#ff751f" },
+                { text: "Add Social links for customers to stay connected", color: "#ff751f" },
+              ].map(({ text, color }, i) => (
+                <div key={i} className="flex items-center gap-5 group">
+                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                    style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
+                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-slate-500">{text}</p>
                   </div>
                 </div>
               ))}
@@ -358,17 +453,31 @@ export function LandingPage() {
       </section> */}
 
       {/* ════════════════════ Value Added Services ════════════════════ */}
-      <section id="value-added-services" className="py-20 sm:py-28 bg-white">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section id="value-added-services" className="relative pt-20 pb-28 sm:pt-28 sm:pb-36 overflow-hidden"
+        style={{ background: "linear-gradient(145deg,#0b183f 0%,#0f2157 45%,#1a1060 100%)" }}>
+
+        {/* Animated background blobs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-30 blur-3xl animate-pulse" style={{ background: "radial-gradient(circle,#ff751f,transparent 70%)", animationDuration: "4s" }} />
+          <div className="absolute -right-24 top-1/4 h-80 w-80 rounded-full opacity-20 blur-3xl animate-pulse" style={{ background: "radial-gradient(circle,#6366f1,transparent 70%)", animationDuration: "6s" }} />
+          <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full opacity-20 blur-3xl animate-pulse" style={{ background: "radial-gradient(circle,#ff751f,transparent 70%)", animationDuration: "5s" }} />
+          {/* Grid overlay */}
+          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.1) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8 z-10">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
             <div ref={communitySection.ref}
               className={`transition-all duration-700 ${communitySection.inView ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
-              <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-4"
-                style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Value Added Services</span>
-              <h2 className="mb-5 text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+                style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
+                <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+                Value Added Services
+              </div>
+              <h2 className="mb-5 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
                 More Than a Platform.<br /><span style={{ color: "#ff751f" }}>Your Growth Partner.</span>
               </h2>
-              <p className="mb-7 text-lg leading-relaxed text-slate-500">
+              <p className="mb-7 text-lg leading-relaxed text-slate-400">
                 Take your online store to the next level with our value added services. Beyond our e-commerce tool, we offer services tailored to help your brand grow online. Let our experts handle the heavy lifting while you focus on selling.
               </p>
               <div className="mb-8 grid grid-cols-2 gap-4">
@@ -378,9 +487,9 @@ export function LandingPage() {
                   { icon: "📦", text: "Product Packaging Design" },
                   { icon: "📈", text: "Growth Strategies" },
                 ].map(({ icon, text }) => (
-                  <div key={text} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(255,117,31,0.06)" }}>
+                  <div key={text} className="flex items-center gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                     <span className="text-xl">{icon}</span>
-                    <span className="text-sm font-semibold text-slate-700">{text}</span>
+                    <span className="text-sm font-semibold text-slate-200">{text}</span>
                   </div>
                 ))}
               </div>
@@ -397,6 +506,13 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Wave divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 80" preserveAspectRatio="none" className="h-16 w-full sm:h-20" fill="none">
+            <path d="M0,80 C360,0 1080,80 1440,0 L1440,80 Z" fill="#fff7f0" />
+          </svg>
         </div>
       </section>
 
@@ -472,13 +588,20 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ CTA BANNER ════════════════════ */}
-      <section className="py-20 sm:py-28" style={{ background: "linear-gradient(135deg,#0b183f 0%,#1a1060 100%)" }}>
+      <section className="py-20 sm:py-20" style={{ background: "linear-gradient(135deg,#0b183f 0%,#1a1060 100%)" }}>
         <div ref={ctaSection.ref} className="mx-auto max-w-4xl px-5 text-center sm:px-8">
           <div className={`transition-all duration-700 ${ctaSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <h2 className="mb-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
-              Zero-effort Ecosystem for<br /><span style={{ color: "#ff751f" }}>Next-level Selling</span>
+            <div className="mb-6 flex justify-center">
+              <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest"
+                style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
+                <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+                Get Your Online Store Up &amp; Running with ZENSOS
+              </div>
+            </div>
+            <h2 className="mb-1 text-4xl font-black tracking-tight text-white sm:text-5xl">
+              Zero-effort<br className="sm:hidden" /> Ecosystem for<br /><span style={{ color: "#ff751f" }}>Next-level Selling</span>
             </h2>
-            <p className="mb-10 text-lg text-slate-400">
+            <p className="mb-5 text-lg text-slate-400">
               by Shankara Online Solutions
             </p>
 
@@ -503,7 +626,7 @@ export function LandingPage() {
               </form>
             )} */}
 
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <button onClick={() => navigate("/login?tab=register")}
                 className="rounded-2xl px-8 py-4 text-base font-bold text-white shadow-xl transition-all hover:scale-105"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)", boxShadow: "0 8px 32px rgba(255,117,31,0.45)" }}>
@@ -526,16 +649,18 @@ export function LandingPage() {
             {/* Brand */}
             <div className="lg:col-span-1">
               <div className="mb-5">
-                {/* Real ZENSOS logo — white/inverted for dark footer */}
+                {/* White-text logo for dark footer */}
                 <img
-                  src="/zensos-logo-1.png"
+                  src="/ZENSOS Final Version (2).png"
                   alt="ZENSOS"
                   className="h-10 w-auto object-contain"
-                  style={{ maxWidth: "9rem", filter: "brightness(1.3) contrast(1.1)" }}
+                  style={{ maxWidth: "9rem" }}
                 />
               </div>
-              <p className="mb-5 text-sm leading-relaxed text-slate-400">
-                Super-easy, plug-n-play e-commerce platform with 0% commission
+              <p className="mb-5 text-sm leading-relaxed text-slate-400 lg:pr-[115px]">
+                <span className="block lg:inline lg:whitespace-nowrap">Super-easy, plug-n-play</span>{" "}
+                <span className="block lg:inline lg:whitespace-nowrap">e-commerce platform</span>{" "}
+                <span className="block lg:inline lg:whitespace-nowrap">with 0% commission</span>
               </p>
               {/* <div className="flex gap-3">
                 {[
@@ -584,7 +709,7 @@ export function LandingPage() {
                 <li className="pt-2">
                   <div className="flex gap-2">
                     <button onClick={() => window.location.href = 'mailto:naik@shankaraonline.com'} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</button>
-                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)" }}>Sign Up</button>
+                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
                   </div>
                 </li>
               </ul>
@@ -593,7 +718,16 @@ export function LandingPage() {
 
           <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t pt-5 sm:flex-row"
             style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-            <p className="text-sm text-slate-500">© 2026 ZENSOS. All rights reserved. Powered by ZENSOS.</p>
+            <p className="text-sm text-slate-500 text-center sm:text-left">
+              © 2026 ZENSOS. All rights reserved.{" "}
+              <span className="block sm:inline">
+                Powered by{" "}
+                <a href="https://www.shankaraonline.com" className="hover:text-slate-300 hover:underline">
+                  Shankara Online
+                </a>
+                .
+              </span>
+            </p>
             <div className="flex gap-1.5 items-center">
               <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#10b981" }} />
               <span className="text-xs font-medium text-slate-500">All systems operational</span>
