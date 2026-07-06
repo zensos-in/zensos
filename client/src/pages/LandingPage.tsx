@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import storefront from "../assets/Storefront.png";
 import registerYourStore from "../assets/Register Your Store.png";
 import addProductsImage from "../assets/Add Products & Product Catelog image.png";
-import communitySellers from "../assets/community_sellers.png";
+import valueAddedServicesImage from "../assets/Value-added-services1.jpg";
 import orders from "../assets/orders.png";
 
 // ─── Intersection observer hook for scroll animations ───────────────────────
@@ -257,8 +257,11 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={featuresSection.ref}
             className={`text-center mb-8 transition-all duration-700 ${featuresSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Why ZENSOS</span>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+              style={{ background: "rgba(255,117,31,0.18)", color: "#ff751f", border: "1px solid rgba(255,117,31,0.3)" }}>
+              <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+              Why ZENSOS
+            </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
               Everything You Need to <span className="lg:block"><span style={{ color: "#ff751f" }}>Start & Scale</span> Your Online Store</span>
             </h2>
@@ -304,10 +307,13 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={howSection.ref}
             className={`text-center mb-8 transition-all duration-700 ${howSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1" }}>How It Works</span>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+              style={{ background: "rgba(255,117,31,0.18)", color: "#ff751f", border: "1px solid rgba(255,117,31,0.3)" }}>
+              <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+              How It Works
+            </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Up & Running in<br /><span style={{ color: "#ff751f" }}>3 Simple Steps</span>
+              Up & Running in <br className="sm:hidden" /><span style={{ color: "#ff751f" }}>3 Simple Steps</span>
             </h2>
           </div>
 
@@ -320,9 +326,13 @@ export function LandingPage() {
 
             {/* Right Column: Steps list */}
             <div className={`order-1 lg:order-2 lg:col-span-5 space-y-5 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
-              <div className="mb-4">
-                <h3 className="flex items-center gap-3 text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
-                  <span className="text-3xl">🏪</span> Create Your Store
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl text-white text-xl font-black shadow-[0_4px_12px_rgba(255,117,31,0.25)]"
+                  style={{ background: "#ff751f" }}>
+                  01
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#0b183f" }}>
+                  Create Your Store
                 </h3>
               </div>
 
@@ -332,15 +342,15 @@ export function LandingPage() {
                 { text: "Set up your store with a business logo and banners", color: "#ff751f" },
                 { text: "Update Contact Information", color: "#ff751f" },
               ].map(({ text }, i) => (
-                <div key={i} className="flex items-center gap-5 group">
-                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                <div key={i} className="flex items-start gap-3.5 group">
+                  <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full transition-transform group-hover:scale-110 mt-1"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
-                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-slate-500">{text}</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-500">{text}</p>
                   </div>
                 </div>
               ))}
@@ -351,8 +361,12 @@ export function LandingPage() {
           <div className="mt-12 lg:mt-16 grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
             {/* Left Column: Steps list */}
             <div className={`lg:col-span-5 space-y-5 lg:order-1 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
-              <div className="mb-4">
-                <h3 className="text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl text-white text-xl font-black shadow-[0_4px_12px_rgba(255,117,31,0.25)]"
+                  style={{ background: "#ff751f" }}>
+                  02
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#0b183f" }}>
                   Add Your Products
                 </h3>
               </div>
@@ -363,15 +377,15 @@ export function LandingPage() {
                 { text: "Options to have multiple variants of the same product", color: "#ff751f" },
                 { text: "Highlight recommended products for your customers", color: "#ff751f" },
               ].map(({ text }, i) => (
-                <div key={i} className="flex items-center gap-5 group">
-                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                <div key={i} className="flex items-start gap-3.5 group">
+                  <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full transition-transform group-hover:scale-110 mt-1"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
-                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-slate-500">{text}</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-500">{text}</p>
                   </div>
                 </div>
               ))}
@@ -394,9 +408,13 @@ export function LandingPage() {
 
             {/* Right Column: Steps list */}
             <div className={`order-1 lg:order-2 lg:col-span-5 space-y-5 transition-all duration-500 delay-200 ${howSection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-y-8"}`}>
-              <div className="mb-4">
-                <h3 className="text-3xl font-black tracking-tight sm:text-4xl" style={{ color: "#0b183f" }}>
-                  Publish Your Store <br />& Get Orders
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl text-white text-xl font-black shadow-[0_4px_12px_rgba(255,117,31,0.25)]"
+                  style={{ background: "#ff751f" }}>
+                  03
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#0b183f" }}>
+                  Publish Your Store & Get Orders
                 </h3>
               </div>
 
@@ -407,15 +425,15 @@ export function LandingPage() {
                 { text: "Reports and analytics to measure your business performance", color: "#ff751f" },
                 { text: "Add Social links for customers to stay connected", color: "#ff751f" },
               ].map(({ text }, i) => (
-                <div key={i} className="flex items-center gap-5 group">
-                  <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                <div key={i} className="flex items-start gap-3.5 group">
+                  <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full transition-transform group-hover:scale-110 mt-1"
                     style={{ background: "#ffffff", border: "2px solid #ff751f" }}>
-                    <svg className="w-4 h-4" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill="none" stroke="#ff751f" strokeWidth="3" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-slate-500">{text}</p>
+                    <p className="text-base sm:text-lg font-bold text-slate-500">{text}</p>
                   </div>
                 </div>
               ))}
@@ -435,38 +453,41 @@ export function LandingPage() {
               The ZENSOS Advantages
             </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Other Platform vs ZENSOS
+              Other Platforms vs ZENSOS
             </h2>
           </div>
 
-          <div className={`p-8 sm:p-12 transition-all duration-700 delay-100 ${comparisonSection.inView ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+          <div className={`p-5 sm:p-12 transition-all duration-700 delay-100 ${comparisonSection.inView ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
             style={{
               background: "#0b183f",
               borderRadius: "24px",
               boxShadow: "0 20px 45px rgba(11,24,63,0.25)",
             }}>
+            {/* Comparison table with horizontal scroll support on mobile */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full min-w-[700px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800">
-                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-teal-400 w-1/3">Feature</th>
-                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-orange-400 w-1/3">Other Platforms</th>
-                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-yellow-400 w-1/3">ZENSOS</th>
+                    <th className="pb-5 pr-4 text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-teal-400 w-1/3">Feature</th>
+                    <th className="pb-5 pr-4 text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-400 w-1/3">Other Platforms</th>
+                    <th className="pb-5 text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-orange-500 w-1/3">ZENSOS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {[
-                    { feature: "Platform Fee", other: "15% - 30% per order", zensos: "0% Commission" },
-                    { feature: "Payout Time", other: "7 - 14 Days", zensos: "Instant (Direct Payments)" },
-                    // { feature: "Customer Data", other: "Hidden / Limited", zensos: "100% Ownership" },
-                    { feature: "Store Customization", other: "Standard Template", zensos: "Banner Listing Service" },
-                    { feature: "Product Showcase", other: "Generic Catalog", zensos: "Recommended Product Section" },
-                    { feature: "Product Variants", other: "Limited / Complex", zensos: "Multiple Variants Enabled" },
+                    { feature: "Transaction Fees", other: "Heavy commissions (5% – 35% per order)", zensos: "0% Commission (Keep 100% of your earnings)" },
+                    { feature: "Payout Timeline", other: "Delayed settlements (2 – 28 business days)", zensos: "Instant Payouts (Direct-to-bank payments)" },
+                    { feature: "Store Customization", other: "Rigid, cookie-cutter templates", zensos: "Flexible Banner Listing Services" },
+                    { feature: "Product Merchandising", other: "Generic, uninspired product catalogs", zensos: "Smart Showcases with Recommended Sections" },
+                    { feature: "Product Configurations", other: "Complex or limited variant setups", zensos: "Seamless Multi-Variant options enabled" },
+                    { feature: "Setup & Launch Time", other: "Hours or days of complex configuration", zensos: "Plug-and-Play setup in under 10 minutes" },
+                    { feature: "Mobile Experience", other: "Inconsistent responsiveness on phones", zensos: "Mobile-First Design optimized for every screen" },
+                    { feature: "Business Insights", other: "Delayed or basic data reporting", zensos: "Real-Time Analytics & performance dashboard" },
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-white/5 transition-colors">
-                      <td className="py-5 font-bold text-white text-sm sm:text-base">{row.feature}</td>
-                      <td className="py-5 text-slate-300 text-sm sm:text-base">{row.other}</td>
-                      <td className="py-5 font-bold text-yellow-400 text-sm sm:text-base">{row.zensos}</td>
+                      <td className="py-5 pr-4 font-bold text-white text-xs sm:text-sm md:text-base">{row.feature}</td>
+                      <td className="py-5 pr-4 text-slate-300 text-xs sm:text-sm md:text-base">{row.other}</td>
+                      <td className="py-5 font-bold text-orange-300 text-xs sm:text-sm md:text-base">{row.zensos}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -555,7 +576,7 @@ export function LandingPage() {
             <div className={`transition-all duration-700 delay-200 ${communitySection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
               <div className="relative">
                 <div className="absolute -inset-4 rounded-3xl blur-2xl opacity-20" style={{ background: "linear-gradient(135deg,#ff751f,#6366f1)" }} />
-                <img src={communitySellers} alt="ZENSOS seller community" className="relative w-full rounded-3xl shadow-2xl" />
+                <img src={valueAddedServicesImage} alt="ZENSOS value added services" className="relative w-full rounded-3xl shadow-2xl" />
               </div>
             </div>
           </div>
@@ -574,12 +595,15 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={pricingSection.ref}
             className={`text-center mb-14 transition-all duration-700 ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>Pricing</span>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+              style={{ background: "rgba(255,117,31,0.18)", color: "#ff751f", border: "1px solid rgba(255,117,31,0.3)" }}>
+              <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+              Pricing
+            </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
               Simple, Transparent<br /><span style={{ color: "#ff751f" }}>Pricing</span>
             </h2>
-            <p className="mt-4 text-lg text-slate-500 max-w-xl mx-auto">No hidden fees. No commission. Pay only for the plan that fits your business.</p>
+            <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">No hidden fees. No commission. Pay only for the plan that fits your business.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -648,7 +672,7 @@ export function LandingPage() {
               <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-widest"
                 style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
                 <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
-                Get Your Online Store Up &amp; Running with ZENSOS
+                Get Your Online Store Up <br className="sm:hidden" />&amp; Running with ZENSOS
               </div>
             </div>
             <h2 className="mb-1 text-4xl font-black tracking-tight text-white sm:text-5xl">
@@ -697,7 +721,7 @@ export function LandingPage() {
 
       {/* ════════════════════ FOOTER ════════════════════ */}
       <footer className="border-t py-10" style={{ background: "#0b183f", borderColor: "rgba(255,255,255,0.08)" }}>
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="mx-auto max-w-7xl pl-10 pr-5 sm:px-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="lg:col-span-1">
