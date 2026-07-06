@@ -57,6 +57,7 @@ export function LandingPage() {
   // Sections for scroll animation
   const featuresSection = useInView();
   const howSection = useInView();
+  const comparisonSection = useInView();
   // const statsSection = useInView();
   const communitySection = useInView();
   const pricingSection = useInView();
@@ -418,6 +419,58 @@ export function LandingPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════ OTHER PLATFORM VS ZENSOS ════════════════════ */}
+      <section id="comparison" className="py-20 sm:py-16" style={{ background: "#fff7f0" }}>
+        <div className="mx-auto max-w-4xl px-5 sm:px-8">
+          <div ref={comparisonSection.ref}
+            className={`text-center mb-10 transition-all duration-700 ${comparisonSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+              style={{ background: "rgba(255,117,31,0.18)", color: "#ff9a5c", border: "1px solid rgba(255,117,31,0.3)" }}>
+              <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
+              The ZENSOS Advantages
+            </div>
+            <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
+              Other Platform vs ZENSOS
+            </h2>
+          </div>
+
+          <div className={`p-8 sm:p-12 transition-all duration-700 delay-100 ${comparisonSection.inView ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+            style={{
+              background: "#0b183f",
+              borderRadius: "24px",
+              boxShadow: "0 20px 45px rgba(11,24,63,0.25)",
+            }}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800">
+                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-teal-400 w-1/3">Feature</th>
+                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-orange-400 w-1/3">Other Platforms</th>
+                    <th className="pb-5 text-sm sm:text-base font-black uppercase tracking-wider text-yellow-400 w-1/3">ZENSOS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {[
+                    { feature: "Platform Fee", other: "15% - 30% per order", zensos: "0% Commission" },
+                    { feature: "Payout Time", other: "7 - 14 Days", zensos: "Instant (Direct Payments)" },
+                    // { feature: "Customer Data", other: "Hidden / Limited", zensos: "100% Ownership" },
+                    { feature: "Store Customization", other: "Standard Template", zensos: "Banner Listing Service" },
+                    { feature: "Product Showcase", other: "Generic Catalog", zensos: "Recommended Product Section" },
+                    { feature: "Product Variants", other: "Limited / Complex", zensos: "Multiple Variants Enabled" },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-white/5 transition-colors">
+                      <td className="py-5 font-bold text-white text-sm sm:text-base">{row.feature}</td>
+                      <td className="py-5 text-slate-300 text-sm sm:text-base">{row.other}</td>
+                      <td className="py-5 font-bold text-yellow-400 text-sm sm:text-base">{row.zensos}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
