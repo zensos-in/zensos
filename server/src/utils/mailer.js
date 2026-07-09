@@ -337,4 +337,26 @@ async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
   });
 }
 
-module.exports = { sendOtpEmail, sendOrderConfirmationEmail };
+async function sendContactEmail({ name, email, phone, message }) {
+  const transporter = getTransporter();
+  await transporter.sendMail({
+    from: `ZENSOS <${email}>`,
+    to: "naik@shankaraonline.com",
+    subject: `Enquiry from ${name} - ZENSOS`,
+    text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <h2 style="color: #0b183f; margin-top: 0; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">Enquiry on Website</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone}</p>
+        <p><strong>Message:</strong></p>
+        <blockquote style="border-left: 3px solid #ff751f; padding: 10px; margin-left: 0; background: #f8fafc; font-style: italic;">
+          ${message.replace(/\n/g, "<br>")}
+        </blockquote>
+      </div>
+    `
+  });
+}
+
+module.exports = { sendOtpEmail, sendOrderConfirmationEmail, sendContactEmail };
