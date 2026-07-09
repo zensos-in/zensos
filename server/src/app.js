@@ -3,14 +3,13 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const { sendContactEmail } = require("./utils/mailer");
-
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const storeRoutes = require("./routes/storeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 const app = express();
 
@@ -88,24 +87,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", paymentRoutes); // Same handler: POST /api/webhooks/webhook
 
-// Contact Form Request Handler
-async function handleContactEnquiry(req, res) {
-  const { name, email, phone, message } = req.body;
-
-  if (!name || !email || !phone || !message) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-
-  try {
-    await sendContactEmail({ name, email, phone, message });
-    res.json({ success: true, message: "Email sent successfully." });
-  } catch (error) {
-    console.error("Contact Form SMTP Error:", error);
-    res.status(500).json({ message: "Failed to send email. Please try again later." });
-  }
-}
-
-app.post("/api/contact", handleContactEnquiry);
+app.use("/api/contact", contactRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
