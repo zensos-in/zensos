@@ -1,5 +1,5 @@
 export const ZENSOS_LOGO_LIGHT = "/zensos-logo.png";
-export const ZENSOS_LOGO_DARK = "/zensos-logo-1.png";
+export const ZENSOS_LOGO_DARK = "/ZENSOS Final Version (2).png";
 
 type ZensosLogoSize = "sm" | "md" | "lg";
 

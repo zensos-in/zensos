@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { GlobalControls } from "./components/GlobalControls";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import { ZensosLogo } from "./components/ZensosLogo";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicStoreHeaderContext, type PublicStoreHeader } from "./context/PublicStoreHeaderContext";
@@ -14,12 +13,24 @@ import { ThankYouPage } from "./pages/ThankYouPage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsOfUsePage } from "./pages/TermsOfUsePage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
+import { ContactUsPage } from "./pages/ContactUsPage";
+import { GlobalControls } from "./components/GlobalControls";
+import { useTheme } from "./context/ThemeContext";
 
 function AppShell() {
   const location = useLocation();
+  const { setTheme } = useTheme();
   const [publicStoreHeader, setPublicStoreHeader] = useState<PublicStoreHeader | null>(null);
   const isLanding = location.pathname === "/";
   const isPublicStore = location.pathname.startsWith("/store/");
+  const showThemeToggle = !isLanding && !["/contact-us", "/privacy-policy", "/terms", "/refund-policy"].includes(location.pathname);
+
+  // Force light theme on all public marketing & login/register pages
+  useEffect(() => {
+    if (["/", "/login", "/contact-us", "/privacy-policy", "/terms", "/refund-policy"].includes(location.pathname)) {
+      setTheme("light");
+    }
+  }, [location.pathname, setTheme]);
 
   return (
     <PublicStoreHeaderContext.Provider value={{ publicStoreHeader, setPublicStoreHeader }}>
@@ -53,9 +64,24 @@ function AppShell() {
                   </div>
                 </div>
               ) : (
-                <ZensosLogo size="lg" alt="Zensos" />
+                <Link to="/" className="focus:outline-none">
+                  <ZensosLogo size="lg" alt="Zensos" />
+                </Link>
               )}
-              <GlobalControls />
+              {location.pathname === "/contact-us" && (
+                <div className="flex items-center gap-3">
+                  <Link to="/login"
+                    className="rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:opacity-80 text-slate-700 dark:text-slate-300">
+                    Sign In
+                  </Link>
+                  <Link to="/login?tab=register"
+                    className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
+                    style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
+                    Sign Up →
+                  </Link>
+                </div>
+              )}
+              {showThemeToggle && <GlobalControls />}
             </div>
           </header>
           <Routes>
@@ -66,6 +92,7 @@ function AppShell() {
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsOfUsePage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
+            <Route path="/contact-us" element={<ContactUsPage />} />
             <Route
               path="/dashboard"
               element={

@@ -3,6 +3,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const nodemailer = require("nodemailer");
 
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -30,7 +31,8 @@ const corsOptions = {
 
     const isAllowed = allowedOrigins.includes(origin) ||
                       origin.startsWith("https://zensos.vercel.app") || origin.startsWith("https://www.zensos.in") ||
-                      origin.startsWith("http://localhost:");
+                      origin.startsWith("http://localhost:") ||
+                      /^http:\/\/(192\.168|10|172)\.\d+\.\d+\.\d+(:\d+)?$/.test(origin);
 
     if (isAllowed) {
       return callback(null, true);
@@ -85,6 +87,50 @@ app.use("/api/store", storeRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", paymentRoutes); // Same handler: POST /api/webhooks/webhook
+
+app.post("/api/contact", async (req, res) => {
+  const { name, email, phone, message } = req.body;
+
+  if (!name || !email || !phone || !message) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `ZENSOS <${email}>`,
+      to: "naik@shankaraonline.com",
+      subject: `Enquiry from ${name} - ZENSOS`,
+      text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #0b183f; margin-top: 0; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">Enquiry on Website</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Message:</strong></p>
+          <blockquote style="border-left: 3px solid #ff751f; padding: 10px; margin-left: 0; background: #f8fafc; font-style: italic;">
+            ${message.replace(/\n/g, "<br>")}
+          </blockquote>
+        </div>
+      `
+    });
+
+    res.json({ success: true, message: "Email sent successfully." });
+  } catch (error) {
+    console.error("Contact Form SMTP Error:", error);
+    res.status(500).json({ message: "Failed to send email. Please try again later." });
+  }
+});
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
