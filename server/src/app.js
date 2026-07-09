@@ -88,7 +88,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", paymentRoutes); // Same handler: POST /api/webhooks/webhook
 
-app.post("/api/contact", async (req, res) => {
+// Contact Form Request Handler
+async function handleContactEnquiry(req, res) {
   const { name, email, phone, message } = req.body;
 
   if (!name || !email || !phone || !message) {
@@ -102,7 +103,9 @@ app.post("/api/contact", async (req, res) => {
     console.error("Contact Form SMTP Error:", error);
     res.status(500).json({ message: "Failed to send email. Please try again later." });
   }
-});
+}
+
+app.post("/api/contact", handleContactEnquiry);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
