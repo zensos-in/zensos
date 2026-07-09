@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true,
     proxy: {
       // All /api requests from the browser are forwarded to the server.
       // This avoids CORS entirely — the browser only ever talks to localhost:5173.

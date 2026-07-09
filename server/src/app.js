@@ -3,13 +3,13 @@ const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const storeRoutes = require("./routes/storeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
 const app = express();
 
@@ -30,7 +30,8 @@ const corsOptions = {
 
     const isAllowed = allowedOrigins.includes(origin) ||
                       origin.startsWith("https://zensos.vercel.app") || origin.startsWith("https://www.zensos.in") ||
-                      origin.startsWith("http://localhost:");
+                      origin.startsWith("http://localhost:") ||
+                      /^http:\/\/(192\.168|10|172)\.\d+\.\d+\.\d+(:\d+)?$/.test(origin);
 
     if (isAllowed) {
       return callback(null, true);
@@ -85,6 +86,8 @@ app.use("/api/store", storeRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", paymentRoutes); // Same handler: POST /api/webhooks/webhook
+
+app.use("/api/contact", contactRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });

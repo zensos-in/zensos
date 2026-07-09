@@ -157,23 +157,23 @@ export function LoginPage() {
     if (error) showError(error);
   }, [error, showError]);
 
-const phoneDigits = phone.number.replace(/\D/g, "");
+  const phoneDigits = phone.number.replace(/\D/g, "");
 
-const phoneError =
-  phone.number.trim().length === 0
-    ? "Phone number is required."
-    : phoneDigits.length !== 10
-      ? "Enter a valid 10-digit phone number."
-      : "";
-
-const emailError =
-  phoneError
-    ? "" // don't validate email until phone is valid
-    : email.trim().length === 0
-      ? "Email address is required."
-      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-        ? "Enter a valid email address."
+  const phoneError =
+    phone.number.trim().length === 0
+      ? "Phone number is required."
+      : phoneDigits.length !== 10
+        ? "Enter a valid 10-digit phone number."
         : "";
+
+  const emailError =
+    phoneError
+      ? "" // don't validate email until phone is valid
+      : email.trim().length === 0
+        ? "Email address is required."
+        : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+          ? "Enter a valid email address."
+          : "";
   const businessNameError =
     (mode === "register" || step === "profile") && businessName.length > 0 && businessName.trim().length < 3
       ? "Business name should be at least 3 characters."
@@ -480,399 +480,690 @@ const emailError =
 
   return (
     <>
-    <main className="mx-auto grid min-h-[calc(100vh-72px)] w-full max-w-7xl items-start gap-6 px-3 py-6 sm:px-4 sm:py-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10">
+      <main className="mx-auto grid min-h-[calc(100vh-72px)] w-full max-w-7xl items-start gap-6 px-3 py-6 sm:px-4 sm:py-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10">
 
-      {/* ── Left: Hero ─────────────────────────────────────────────── */}
-      <section className="order-2 space-y-6 text-center lg:order-1 lg:space-y-7 lg:text-left">
-        <div className="inline-flex items-center rounded-2xl border border-orange-100 bg-white/85 px-4 py-2 shadow-sm dark:border-orange-900/40 dark:bg-slate-950/80">
-          <ZensosLogo size="md" alt="Zensos" />
-        </div>
-        <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl dark:text-slate-100">
-          {mode === "login"
-            ? "Welcome back to Zensos."
-            : "Open your Zensos store and start selling today."}
-        </h1>
-        <p className="mx-auto max-w-xl text-base leading-7 text-slate-600 sm:text-lg lg:mx-0 dark:text-slate-300">
-          {mode === "login"
-            ? "Enter your registered phone and email, verify with OTP, and jump straight into your store dashboard."
-            : "Register with your phone and email, verify with OTP, and share your Zensos link on WhatsApp — all in under 2 minutes."}
-        </p>
+        {/* ── Left: Hero ─────────────────────────────────────────────── */}
+        <section className="order-2 space-y-6 text-center lg:order-1 lg:space-y-7 lg:text-left">
+          <div className="inline-flex items-center rounded-2xl border border-orange-100 bg-white/85 px-4 py-2 shadow-sm dark:border-orange-900/40 dark:bg-slate-950/80">
+            <ZensosLogo size="md" alt="Zensos" />
+          </div>
+          <h1 className="font-heading text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl dark:text-slate-100">
+            {mode === "login"
+              ? "Welcome back to ZENSOS."
+              : "Open your ZENSOS store and start selling today."}
+          </h1>
+          <p className="mx-auto max-w-xl text-base leading-7 text-slate-600 sm:text-lg lg:mx-0 dark:text-slate-300">
+            {mode === "login"
+              ? "Enter your registered phone and email, verify with OTP, and jump straight into your store dashboard."
+              : "Register with your phone and email, verify with OTP, Start Selling - all in under 10 minutes."}
+          </p>
 
-        <div className="grid gap-3 text-left sm:grid-cols-3">
-          {[
-            { title: "Fast onboarding", detail: "OTP-based sign in and setup", icon: "login" },
-            { title: "Built for sellers", detail: "Business profile + payments", icon: "store" },
-            { title: "Share instantly", detail: "Launch your store link fast", icon: "share" },
-          ].map((item) => (
-            <div key={item.title} className="surface-card rounded-[24px] p-4">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
-                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[22px]" />
-              </span>
-              <p className="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Step indicators */}
-        <div className="flex flex-wrap items-start justify-center gap-3 lg:justify-start">
-          {activeSteps.map((s, i) => (
-            <div key={s.key} className="flex items-start gap-2">
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-bold transition-all duration-300 ${
-                    i < currentStepIndex
-                      ? "border-orange-100 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
-                      : i === currentStepIndex
-                      ? "border-orange-200 bg-orange-50 text-orange-600 ring-4 ring-orange-100/50 shadow-sm dark:border-orange-800/50 dark:bg-orange-950/50 dark:text-orange-300 dark:ring-orange-950/60"
-                      : "border-slate-100 bg-slate-50 text-slate-400 shadow-sm dark:border-slate-800/50 dark:bg-slate-900/40"
-                  }`}
-                >
-                  {i < currentStepIndex ? <AppIcon name="check" className="text-[18px]" /> : String(i + 1)}
-                </div>
-                <span
-                  className={`text-[10px] font-semibold tracking-wide ${
-                    i === currentStepIndex ? "text-orange-700" : "text-slate-400"
-                  }`}
-                >
-                  {s.label}
+          <div className="grid gap-3 text-left sm:grid-cols-3">
+            {[
+              { title: "Fast onboarding", detail: "OTP-based sign in and setup", icon: "login" },
+              { title: "Built for sellers", detail: "Business profile + payments", icon: "store" },
+              { title: "Share instantly", detail: "Launch your store link fast", icon: "share" },
+            ].map((item) => (
+              <div key={item.title} className="surface-card rounded-[24px] p-4">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
+                  <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[22px]" />
                 </span>
+                <p className="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.detail}</p>
               </div>
-              {i < activeSteps.length - 1 && (
-                <div
-                  className={`mt-5 h-0.5 w-8 rounded transition-all duration-300 ${
-                    i < currentStepIndex ? "bg-orange-400" : "bg-slate-200 dark:bg-slate-850"
-                  }`}
-                />
-              )}
+            ))}
+          </div>
+
+          {/* Step indicators */}
+          {mode !== "register" && (
+            <div className="flex flex-wrap items-start justify-center gap-3 lg:justify-start">
+              {activeSteps.map((s, i) => (
+                <div key={s.key} className="flex items-start gap-2">
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-bold transition-all duration-300 ${i < currentStepIndex
+                        ? "border-orange-100 bg-orange-50 text-orange-600 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
+                        : i === currentStepIndex
+                          ? "border-orange-200 bg-orange-50 text-orange-600 ring-4 ring-orange-100/50 shadow-sm dark:border-orange-800/50 dark:bg-orange-950/50 dark:text-orange-300 dark:ring-orange-950/60"
+                          : "border-slate-100 bg-slate-50 text-slate-400 shadow-sm dark:border-slate-800/50 dark:bg-slate-900/40"
+                        }`}
+                    >
+                      {i < currentStepIndex ? <AppIcon name="check" className="text-[18px]" /> : String(i + 1)}
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold tracking-wide ${i === currentStepIndex ? "text-orange-700" : "text-slate-400"
+                        }`}
+                    >
+                      {s.label}
+                    </span>
+                  </div>
+                  {i < activeSteps.length - 1 && (
+                    <div
+                      className={`mt-5 h-0.5 w-8 rounded transition-all duration-300 ${i < currentStepIndex ? "bg-orange-400" : "bg-slate-200 dark:bg-slate-850"
+                        }`}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          )}
+        </section>
 
-      {/* ── Right: Form Card ───────────────────────────────────────── */}
-      <section className="surface-card-strong order-1 mx-auto w-full max-w-xl rounded-[32px] p-5 sm:p-7 lg:order-2">
+        {/* ── Right: Form Card ───────────────────────────────────────── */}
+        <section className="surface-card-strong order-1 mx-auto w-full max-w-xl rounded-[32px] p-5 sm:p-7 lg:order-2">
 
-        {/* Mode Toggle Tabs */}
-        <div className="mb-6 flex rounded-2xl border border-slate-200 bg-slate-50/90 p-1 dark:border-slate-700 dark:bg-slate-900/90">
-          {(["login", "register"] as Mode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => switchMode(m)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-sm font-semibold transition-all duration-200 ${
-                mode === m
+          {/* Mode Toggle Tabs */}
+          <div className="mb-6 flex rounded-2xl border border-slate-200 bg-slate-50/90 p-1 dark:border-slate-700 dark:bg-slate-900/90">
+            {(["login", "register"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-sm font-semibold transition-all duration-200 ${mode === m
                   ? "bg-white text-slate-900 shadow-sm dark:bg-slate-950 dark:text-slate-100"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              }`}
-            >
-              {m === "login"
-                ? <><AppIcon name="login" className="text-[20px]" /> {t("auth.login", "Login")}</>
-                : <><AppIcon name="register" className="text-[20px]" /> {t("auth.register", "Register")}</>}
-            </button>
-          ))}
-        </div>
+                  }`}
+              >
+                {m === "login"
+                  ? <><AppIcon name="login" className="text-[20px]" /> {t("auth.login", "Login")}</>
+                  : <><AppIcon name="register" className="text-[20px]" /> {t("auth.register", "Register")}</>}
+              </button>
+            ))}
+          </div>
 
-        {/* ── Step 1: Contact (Login) or Details (Register) ── */}
-        {step === "contact" && (
-          <>
-            <h2 className="font-heading text-2xl font-bold text-slate-900">
-              {mode === "login" ? "Sign in to Your Zensos Store" : "Create Your Zensos Store"}
-            </h2>
-            <p className="mt-1.5 text-sm text-slate-500">
-              {mode === "login"
-                ? "Enter your registered phone number and email address. We'll send a one-time password to your email."
-                : "Complete each section, then verify your account with an email OTP."}
-            </p>
-            {mode === "register" && (
-              <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/70">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase text-orange-700">
-                    Step {registerSectionIndex + 1} of {registerSections.length}
-                  </p>
-                </div>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                  {registerSections.map((item, index) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => {
-                        if (index <= registerSectionIndex) goToRegisterSection(index);
-                      }}
-                      className={`min-h-10 rounded-xl border px-2 py-2 text-center text-[11px] font-semibold transition ${
-                        index === registerSectionIndex
+          {/* ── Step 1: Contact (Login) or Details (Register) ── */}
+          {step === "contact" && (
+            <>
+              <h2 className="font-heading text-2xl font-bold text-slate-900">
+                {mode === "login" ? "Sign in to Your ZENSOS Store" : "Create Your ZENSOS Store"}
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                {mode === "login"
+                  ? "Enter your registered phone number and email address. We'll send a one-time password to your email."
+                  : "Complete each section, then verify your account with an email OTP."}
+              </p>
+              {mode === "register" && (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/70">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase text-orange-700">
+                      Step {registerSectionIndex + 1} of {registerSections.length}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                    {registerSections.map((item, index) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => {
+                          if (index <= registerSectionIndex) goToRegisterSection(index);
+                        }}
+                        className={`min-h-10 rounded-xl border px-2 py-2 text-center text-[11px] font-semibold transition ${index === registerSectionIndex
                           ? "border-orange-500 bg-white text-orange-700 shadow-sm dark:border-orange-500 dark:bg-slate-950 dark:text-orange-400"
                           : index < registerSectionIndex
                             ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-400"
                             : "border-slate-200 bg-white/70 text-slate-400 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-500"
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                          }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <form
-              className={`mt-5 ${mode === "register" ? "grid gap-3 sm:grid-cols-2" : "space-y-4"}`}
-              noValidate={mode === "register"}
-              onSubmit={mode === "register" ? handleRegisterSectionSubmit : handleSendOtp}
-            >
-              {/* Phone */}
-              <label className={`space-y-1 ${mode === "register" && registerSection !== "contact" ? "hidden" : "block"}`}>
-                <span className="text-sm font-semibold text-slate-700">Phone number *</span>
-                <div className="grid grid-cols-[80px_1fr] gap-2">
+              <form
+                className={`mt-5 ${mode === "register" ? "grid gap-3 sm:grid-cols-2" : "space-y-4"}`}
+                noValidate={mode === "register"}
+                onSubmit={mode === "register" ? handleRegisterSectionSubmit : handleSendOtp}
+              >
+                {/* Phone */}
+                <label className={`space-y-1 ${mode === "register" && registerSection !== "contact" ? "hidden" : "block"}`}>
+                  <span className="text-sm font-semibold text-slate-700">Phone number *</span>
+                  <div className="grid grid-cols-[80px_1fr] gap-2">
+                    <input
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                      value={phone.countryCode}
+                      readOnly
+                      disabled
+                      placeholder="+91"
+                    />
+                    <input
+                      className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
+                      placeholder="9876543210"
+                      value={phone.number}
+                      onChange={(e) => setPhone((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                      required={mode === "login" || registerSection === "contact"}
+                    />
+                  </div>
+                  {phoneError && <span className="text-xs text-rose-600">{phoneError}</span>}
+                </label>
+
+                {/* Email */}
+                <label className={`space-y-1 ${mode === "register" && registerSection !== "contact" ? "hidden" : "block"}`}>
+                  <span className="text-sm font-semibold text-slate-700">
+                    Email address *
+                  </span>
                   <input
-                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                    value={phone.countryCode}
-                    readOnly
-                    disabled
-                    placeholder="+91"
-                  />
-                  <input
-                    className="min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
-                    placeholder="9876543210"
-                    value={phone.number}
-                    onChange={(e) => setPhone((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                    type="email"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required={mode === "login" || registerSection === "contact"}
                   />
-                </div>
-                {phoneError && <span className="text-xs text-rose-600">{phoneError}</span>}
-              </label>
+                  {emailError && <span className="text-xs text-rose-600">{emailError}</span>}
+                </label>
 
-              {/* Email */}
-              <label className={`space-y-1 ${mode === "register" && registerSection !== "contact" ? "hidden" : "block"}`}>
-                <span className="text-sm font-semibold text-slate-700">
-                  Email address *
-                </span>
-                <input
-                  type="email"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50 sm:text-sm"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required={mode === "login" || registerSection === "contact"}
-                />
-                {emailError && <span className="text-xs text-rose-600">{emailError}</span>}
-              </label>
+                {/* ── Register Mode: Extra Business Fields ── */}
+                {mode === "register" && (
+                  <>
+                    {/* Divider */}
+                    <div className={`sm:col-span-2 ${registerSection === "business" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-xs font-semibold uppercase text-slate-400">
+                        Business Info
+                      </span>
+                      <div className="h-px flex-1 bg-slate-200" />
+                    </div>
 
-              {/* ── Register Mode: Extra Business Fields ── */}
-              {mode === "register" && (
-                <>
-                  {/* Divider */}
-                  <div className={`sm:col-span-2 ${registerSection === "business" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase text-slate-400">
-                      Business Info
-                    </span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-
-                  {/* Business Name */}
-                  <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Business name *</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="Star Astro Academy"
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      required={registerSection === "business"}
-                    />
-                    {businessNameError && <span className="text-xs text-rose-600">{businessNameError}</span>}
-                  </label>
-                  <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Business category *</span>
-                    <select
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      value={businessCategory}
-                      onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
-                      required={registerSection === "business"}
-                    >
-                      {BUSINESS_CATEGORY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </label>
-                  {businessCategory === "Other" && (
+                    {/* Business Name */}
                     <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
-                      <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
+                      <span className="text-sm font-semibold text-slate-700">Business name *</span>
                       <input
                         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                        value={businessCategoryOther}
-                        onChange={(e) => setBusinessCategoryOther(e.target.value)}
-                        placeholder="Type your business category"
+                        placeholder="Star Astro Academy"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
                         required={registerSection === "business"}
                       />
+                      {businessNameError && <span className="text-xs text-rose-600">{businessNameError}</span>}
                     </label>
-                  )}
+                    <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Business category *</span>
+                      <select
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        value={businessCategory}
+                        onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
+                        required={registerSection === "business"}
+                      >
+                        {BUSINESS_CATEGORY_OPTIONS.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                    {businessCategory === "Other" && (
+                      <label className={`space-y-1 sm:col-span-2 ${registerSection === "business" ? "block" : "hidden"}`}>
+                        <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
+                        <input
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                          value={businessCategoryOther}
+                          onChange={(e) => setBusinessCategoryOther(e.target.value)}
+                          placeholder="Type your business category"
+                          required={registerSection === "business"}
+                        />
+                      </label>
+                    )}
 
-                  <div className={`sm:col-span-2 ${registerSection === "bank" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase text-slate-400">Bank & Payments</span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-
-                  <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">UPI ID</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="seller@okaxis"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                    />
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Account holder name *</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="Name as per bank account"
-                      value={bankAccountName}
-                      required={registerSection === "bank"}
-                      onChange={(e) => setBankAccountName(e.target.value)}
-                    />
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Bank name *</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="HDFC Bank"
-                      value={bankName}
-                      required={registerSection === "bank"}
-                      onChange={(e) => setBankName(e.target.value)}
-                    />
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Account number *</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="123456789012"
-                      value={bankAccountNumber}
-                      required={registerSection === "bank"}
-                      onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
-                    />
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">IFSC code *</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="HDFC0001234"
-                      value={bankIfsc}
-                      required={registerSection === "bank"}
-                      onChange={(e) => setBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))}
-                    />
-                  </label>
-
-                  <div className={`sm:col-span-2 ${registerSection === "address" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase text-slate-400">Address & Contact</span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-
-                  <div className={registerSection === "address" ? "contents" : "hidden"}>
-                    <AddressFields
-                      value={businessAddress}
-                      onChange={setBusinessAddress}
-                      inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      required={registerSection === "address"}
-                    />
-                  </div>
-
-                  {/* WhatsApp */}
-                  <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
-                    <div className="grid grid-cols-[80px_1fr] gap-2">
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                    <div className={`sm:col-span-2 ${registerSection === "bank" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-xs font-semibold uppercase text-slate-400">Bank & Payments</span>
+                      <div className="h-px flex-1 bg-slate-200" />
                     </div>
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Call number</span>
-                    <div className="grid grid-cols-[80px_1fr] gap-2">
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
-                      <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
-                    </div>
-                  </label>
 
-                  {/* GST */}
-                  <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="22AAAAA0000A1Z5"
-                      value={businessGST}
-                      onChange={(e) => setBusinessGST(e.target.value)}
-                    />
-                  </label>
-                  {/* KYC Documents */}
-                  <div className={`sm:col-span-2 ${registerSection === "kyc" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold uppercase text-slate-400">PAN & KYC Documents</span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-                  <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">PAN number <span className="text-rose-500">*</span></span>
-                    <input
-                      className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${
-                        pan && panError
+                    <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">UPI ID</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="seller@okaxis"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                      />
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Account holder name *</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="Name as per bank account"
+                        value={bankAccountName}
+                        required={registerSection === "bank"}
+                        onChange={(e) => setBankAccountName(e.target.value)}
+                      />
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Bank name *</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="HDFC Bank"
+                        value={bankName}
+                        required={registerSection === "bank"}
+                        onChange={(e) => setBankName(e.target.value)}
+                      />
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Account number *</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="123456789012"
+                        value={bankAccountNumber}
+                        required={registerSection === "bank"}
+                        onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "bank" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">IFSC code *</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="HDFC0001234"
+                        value={bankIfsc}
+                        required={registerSection === "bank"}
+                        onChange={(e) => setBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))}
+                      />
+                    </label>
+
+                    <div className={`sm:col-span-2 ${registerSection === "address" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-xs font-semibold uppercase text-slate-400">Address & Contact</span>
+                      <div className="h-px flex-1 bg-slate-200" />
+                    </div>
+
+                    <div className={registerSection === "address" ? "contents" : "hidden"}>
+                      <AddressFields
+                        value={businessAddress}
+                        onChange={setBusinessAddress}
+                        inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        required={registerSection === "address"}
+                      />
+                    </div>
+
+                    {/* WhatsApp */}
+                    <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
+                      <div className="grid grid-cols-[80px_1fr] gap-2">
+                        <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
+                        <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                      </div>
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Call number</span>
+                      <div className="grid grid-cols-[80px_1fr] gap-2">
+                        <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
+                        <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 10) }))} />
+                      </div>
+                    </label>
+
+                    {/* GST */}
+                    <label className={`space-y-1 ${registerSection === "address" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="22AAAAA0000A1Z5"
+                        value={businessGST}
+                        onChange={(e) => setBusinessGST(e.target.value)}
+                      />
+                    </label>
+                    {/* KYC Documents */}
+                    <div className={`sm:col-span-2 ${registerSection === "kyc" ? "flex" : "hidden"} items-center gap-3 pt-1`}>
+                      <div className="h-px flex-1 bg-slate-200" />
+                      <span className="text-xs font-semibold uppercase text-slate-400">PAN & KYC Documents</span>
+                      <div className="h-px flex-1 bg-slate-200" />
+                    </div>
+                    <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">PAN number <span className="text-rose-500">*</span></span>
+                      <input
+                        className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${pan && panError
                           ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50"
                           : "border-slate-200 focus:border-orange-500 focus:ring-orange-50"
-                      }`}
-                      placeholder="ABCDE1234F"
-                      maxLength={10}
-                      value={pan}
-                      onChange={(e) => setPan(normalizePan(e.target.value))}
-                      required={registerSection === "kyc"}
-                    />
-                    {(panError && pan) || (!pan && registerSection === "kyc") ? (
-                      <span className="text-xs text-rose-600">{panError}</span>
-                    ) : (
-                      <span className="text-xs text-slate-400">Required for Razorpay linked account and settlements.</span>
-                    )}
-                  </label>
-                  <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">PAN holder legal name <span className="text-rose-500">*</span></span>
+                          }`}
+                        placeholder="ABCDE1234F"
+                        maxLength={10}
+                        value={pan}
+                        onChange={(e) => setPan(normalizePan(e.target.value))}
+                        required={registerSection === "kyc"}
+                      />
+                      {(panError && pan) || (!pan && registerSection === "kyc") ? (
+                        <span className="text-xs text-rose-600">{panError}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">Required for Razorpay linked account and settlements.</span>
+                      )}
+                    </label>
+                    <label className={`space-y-1 ${registerSection === "kyc" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">PAN holder legal name <span className="text-rose-500">*</span></span>
+                      <input
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                        placeholder="Name exactly as on PAN"
+                        value={panHolderName}
+                        onChange={(e) => setPanHolderName(e.target.value)}
+                        required={registerSection === "kyc"}
+                      />
+                      {panHolderNameError && panHolderName.length === 0 ? (
+                        <span className="text-xs text-rose-600">{panHolderNameError}</span>
+                      ) : null}
+                    </label>
+                    <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">PAN document <span className="text-rose-500">*</span></span>
+                      <p className="text-xs text-slate-400">Upload a clear photo or scan of your PAN card.</p>
+                      <ImageUploadField
+                        value={panDocumentUrl}
+                        onChange={setPanDocumentUrl}
+                        placeholder="Paste image URL of your PAN card..."
+                      />
+                    </label>
+                    <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">ID Proof <span className="text-rose-500">*</span></span>
+                      <p className="text-xs text-slate-400">Aadhaar, PAN, Passport, Voter ID, Driving Licence</p>
+                      <ImageUploadField
+                        value={idProofUrl}
+                        onChange={setIdProofUrl}
+                        placeholder="Paste image URL of your ID proof..."
+                      />
+                    </label>
+                    <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
+                      <span className="text-sm font-semibold text-slate-700">Address Proof <span className="text-rose-500">*</span></span>
+                      <p className="text-xs text-slate-400">Utility bill, Bank statement, Rental agreement (up to 3 months old)</p>
+                      <ImageUploadField
+                        value={addressProofUrl}
+                        onChange={setAddressProofUrl}
+                        placeholder="Paste image URL of your address proof..."
+                      />
+                    </label>
+                  </>
+                )}
+                {mode === "register" && registerSection === "policies" && (
+                  <div className="sm:col-span-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-sm font-semibold text-slate-700">Vendor policy checklist (required)</p>
+                    {DEFAULT_VENDOR_POLICY_POINTS.map((item, index) => (
+                      <label key={index} className="flex items-start gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(policyChecks[String(index)])}
+                          onChange={(e) => setPolicyChecks((prev) => ({ ...prev, [String(index)]: e.target.checked }))}
+                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                        />
+                        <span>{item}</span>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-left text-sm font-semibold text-orange-700 underline underline-offset-2"
+                    >
+                      View full Terms & Conditions
+                    </button>
+                  </div>
+                )}
+
+                {mode === "register" ? (
+                  <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      fullWidth
+                      disabled={submitting || isFirstRegisterSection}
+                      onClick={() => goToRegisterSection(registerSectionIndex - 1)}
+                    >
+                      {"<- Back"}
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitting || (isLastRegisterSection && !canSendOtp)}
+                      loading={submitting}
+                      fullWidth
+                      variant="brand"
+                    >
+                      {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={submitting || !canSendOtp}
+                    loading={submitting}
+                    fullWidth
+                    variant="brand"
+                  >
+                    Send OTP
+                  </Button>
+                )}
+              </form>
+            </>
+          )}
+
+          {/* ── Step 2: OTP Verification ── */}
+          {step === "otp" && (
+            <>
+              <h2 className="font-heading text-2xl font-bold text-slate-900">Verify OTP</h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                Enter the 6-digit code sent to{" "}
+                <span className="font-semibold text-slate-700">{email.trim()}</span>.
+              </p>
+              {info && (
+                <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
+                  {info}
+                </p>
+              )}
+              <form className="mt-5 space-y-4" onSubmit={handleVerifyOtp}>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">6-digit OTP *</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="------"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    required
+                    autoFocus
+                  />
+                  {otpError && <span className="text-xs text-rose-600">{otpError}</span>}
+                </label>
+
+                <Button
+                  type="submit"
+                  disabled={submitting || !canVerifyOtp}
+                  loading={submitting}
+                  fullWidth
+                  variant="brand"
+                >
+                  {mode === "register"
+                    ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
+                    : "Verify OTP"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => {
+                    setStep("contact");
+                    setError("");
+                    setInfo("");
+                    setOtp("");
+                  }}
+                >
+                  {"<- Back"}
+                </Button>
+              </form>
+            </>
+          )}
+
+          {/* ── Step 3 (Login mode only): Complete Profile for new users ── */}
+          {step === "profile" && (
+            <>
+              <h2 className="font-heading text-2xl font-bold text-slate-900">
+                Complete Your Profile
+              </h2>
+              {info && (
+                <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
+                  {info}
+                </p>
+              )}
+              <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={handleRegister}>
+                {/* Business name */}
+                <label className="block space-y-1 sm:col-span-2">
+                  <span className="text-sm font-semibold text-slate-700">Business name *</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="Star Astro Academy"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="block space-y-1 sm:col-span-2">
+                  <span className="text-sm font-semibold text-slate-700">Business category *</span>
+                  <select
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    value={businessCategory}
+                    onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
+                    required
+                  >
+                    {BUSINESS_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+                {businessCategory === "Other" && (
+                  <label className="block space-y-1 sm:col-span-2">
+                    <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
                     <input
                       className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                      placeholder="Name exactly as on PAN"
-                      value={panHolderName}
-                      onChange={(e) => setPanHolderName(e.target.value)}
-                      required={registerSection === "kyc"}
-                    />
-                    {panHolderNameError && panHolderName.length === 0 ? (
-                      <span className="text-xs text-rose-600">{panHolderNameError}</span>
-                    ) : null}
-                  </label>
-                  <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">PAN document <span className="text-rose-500">*</span></span>
-                    <p className="text-xs text-slate-400">Upload a clear photo or scan of your PAN card.</p>
-                    <ImageUploadField
-                      value={panDocumentUrl}
-                      onChange={setPanDocumentUrl}
-                      placeholder="Paste image URL of your PAN card..."
+                      value={businessCategoryOther}
+                      onChange={(e) => setBusinessCategoryOther(e.target.value)}
+                      placeholder="Type your business category"
+                      required
                     />
                   </label>
-                  <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">ID Proof <span className="text-rose-500">*</span></span>
-                    <p className="text-xs text-slate-400">Aadhaar, PAN, Passport, Voter ID, Driving Licence</p>
-                    <ImageUploadField
-                      value={idProofUrl}
-                      onChange={setIdProofUrl}
-                      placeholder="Paste image URL of your ID proof..."
-                    />
-                  </label>
-                  <label className={`space-y-1 sm:col-span-2 ${registerSection === "kyc" ? "block" : "hidden"}`}>
-                    <span className="text-sm font-semibold text-slate-700">Address Proof <span className="text-rose-500">*</span></span>
-                    <p className="text-xs text-slate-400">Utility bill, Bank statement, Rental agreement (up to 3 months old)</p>
-                    <ImageUploadField
-                      value={addressProofUrl}
-                      onChange={setAddressProofUrl}
-                      placeholder="Paste image URL of your address proof..."
-                    />
-                  </label>
-                </>
-              )}
-              {mode === "register" && registerSection === "policies" && (
+                )}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Business email</span>
+                  <input
+                    type="email"
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
+                    value={email}
+                    readOnly
+                  />
+                  <span className="text-xs text-slate-400">This email will be used for login and account verification.</span>
+                </label>
+                {/* UPI ID */}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">UPI ID</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="seller@okaxis"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Account holder name</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="Name as per bank account"
+                    value={bankAccountName}
+                    onChange={(e) => setBankAccountName(e.target.value)}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Bank name</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="HDFC Bank"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Account number</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="123456789012"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">IFSC code</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="HDFC0001234"
+                    value={bankIfsc}
+                    onChange={(e) => setBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))}
+                  />
+                </label>
+                <AddressFields
+                  value={businessAddress}
+                  onChange={setBusinessAddress}
+                  inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                  required
+                />
+                {/* GST */}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="22AAAAA0000A1Z5"
+                    value={businessGST}
+                    onChange={(e) => setBusinessGST(e.target.value)}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">PAN number *</span>
+                  <input
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${pan && panError
+                      ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50"
+                      : "border-slate-200 focus:border-orange-500 focus:ring-orange-50"
+                      }`}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                    value={pan}
+                    onChange={(e) => setPan(normalizePan(e.target.value))}
+                    required
+                  />
+                  {panError && pan ? <span className="text-xs text-rose-600">{panError}</span> : null}
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">PAN holder legal name *</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="Name exactly as on PAN"
+                    value={panHolderName}
+                    onChange={(e) => setPanHolderName(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="block space-y-1 sm:col-span-2">
+                  <span className="text-sm font-semibold text-slate-700">PAN document *</span>
+                  <ImageUploadField
+                    value={panDocumentUrl}
+                    onChange={setPanDocumentUrl}
+                    placeholder="Paste image URL of your PAN card..."
+                  />
+                </label>
+                {/* Business Logo */}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Business logo URL</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
+                    placeholder="https://..."
+                    value={businessLogo}
+                    onChange={(e) => setBusinessLogo(e.target.value)}
+                  />
+                </label>
+                {/* WhatsApp */}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
+                  <div className="grid grid-cols-[80px_1fr] gap-2">
+                    <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
+                    <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                  </div>
+                </label>
+                {/* Call number */}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold text-slate-700">Call number</span>
+                  <div className="grid grid-cols-[80px_1fr] gap-2">
+                    <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
+                    <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                  </div>
+                </label>
                 <div className="sm:col-span-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <p className="text-sm font-semibold text-slate-700">Vendor policy checklist (required)</p>
                   {DEFAULT_VENDOR_POLICY_POINTS.map((item, index) => (
@@ -894,359 +1185,63 @@ const emailError =
                     View full Terms & Conditions
                   </button>
                 </div>
-              )}
 
-              {mode === "register" ? (
-                <div className="flex flex-col-reverse gap-2 sm:col-span-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    fullWidth
-                    disabled={submitting || isFirstRegisterSection}
-                    onClick={() => goToRegisterSection(registerSectionIndex - 1)}
-                  >
-                    {"<- Back"}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={submitting || (isLastRegisterSection && !canSendOtp)}
-                    loading={submitting}
-                    fullWidth
-                    variant="brand"
-                  >
-                    {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
-                  </Button>
-                </div>
-              ) : (
+                {businessNameError && <span className="text-xs text-rose-600 sm:col-span-2">{businessNameError}</span>}
                 <Button
                   type="submit"
-                  disabled={submitting || !canSendOtp}
+                  disabled={submitting || !canCompleteProfile}
                   loading={submitting}
                   fullWidth
                   variant="brand"
+                  className="sm:col-span-2"
                 >
-                  Send OTP
+                  <AppIcon name="register" className="text-[10px]" /> Complete Setup & Go to Dashboard
                 </Button>
-              )}
-            </form>
-          </>
-        )}
-
-        {/* ── Step 2: OTP Verification ── */}
-        {step === "otp" && (
-          <>
-            <h2 className="font-heading text-2xl font-bold text-slate-900">Verify OTP</h2>
-            <p className="mt-1.5 text-sm text-slate-500">
-              Enter the 6-digit code sent to{" "}
-              <span className="font-semibold text-slate-700">{email.trim()}</span>.
-            </p>
-            {info && (
-              <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
-                {info}
-              </p>
-            )}
-            <form className="mt-5 space-y-4" onSubmit={handleVerifyOtp}>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">6-digit OTP *</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-2xl font-bold tracking-[0.3em] text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="------"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  required
-                  autoFocus
-                />
-                {otpError && <span className="text-xs text-rose-600">{otpError}</span>}
-              </label>
-
-              <Button
-                type="submit"
-                disabled={submitting || !canVerifyOtp}
-                loading={submitting}
-                fullWidth
-                variant="brand"
-              >
-                {mode === "register"
-                  ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
-                  : "Verify OTP"}
-              </Button>
-
-              <Button
+              </form>
+            </>
+          )}
+        </section>
+      </main>
+      <footer className="px-3 pb-2 text-center text-xs text-slate-400 sm:px-4">
+        <span className="inline-flex flex-wrap items-center justify-center gap-2 text-slate-500">
+          <ZensosLogo size="sm" alt="Zensos" />
+          <span className="font-semibold">Your Store. Your Link. Your Sales.</span>
+        </span>
+      </footer>
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-3 py-3 backdrop-blur-[2px] sm:items-center sm:px-4 sm:py-6">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-4 sm:px-5">
+              <h3 className="font-heading text-xl font-bold text-slate-900">Terms & Conditions</h3>
+              <button
                 type="button"
-                variant="secondary"
-                fullWidth
-                onClick={() => {
-                  setStep("contact");
-                  setError("");
-                  setInfo("");
-                  setOtp("");
-                }}
+                onClick={() => setShowTermsModal(false)}
+                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
-                {"<- Back"}
-              </Button>
-            </form>
-          </>
-        )}
-
-        {/* ── Step 3 (Login mode only): Complete Profile for new users ── */}
-        {step === "profile" && (
-          <>
-            <h2 className="font-heading text-2xl font-bold text-slate-900">
-              Complete Your Profile
-            </h2>
-            {info && (
-              <p className="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
-                {info}
-              </p>
-            )}
-            <form className="mt-5 grid gap-3 sm:grid-cols-2" onSubmit={handleRegister}>
-              {/* Business name */}
-              <label className="block space-y-1 sm:col-span-2">
-                <span className="text-sm font-semibold text-slate-700">Business name *</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="Star Astro Academy"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block space-y-1 sm:col-span-2">
-                <span className="text-sm font-semibold text-slate-700">Business category *</span>
-                <select
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  value={businessCategory}
-                  onChange={(e) => setBusinessCategory(e.target.value as BusinessCategoryOption)}
-                  required
-                >
-                  {BUSINESS_CATEGORY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-              {businessCategory === "Other" && (
-                <label className="block space-y-1 sm:col-span-2">
-                  <span className="text-sm font-semibold text-slate-700">Enter business category *</span>
-                  <input
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                    value={businessCategoryOther}
-                    onChange={(e) => setBusinessCategoryOther(e.target.value)}
-                    placeholder="Type your business category"
-                    required
-                  />
-                </label>
-              )}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Business email</span>
-                <input
-                  type="email"
-                  className="w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 outline-none"
-                  value={email}
-                  readOnly
-                />
-                <span className="text-xs text-slate-400">This email will be used for login and account verification.</span>
-              </label>
-              {/* UPI ID */}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">UPI ID</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="seller@okaxis"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Account holder name</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="Name as per bank account"
-                  value={bankAccountName}
-                  onChange={(e) => setBankAccountName(e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Bank name</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="HDFC Bank"
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Account number</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="123456789012"
-                  value={bankAccountNumber}
-                  onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">IFSC code</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="HDFC0001234"
-                  value={bankIfsc}
-                  onChange={(e) => setBankIfsc(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11))}
-                />
-              </label>
-              <AddressFields
-                value={businessAddress}
-                onChange={setBusinessAddress}
-                inputClassName="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                required
-              />
-              {/* GST */}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">GST number (optional)</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="22AAAAA0000A1Z5"
-                  value={businessGST}
-                  onChange={(e) => setBusinessGST(e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">PAN number *</span>
-                <input
-                  className={`w-full rounded-xl border px-3 py-2.5 text-sm uppercase outline-none transition focus:ring-2 ${
-                    pan && panError
-                      ? "border-rose-300 focus:border-rose-400 focus:ring-rose-50"
-                      : "border-slate-200 focus:border-orange-500 focus:ring-orange-50"
-                  }`}
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                  value={pan}
-                  onChange={(e) => setPan(normalizePan(e.target.value))}
-                  required
-                />
-                {panError && pan ? <span className="text-xs text-rose-600">{panError}</span> : null}
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">PAN holder legal name *</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="Name exactly as on PAN"
-                  value={panHolderName}
-                  onChange={(e) => setPanHolderName(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="block space-y-1 sm:col-span-2">
-                <span className="text-sm font-semibold text-slate-700">PAN document *</span>
-                <ImageUploadField
-                  value={panDocumentUrl}
-                  onChange={setPanDocumentUrl}
-                  placeholder="Paste image URL of your PAN card..."
-                />
-              </label>
-              {/* Business Logo */}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Business logo URL</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50"
-                  placeholder="https://..."
-                  value={businessLogo}
-                  onChange={(e) => setBusinessLogo(e.target.value)}
-                />
-              </label>
-              {/* WhatsApp */}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">WhatsApp number</span>
-                <div className="grid grid-cols-[80px_1fr] gap-2">
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={whatsappNumber.countryCode} readOnly disabled placeholder="+91" />
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={whatsappNumber.number} onChange={(e) => setWhatsappNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                Close
+              </button>
+            </div>
+            <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-4 py-4 sm:px-5">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Vendor Policy Checklist</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
+                    {DEFAULT_VENDOR_POLICY_POINTS.map((point, index) => (
+                      <li key={index}>{point}</li>
+                    ))}
+                  </ul>
                 </div>
-              </label>
-              {/* Call number */}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold text-slate-700">Call number</span>
-                <div className="grid grid-cols-[80px_1fr] gap-2">
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" value={callNumber.countryCode} readOnly disabled placeholder="+91" />
-                  <input className="min-w-0 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-50" placeholder="9876543210" value={callNumber.number} onChange={(e) => setCallNumber((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))} />
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">General Terms & Conditions</p>
+                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
+                    {DEFAULT_POLICY_CONTENT.termsAndConditions}
+                  </p>
                 </div>
-              </label>
-              <div className="sm:col-span-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-sm font-semibold text-slate-700">Vendor policy checklist (required)</p>
-                {DEFAULT_VENDOR_POLICY_POINTS.map((item, index) => (
-                  <label key={index} className="flex items-start gap-2 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(policyChecks[String(index)])}
-                      onChange={(e) => setPolicyChecks((prev) => ({ ...prev, [String(index)]: e.target.checked }))}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                    />
-                    <span>{item}</span>
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setShowTermsModal(true)}
-                  className="text-left text-sm font-semibold text-orange-700 underline underline-offset-2"
-                >
-                  View full Terms & Conditions
-                </button>
-              </div>
-
-              {businessNameError && <span className="text-xs text-rose-600 sm:col-span-2">{businessNameError}</span>}
-              <Button
-                type="submit"
-                disabled={submitting || !canCompleteProfile}
-                loading={submitting}
-                fullWidth
-                variant="brand"
-                className="sm:col-span-2"
-              >
-                <AppIcon name="register" className="text-[10px]" /> Complete Setup & Go to Dashboard
-              </Button>
-            </form>
-          </>
-        )}
-      </section>
-    </main>
-    <footer className="px-3 pb-2 text-center text-xs text-slate-400 sm:px-4">
-      <span className="inline-flex flex-wrap items-center justify-center gap-2 text-slate-500">
-        <ZensosLogo size="sm" alt="Zensos" />
-        <span className="font-semibold">Your Store. Your Link. Your Sales.</span>
-      </span>
-    </footer>
-    {showTermsModal && (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 px-3 py-3 backdrop-blur-[2px] sm:items-center sm:px-4 sm:py-6">
-        <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-card">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-4 sm:px-5">
-            <h3 className="font-heading text-xl font-bold text-slate-900">Terms & Conditions</h3>
-            <button
-              type="button"
-              onClick={() => setShowTermsModal(false)}
-              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Close
-            </button>
-          </div>
-          <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-4 py-4 sm:px-5">
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Vendor Policy Checklist</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
-                  {DEFAULT_VENDOR_POLICY_POINTS.map((point, index) => (
-                    <li key={index}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">General Terms & Conditions</p>
-                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
-                  {DEFAULT_POLICY_CONTENT.termsAndConditions}
-                </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }
