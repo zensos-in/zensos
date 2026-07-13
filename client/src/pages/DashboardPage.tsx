@@ -370,6 +370,7 @@ export function DashboardPage() {
 
   // ── Real-time order refresh
   const ordersIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dashboardDataRequestRef = useRef<Promise<void> | null>(null);
   const [ordersLastUpdated, setOrdersLastUpdated] = useState<Date | null>(null);
   const [, forceTickUpdate] = useState(0);
 
@@ -422,21 +423,37 @@ export function DashboardPage() {
     setTermsAndConditions(seller.termsAndConditions || DEFAULT_POLICY_CONTENT.termsAndConditions);
   }, [seller]);
 
-  async function loadData() {
-    setLoading(true); setError("");
-    try {
-      const [pr, or] = await Promise.all([
-        api.get<{ products: Product[] }>("/products/my"),
-        api.get<{ orders: Order[] }>("/orders/my"),
-      ]);
-      setProducts(pr.data.products);
-      setOrders(or.data.orders);
-      setOrdersLastUpdated(new Date());
-    } catch { setError("Could not load dashboard data."); }
-    finally { setLoading(false); }
+  function loadData() {
+    // A tab change, manual refresh, or Strict Mode can call this together.
+    // Reuse the active request so each endpoint is requested only once.
+    if (dashboardDataRequestRef.current) return dashboardDataRequestRef.current;
+
+    const request = (async () => {
+      setLoading(true); setError("");
+      try {
+        const [pr, or] = await Promise.all([
+          api.get<{ products: Product[] }>("/products/my"),
+          api.get<{ orders: Order[] }>("/orders/my"),
+        ]);
+        setProducts(pr.data.products);
+        setOrders(or.data.orders);
+        setOrdersLastUpdated(new Date());
+      } catch { setError("Could not load dashboard data."); }
+      finally { setLoading(false); }
+    })();
+
+    dashboardDataRequestRef.current = request;
+    void request.finally(() => {
+      if (dashboardDataRequestRef.current === request) {
+        dashboardDataRequestRef.current = null;
+      }
+    });
+    return request;
   }
 
-  useEffect(() => { void loadData(); }, []);
+  useEffect(() => {
+    void loadData();
+  }, []);
 
   useEffect(() => {
     if (error) showError(error);

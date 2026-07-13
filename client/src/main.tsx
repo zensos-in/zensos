@@ -10,6 +10,18 @@ import "./index.css";
 // because a visitor's browser necessarily receives the application's assets.
 if (import.meta.env.PROD) {
   document.addEventListener("contextmenu", (event) => event.preventDefault());
+  document.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    const isInspectShortcut =
+      event.key === "F12" ||
+      (event.ctrlKey && event.shiftKey && ["i", "j", "c"].includes(key)) ||
+      (event.ctrlKey && key === "u");
+
+    if (isInspectShortcut) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
 }
 
 createRoot(document.getElementById("app")!).render(
