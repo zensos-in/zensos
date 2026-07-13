@@ -1103,6 +1103,11 @@ export function DashboardPage() {
         setSuccess("Product updated.");
         setEditingProduct(null);
       } else {
+        if (products.length >= 10) {
+          setError("You can list up to 10 products. Delete a product before adding another.");
+          setIsSubmittingProduct(false);
+          return;
+        }
         await api.post("/products", payload);
         setSuccess("Product added.");
       }
@@ -1763,6 +1768,12 @@ export function DashboardPage() {
                 Editing: <strong>{editingProduct.title}</strong>
               </p>
             )}
+            {!editingProduct && (
+              <p className="mt-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-700">
+                {products.length}/10 products listed
+                {products.length >= 10 ? " — product limit reached." : ` — ${10 - products.length} remaining.`}
+              </p>
+            )}
             <form className="mt-4 space-y-4" onSubmit={handleSubmitProduct}>
 
               {/* ── Section 1: Title + Category */}
@@ -2207,7 +2218,7 @@ export function DashboardPage() {
                     <AppIcon name="close" className="text-[22px]" /> Cancel Edit
                   </button>
                 )}
-                <button type="submit" disabled={isSubmittingProduct}
+                <button type="submit" disabled={isSubmittingProduct || (!editingProduct && products.length >= 10)}
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-[#ff751f] hover:bg-[#ff8c3a] px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:bg-slate-300 sm:flex-1">
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")

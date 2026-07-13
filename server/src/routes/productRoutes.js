@@ -9,6 +9,7 @@ const { sendOtpEmail } = require("../utils/mailer");
 
 const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
+const MAX_PRODUCTS_PER_SELLER = 10;
 
 function isAdminPreviewRequest(req) {
   if (String(req.query.preview || "") !== "admin") return false;
@@ -306,6 +307,15 @@ router.post("/", auth, async (req, res) => {
     const seller = await Seller.findById(req.sellerId);
     if (!seller) {
       return res.status(404).json({ message: "Seller not found" });
+    }
+
+    // This is intentionally enforced by the API, not just the dashboard.
+    const productCount = await Product.countDocuments({ seller: seller._id });
+    if (productCount >= MAX_PRODUCTS_PER_SELLER) {
+      return res.status(403).json({
+        message: `You can list up to ${MAX_PRODUCTS_PER_SELLER} products. Delete a product before adding another.`,
+        productLimit: MAX_PRODUCTS_PER_SELLER,
+      });
     }
 
     const product = await Product.create({
