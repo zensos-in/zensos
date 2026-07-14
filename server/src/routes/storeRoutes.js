@@ -7,14 +7,25 @@ const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/o
 const { sendOtpEmail } = require("../utils/mailer");
 const { collectKycIssues } = require("../utils/kycCompliance");
 
+const { getStoreAccessState } = require("../utils/trialService");
+
 const router = express.Router();
 
 function withPolicyDefaults(sellerDoc) {
   if (!sellerDoc) return sellerDoc;
 
   const seller = sellerDoc.toObject ? sellerDoc.toObject() : sellerDoc;
+  const trialState = getStoreAccessState(seller);
+  const trial = {
+    status: trialState.status,
+    startedAt: trialState.startedAt,
+    endsAt: trialState.endsAt,
+    remainingDays: trialState.remainingDays,
+  };
+
   return {
     ...seller,
+    trial,
     ...getPolicyContent(seller),
   };
 }
@@ -74,7 +85,8 @@ router.get("/public/:sellerSlug", async (req, res) => {
       return res.status(404).json({ message: "Store not found" });
     }
 
-    if (!seller.storePublished || seller.approvalStatus !== "approved") {
+    const trialState = getStoreAccessState(seller);
+    if (!seller.storePublished || seller.approvalStatus !== "approved" || !trialState.hasAccess) {
       return res.status(404).json({ message: "Store not found" });
     }
 
@@ -89,6 +101,13 @@ router.post("/publish", auth, async (req, res) => {
     const seller = await Seller.findById(req.sellerId);
     if (!seller) {
       return res.status(404).json({ message: "Seller not found" });
+    }
+
+    const trialState = getStoreAccessState(seller);
+    if (trialState.status === "expired") {
+      return res.status(400).json({
+        message: "Your free trial has ended. Please choose a plan to publish your store.",
+      });
     }
 
     const missingFields = getMissingPublishFields(seller);

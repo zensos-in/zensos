@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Seller = require("../models/Seller");
 const auth = require("../middleware/auth");
+const { getStoreAccessState } = require("../utils/trialService");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
 const {
   calculatePlatformFeePaise,
@@ -281,6 +282,10 @@ router.post("/", async (req, res) => {
       if (!product) {
         product = await Product.findById(requestedProductId).populate("seller");
         if (!product || !product.isActive) {
+          return res.status(404).json({ message: "One or more products are unavailable" });
+        }
+        const trialState = getStoreAccessState(product.seller);
+        if (!product.seller.storePublished || product.seller.approvalStatus !== "approved" || !trialState.hasAccess) {
           return res.status(404).json({ message: "One or more products are unavailable" });
         }
         if (

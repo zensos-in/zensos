@@ -163,6 +163,41 @@ router.patch("/sellers/:sellerId/approval", adminAuth, async (req, res) => {
       if (seller.razorpayAccountId && seller.razorpayAccountStatus === "active") {
         seller.payoutStatus = "enabled";
       }
+
+      // Initialize free trial if this is the first successful publication
+      if (seller.trialStatus === "not_started" && !seller.trialStartedAt && !seller.trialEndsAt) {
+        const now = new Date();
+        const trialDuration = 15 * 24 * 60 * 60 * 1000;
+        const trialEnds = new Date(now.getTime() + trialDuration);
+
+        const resUpdate = await Seller.updateOne(
+          {
+            _id: seller._id,
+            trialStartedAt: null,
+            trialEndsAt: null,
+            trialStatus: "not_started"
+          },
+          {
+            $set: {
+              trialStartedAt: now,
+              trialEndsAt: trialEnds,
+              trialStatus: "active"
+            }
+          }
+        );
+        if (resUpdate.modifiedCount > 0) {
+          seller.trialStartedAt = now;
+          seller.trialEndsAt = trialEnds;
+          seller.trialStatus = "active";
+        } else {
+          const updatedSeller = await Seller.findById(seller._id).select("trialStartedAt trialEndsAt trialStatus");
+          if (updatedSeller) {
+            seller.trialStartedAt = updatedSeller.trialStartedAt;
+            seller.trialEndsAt = updatedSeller.trialEndsAt;
+            seller.trialStatus = updatedSeller.trialStatus;
+          }
+        }
+      }
     } else if (status === "suspended") {
       seller.storePublished = false;
       seller.razorpayAccountStatus = "suspended";

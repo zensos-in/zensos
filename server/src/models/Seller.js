@@ -295,6 +295,18 @@ const sellerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    trialStartedAt: {
+      type: Date,
+      default: null,
+    },
+    trialEndsAt: {
+      type: Date,
+      default: null,
+    },
+    trialStatus: {
+      type: String,
+      enum: ["not_started", "active", "expired"],
+    },
     publishRequestedAt: {
       type: Date,
       default: null,
@@ -355,5 +367,12 @@ sellerSchema.index(
   }
 );
 sellerSchema.index({ kycStatus: 1, payoutStatus: 1, approvalStatus: 1 });
+
+sellerSchema.pre("save", function (next) {
+  if (this.isNew) {
+    this.trialStatus = "not_started";
+  }
+  next();
+});
 
 module.exports = mongoose.model("Seller", sellerSchema);

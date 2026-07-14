@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import storefront from "../assets/Storefront.png";
 import registerYourStore from "../assets/Register Your Store.png";
 import addProductsImage from "../assets/Add Products & Product Catelog image.png";
@@ -49,6 +49,18 @@ function useInView(threshold = 0.15) {
 // ─── Main Landing Page ───────────────────────────────────────────────────────
 export function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#pricing" || window.location.hash === "#pricing") {
+      const el = document.getElementById("pricing");
+      if (el) {
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ behavior: "smooth" });
+        });
+      }
+    }
+  }, [location]);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // const [email, setEmail] = useState("");

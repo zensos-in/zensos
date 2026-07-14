@@ -26,12 +26,23 @@ function isAdminPreviewRequest(req) {
   }
 }
 
+const { getStoreAccessState } = require("../utils/trialService");
+
 function withPolicyDefaults(sellerDoc) {
   if (!sellerDoc) return sellerDoc;
 
   const seller = sellerDoc.toObject ? sellerDoc.toObject() : sellerDoc;
+  const trialState = getStoreAccessState(seller);
+  const trial = {
+    status: trialState.status,
+    startedAt: trialState.startedAt,
+    endsAt: trialState.endsAt,
+    remainingDays: trialState.remainingDays,
+  };
+
   return {
     ...seller,
+    trial,
     ...getPolicyContent(seller),
   };
 }
@@ -372,7 +383,8 @@ router.get("/public/:sellerSlug", async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    if (!isAdminPreview && (!seller.storePublished || seller.approvalStatus !== "approved")) {
+    const trialState = getStoreAccessState(seller);
+    if (!isAdminPreview && (!seller.storePublished || seller.approvalStatus !== "approved" || !trialState.hasAccess)) {
       return res.status(404).json({ message: "Seller store unavailable" });
     }
 
