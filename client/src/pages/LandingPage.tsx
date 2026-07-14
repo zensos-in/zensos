@@ -64,7 +64,7 @@ export function LandingPage() {
   const faqSection = useInView();
   const ctaSection = useInView();
 
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
