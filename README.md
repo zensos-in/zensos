@@ -39,7 +39,7 @@ zensos/
 ├── client/    ← Vite + React SPA
 │   └── src/
 │       ├── pages/LoginPage.tsx         ← OTP login + registration
-│       ├── pages/DashboardPage.tsx     ← Seller dashboard (6 tabs)
+│       ├── pages/DashboardPage.tsx     ← Seller dashboard (8 tabs)
 │       └── pages/PublicStorePage.tsx   ← Customer store + checkout
 └── server/    ← Express API
     └── src/

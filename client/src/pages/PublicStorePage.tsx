@@ -1678,6 +1678,25 @@ rzp.open(); } catch (err: any) {
               <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200 text-sm">
                 <span>Total Payable</span><span>&#8377;{grandTotal.toLocaleString("en-IN")}</span>
               </div>
+              {(() => {
+                const totalSaving = cartEntries.reduce((sum, entry) => {
+                  const matchedVariant = findMatchingVariant(entry!.product, entry!.item.variants, entry!.item.variantId);
+                  const mrp = matchedVariant?.mrp || entry!.product.mrp || 0;
+                  const price = entry!.item.unitPrice;
+                  const qty = entry!.item.quantity;
+                  return mrp > price ? sum + (mrp - price) * qty : sum;
+                }, 0);
+                if (totalSaving <= 0) return null;
+                return (
+                  <div className="flex items-center justify-between gap-2 rounded-xl bg-green-50 border border-green-200 px-3 py-2 mt-1 dark:bg-green-950/40 dark:border-green-800/60">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-green-600 dark:text-green-400 text-base">🎉</span>
+                      <span className="text-xs font-semibold text-green-700 dark:text-green-400">Your Total Saving</span>
+                    </div>
+                    <span className="text-sm font-bold text-green-700 dark:text-green-400">&#8377;{totalSaving.toLocaleString("en-IN")}</span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

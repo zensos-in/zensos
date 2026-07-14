@@ -31,3 +31,9 @@ coverage/
 # Misc
 *.tmp
 *.swp
+
+# Local Database
+.mongodb_data/
+
+# Local testing scripts
+server/src/scripts/

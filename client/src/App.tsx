@@ -13,6 +13,7 @@ import { ThankYouPage } from "./pages/ThankYouPage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsOfUsePage } from "./pages/TermsOfUsePage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
+import { FAQPage } from "./pages/FAQPage";
 import { ContactUsPage } from "./pages/ContactUsPage";
 import { GlobalControls } from "./components/GlobalControls";
 import { useTheme } from "./context/ThemeContext";
@@ -21,13 +22,13 @@ function AppShell() {
   const location = useLocation();
   const { setTheme } = useTheme();
   const [publicStoreHeader, setPublicStoreHeader] = useState<PublicStoreHeader | null>(null);
-  const isLanding = location.pathname === "/";
+  const isLanding = location.pathname === "/" || location.pathname === "/faq";
   const isPublicStore = location.pathname.startsWith("/store/");
-  const showThemeToggle = !isLanding && !["/contact-us", "/privacy-policy", "/terms", "/refund-policy"].includes(location.pathname);
+  const showThemeToggle = !isLanding && !["/contact-us", "/privacy-policy", "/terms", "/refund-policy", "/faq"].includes(location.pathname);
 
   // Force light theme on all public marketing & login/register pages
   useEffect(() => {
-    if (["/", "/login", "/contact-us", "/privacy-policy", "/terms", "/refund-policy"].includes(location.pathname)) {
+    if (["/", "/login", "/contact-us", "/privacy-policy", "/terms", "/refund-policy", "/faq"].includes(location.pathname)) {
       setTheme("light");
     }
   }, [location.pathname, setTheme]);
@@ -38,6 +39,7 @@ function AppShell() {
       {isLanding ? (
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/faq" element={<FAQPage />} />
         </Routes>
       ) : (
         <div className="min-h-screen">
@@ -69,13 +71,13 @@ function AppShell() {
                 </Link>
               )}
               {location.pathname === "/contact-us" && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Link to="/login"
-                    className="rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:opacity-80 text-slate-700 dark:text-slate-300">
+                    className="rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 text-slate-700 dark:text-slate-300">
                     Sign In
                   </Link>
                   <Link to="/login?tab=register"
-                    className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
+                    className="rounded-xl px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
                     style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
                     Sign Up →
                   </Link>

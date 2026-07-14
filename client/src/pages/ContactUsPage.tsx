@@ -109,7 +109,7 @@ export function ContactUsPage() {
                     For Collaborations
                   </h2>
                   <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    Feel free to reach out to us via call or email.
+                    Feel free to reach out to us via call<br className="sm:hidden" /> or email.
                   </p>
                 </div>
 
@@ -246,14 +246,24 @@ export function ContactUsPage() {
                     </div>
 
                     {/* Captcha */}
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-sm font-extrabold text-slate-600 dark:text-slate-400">
                           Solve this:
                         </span>
                         <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl font-black text-slate-800 dark:text-slate-100 tracking-wider text-base">
-                          {captcha.num1} + {captcha.num2} = ?
+                          {captcha.num1} + {captcha.num2} =
                         </div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          name="captchaInput"
+                          value={formData.captchaInput}
+                          onChange={handleChange}
+                          required
+                          placeholder="Answer"
+                          className="w-24 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold outline-none focus:border-[#ff751f] text-slate-800 dark:text-slate-100"
+                        />
                         <button
                           type="button"
                           onClick={generateCaptcha}
@@ -262,15 +272,6 @@ export function ContactUsPage() {
                           Refresh
                         </button>
                       </div>
-                      <input
-                        type="number"
-                        name="captchaInput"
-                        value={formData.captchaInput}
-                        onChange={handleChange}
-                        required
-                        placeholder="Your Answer"
-                        className="w-full sm:w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm font-bold outline-none focus:border-[#ff751f] text-slate-800 dark:text-slate-100"
-                      />
                     </div>
 
                     {/* Submit Button */}
@@ -343,7 +344,7 @@ export function ContactUsPage() {
                 <li><Link to="/contact-us" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400">Contact Us</Link></li>
                 <li className="pt-2">
                   <div className="flex gap-2">
-                    <button onClick={() => window.location.href = 'Mail to:naik@shankaraonline.com'} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</button>
+                    <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
                     <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
                   </div>
                 </li>
