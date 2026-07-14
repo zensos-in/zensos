@@ -64,7 +64,7 @@ export function LandingPage() {
   const faqSection = useInView();
   const ctaSection = useInView();
 
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -124,6 +124,13 @@ export function LandingPage() {
                 {label}
               </button>
             ))}
+            <Link
+              to="/faq"
+              className="text-sm font-semibold transition-colors hover:text-orange-500"
+              style={{ color: scrolled ? "#1e293b" : "#fff", textShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.3)" }}
+            >
+              FAQ
+            </Link>
           </div>
 
           {/* CTA buttons */}
@@ -155,6 +162,9 @@ export function LandingPage() {
                 {label}
               </button>
             ))}
+            <Link to="/faq" className="block w-full py-3 text-left text-sm font-semibold text-slate-700 hover:text-orange-500">
+              FAQ
+            </Link>
             <Link to="/login" className="mt-2 block rounded-xl py-2.5 text-center text-sm font-bold" style={{ color: "#ff751f" }}>
               Sign In
             </Link>
@@ -421,7 +431,7 @@ export function LandingPage() {
                   03
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#0b183f" }}>
-                  Publish Your Store & Get Orders
+                  Publish Your Store<br className="sm:hidden" /> & Get Orders
                 </h3>
               </div>
 
@@ -462,7 +472,7 @@ export function LandingPage() {
               The ZENSOS Advantages
             </div>
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl" style={{ color: "#0b183f" }}>
-              Other Platforms vs ZENSOS
+              Other Platforms vs <span style={{ color: "#ff751f" }}>ZENSOS</span>
             </h2>
           </div>
 
@@ -687,21 +697,74 @@ export function LandingPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
               {
-                name: "Starter", price: "Free", period: "forever", color: "#6366f1",
-                features: ["1 Store", "Up to 10 Products", "Basic Analytics", "Community Access", "Email Support"],
-                cta: "Get Started Free", popular: false,
+                name: "Starter",
+                subtitle: "For sellers just getting started",
+                price: "₹1,299",
+                strikePrice: "₹999",
+                color: "#6366f1",
+                features: [
+                  "List up to 10 products",
+                  "Up to 2 store banners",
+                  "Up to 5 variants per product",
+                  "Printable PDF of order copy",
+                  "Payment Gateway Integration",
+                  "Settlement in T+2 days",
+                  "Free ZENSOS subdomain",
+                  "Real-time Store Analytics",
+                  "Email Support",
+                  "Trust Badge",
+                ],
+                cta: "Get Started", popular: false,
               },
               {
-                name: "Growth", price: "₹999", period: "/month", color: "#ff751f",
-                features: ["3 Stores", "Unlimited Products", "Advanced Analytics", "Priority Support", "Custom Domain", "Bulk Import"],
+                name: "Growth",
+                subtitle: "For sellers ready to scale",
+                price: "₹1,799",
+                strikePrice: "₹1,499",
+                color: "#ff751f",
+                features: [
+                  "List up to 18 products",
+                  "Up to 3 store banners",
+                  "Up to 8 variants per product",
+                  "Printable PDF of order copy",
+                  "Payment Gateway Integration",
+                  "Settlement in T+2 days",
+                  "Free ZENSOS subdomain",
+                  "Real-time Store Analytics",
+                  "Email and Call Support",
+                  "Trust Badge",
+                  "Delivery Partner Integration",
+                  "Instagram Reels Integration",
+                  "Coupon Code Integration",
+                ],
                 cta: "Start Growing", popular: true,
               },
               {
-                name: "Pro", price: "₹2499", period: "/month", color: "#10b981",
-                features: ["Unlimited Stores", "Unlimited Products", "Real-time Analytics", "24/7 Dedicated Support", "White-label Option", "API Access"],
-                cta: "Go Pro", popular: false,
+                name: "Business",
+                subtitle: "For established sellers",
+                price: "₹2,799",
+                strikePrice: "₹2,499",
+                color: "#10b981",
+                features: [
+                  "List up to 30 products",
+                  "Up to 5 store banners",
+                  "Up to 10 variants per product",
+                  "Printable PDF of order copy",
+                  "Payment Gateway Integration",
+                  "Settlement in T+2 days",
+                  "Free ZENSOS subdomain",
+                  "Real-time Store Analytics",
+                  "Priority Support on Call",
+                  "Trust Badge",
+                  "Delivery Partner Integration",
+                  "Instagram Reels Integration",
+                  "Coupon Code Integration",
+                  "Affiliate Program Integration",
+                  "Google Reviews Integration",
+                ],
+                cta: "Go Business", popular: false,
               },
-            ].map(({ name, price, period, color, features, cta, popular }, i) => (
+            ].map(({ name, subtitle, price, strikePrice, color, features, cta, popular }, i) => (
               <div key={name}
                 className={`relative rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"} ${popular ? "ring-2 shadow-xl" : "shadow-md"}`}
                 style={{
@@ -713,17 +776,25 @@ export function LandingPage() {
                 {popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-black text-white"
                     style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-                    ✦ MOST POPULAR
+                    ✦ RECOMMENDED
                   </div>
                 )}
-                <div className="mb-6">
-                  <p className="text-sm font-bold uppercase tracking-widest mb-1" style={{ color: popular ? "rgba(255,255,255,0.6)" : "#94a3b8" }}>{name}</p>
-                  <div className="flex items-end gap-1">
-                    <span className="text-5xl font-black" style={{ color: popular ? "#fff" : "#0b183f" }}>{price}</span>
-                    <span className="mb-1.5 text-sm font-medium" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>{period}</span>
+                <div className="mb-1">
+                  <p className="text-lg font-black uppercase tracking-widest" style={{ color: popular ? "#fff" : "#0b183f" }}>{name}</p>
+                  <p className="text-xs font-semibold mt-0.5 mb-4" style={{ color: popular ? "rgba(255,255,255,0.55)" : "#94a3b8" }}>{subtitle}</p>
+                  {/* Price */}
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-4xl font-black" style={{ color: popular ? "#fff" : "#0b183f" }}>{strikePrice}</span>
+                    <span className="text-base font-semibold line-through opacity-50" style={{ color: popular ? "#fff" : "#0b183f" }}>{price}</span>
+                    <span className="text-xs font-semibold" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>+ 18% GST</span>
                   </div>
+                  {/* Handling charge note */}
+                  <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
+                    style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
+                    +1% per transaction · Platform Payment Handling Charges
+                  </p>
                 </div>
-                <ul className="mb-8 space-y-3">
+                <ul className="mb-8 space-y-2.5">
                   {features.map((f) => (
                     <li key={f} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
@@ -808,7 +879,7 @@ export function LandingPage() {
 
       {/* ════════════════════ FAQ SECTION ════════════════════ */}
       <section id="faq" className="py-20 sm:py-20" style={{ background: "#ffffff" }}>
-        <div className="mx-auto max-w-4xl px-5 sm:px-8">
+        <div className="mx-auto max-w-5xl px-5 sm:px-8">
           <div ref={faqSection.ref}
             className={`text-center mb-10 transition-all duration-700 ${faqSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
@@ -821,62 +892,30 @@ export function LandingPage() {
             </h2>
           </div>
 
-          <div className="space-y-4">
+          {/* Mosaic pill cards */}
+          <div className="flex flex-wrap gap-3 justify-center">
             {[
-              {
-                q: "Is Zensos really 0% commission? How do you make money?",
-                a: "Yes! Zensos charges 0% commission on every order you receive, so you keep 100% of your sales revenue. Instead of taking a percentage from each transaction, we offer affordable subscription plans based on your business needs."
-              },
-              {
-                q: "Are there any hidden charges?",
-                a: "No. Zensos follows transparent pricing. You only pay the subscription fee for your selected plan. Standard payment gateway charges may apply depending on your chosen payment provider, but Zensos does not deduct any commission from your sales."
-              },
-              {
-                q: "Do I need technical knowledge to create my online store?",
-                a: "No. Zensos is built for everyone. You can create and manage your online store without any coding or technical experience."
-              },
-              {
-                q: "Is there a limit on the number of products I can upload?",
-                a: "The product limit depends on the subscription plan you choose. Each plan includes a specific product capacity designed to match different business requirements."
-              },
-              {
-                q: "Can I update or manage my products anytime?",
-                a: "Yes. You can easily add, edit, update, or remove products from your seller dashboard whenever required."
-              },
-              {
-                q: "Does Zensos hold my payments?",
-                a: "No. Zensos does not hold your money. Every successful customer payment is directly credited to your linked seller account, giving you immediate access to your earnings without payout delays or withdrawal requests."
-              }
-            ].map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div key={idx}
-                  className={`border rounded-2xl transition-all duration-300 ${isOpen ? "border-orange-500/30 ring-1 ring-orange-500/10" : "border-slate-200/80 hover:border-slate-300"}`}
-                  style={{
-                    background: "#ffffff",
-                    boxShadow: "0 10px 30px rgba(11, 24, 63, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02)"
-                  }}>
-                  <button onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none">
-                    <span className="text-base sm:text-lg font-extrabold text-[#0b183f]">
-                      {faq.q}
-                    </span>
-                    <span className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? "rotate-180 bg-orange-50 text-orange-500" : "text-slate-500"}`}
-                      style={!isOpen ? { background: "#f8fafc" } : undefined}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                      </svg>
-                    </span>
-                  </button>
-                  <div className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-[500px]" : "max-h-0"}`}>
-                    <div className="p-5 sm:p-6 pt-0 border-t border-slate-100 text-sm sm:text-base leading-relaxed font-medium"
-                      style={{ color: "#475569" }}>
-                      {faq.a}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+              { id: "getting-started", label: "Getting Started"                   },
+              { id: "payments",        label: "Payments & Settlements"            },
+              { id: "pricing",         label: "Pricing & Charges"                 },
+              { id: "store-growth",    label: "Store, Products & Growth"          },
+              { id: "delivery",        label: "Inventory, Delivery & Fulfillment" },
+              { id: "support",         label: "Support & Security"                },
+            ].map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/faq#${cat.id}`}
+                className="group inline-flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
+                style={{ boxShadow: "0 4px 20px rgba(11,24,63,0.05)" }}
+              >
+                <span className="font-extrabold text-[#0b183f] text-sm sm:text-base">{cat.label}</span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200 group-hover:bg-orange-50" style={{ color: "#ff751f" }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -982,6 +1021,9 @@ export function LandingPage() {
                     <button onClick={() => scrollTo(id)} className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>{label}</button>
                   </li>
                 ))}
+                <li>
+                  <Link to="/faq" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>FAQ</Link>
+                </li>
               </ul>
             </div>
 
@@ -1003,7 +1045,7 @@ export function LandingPage() {
                 <li><Link to="/contact-us" className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400">Contact Us</Link></li>
                 <li className="pt-2">
                   <div className="flex gap-2">
-                    <button onClick={() => window.location.href = 'Mail to:naik@shankaraonline.com'} className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</button>
+                    <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
                     <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
                   </div>
                 </li>

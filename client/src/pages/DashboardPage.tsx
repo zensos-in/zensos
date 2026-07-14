@@ -1542,9 +1542,7 @@ export function DashboardPage() {
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
                   🖥️ Desktop — <span className="font-bold">1200 × 260 px</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-400">
-                  📱 Mobile — <span className="font-bold">400 × 200 px</span>
-                </span>
+
               </div>
               <div className="space-y-2">
                 {banners.map((b, i) => (
@@ -2800,17 +2798,17 @@ export function DashboardPage() {
                   })}
                 </div>
                 {/* Desktop table */}
-                <div className="hidden overflow-x-auto md:block mt-4">
-                  <table className="min-w-full border-collapse text-left text-sm">
+                <div className="hidden overflow-x-auto md:block mt-4 -mx-5">
+                  <table className="w-full min-w-full border-collapse text-left text-sm">
                     <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
-                      <th className="pb-2 pr-4">Order No</th>
+                      <th className="pb-2 pr-4 pl-5">Order No</th>
                       <th className="pb-2 pr-4">Customer Name</th>
                       <th className="pb-2 pr-4">Contact</th>
                       <th className="pb-2 pr-4">Product</th>
                       <th className="pb-2 pr-4">Order Value</th>
                       <th className="pb-2 pr-4">Order Status</th>
                       <th className="pb-2 pr-4">Update</th>
-                      <th className="pb-2">View</th>
+                      <th className="pb-2 pr-5">View</th>
                     </tr></thead>
                     <tbody>
                       {filtered.map(order => {
@@ -2818,7 +2816,7 @@ export function DashboardPage() {
                         return (
                           <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
                             {/* Order No */}
-                            <td className="py-3 pr-4">
+                            <td className="py-3 pr-4 pl-5">
                               <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>#{order._id.slice(-8).toUpperCase()}</p>
                             </td>
                             {/* Customer Name */}
@@ -2853,7 +2851,7 @@ export function DashboardPage() {
                               </select>
                             </td>
                             {/* View Order */}
-                            <td className="py-3">
+                            <td className="py-3 pr-5">
                               <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-full border border-orange-400 bg-orange-50/70 px-3.5 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50 whitespace-nowrap"><AppIcon name="visibility" className="text-[16px]" /> View Order</button>
                             </td>
                           </tr>
@@ -3076,7 +3074,7 @@ export function DashboardPage() {
                       {report.topProducts.map((product, index) => {
                         const leaderRevenue = report.topProducts[0]?.revenue || 1;
                         const revenueWidth = Math.max(10, Math.min(100, (product.revenue / leaderRevenue) * 100));
-                        const rankClass = index === 0 ? "bg-gradient-to-br from-orange-200 to-amber-100 text-orange-700" : index === 1 ? "bg-gradient-to-br from-sky-500 to-cyan-600 text-white" : "bg-gradient-to-br from-amber-400 to-orange-500 text-white";
+                        const rankClass = index === 0 ? "bg-gradient-to-br from-orange-500 to-orange-600 text-white" : index === 1 ? "bg-gradient-to-br from-orange-400 to-amber-500 text-white" : "bg-gradient-to-br from-amber-400 to-orange-400 text-white";
                         return (
                           <div key={product.title + "-" + index} className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 transition hover:border-orange-200 hover:bg-white dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-orange-800">
                             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

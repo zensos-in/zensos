@@ -1231,13 +1231,13 @@ export function AdminPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="shrink-0 border-b border-slate-200 bg-gradient-to-r from-white via-teal-50/60 to-sky-50/50 px-4 py-3 dark:border-slate-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 sm:px-6 sm:py-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex min-w-0 items-start gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
                   {selectedSeller.businessLogo ? (
                     <img
                       src={selectedSeller.businessLogo}
                       alt=""
-                      className="h-11 w-11 shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1 sm:h-14 sm:w-14 sm:rounded-2xl dark:border-slate-700"
+                      className="h-11 w-auto max-w-[44px] shrink-0 rounded-xl border border-slate-200 bg-white object-contain p-1 sm:h-14 sm:max-w-[56px] sm:rounded-2xl dark:border-slate-700"
                     />
                   ) : (
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-base font-bold text-teal-700 sm:h-14 sm:w-14 sm:rounded-2xl sm:text-lg dark:border-slate-700 dark:bg-slate-900">
@@ -1268,7 +1268,7 @@ export function AdminPage() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:items-center">
                   {selectedSeller.slug ? (
                     <a
                       href={getAdminPreviewUrl(selectedSeller)}
