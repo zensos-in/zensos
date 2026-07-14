@@ -19,6 +19,8 @@ const {
   recordComplianceEvent,
 } = require("../utils/kycCompliance");
 
+const { getStoreAccessState } = require("../utils/trialService");
+
 const router = express.Router();
 
 function issueToken(sellerId) {
@@ -34,8 +36,18 @@ function withPolicyDefaults(sellerDoc) {
   const pan = getPanCompliance(seller);
   const businessType = seller.kycDetailsEncrypted?.businessType || seller.businessType || "individual";
   delete seller.kycDetailsEncrypted;
+
+  const trialState = getStoreAccessState(seller);
+  const trial = {
+    status: trialState.status,
+    startedAt: trialState.startedAt,
+    endsAt: trialState.endsAt,
+    remainingDays: trialState.remainingDays,
+  };
+
   return {
     ...seller,
+    trial,
     pan: pan.panMasked || seller.pan || "",
     businessType,
     ...getPolicyContent(seller),

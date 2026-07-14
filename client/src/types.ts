@@ -35,7 +35,15 @@ export interface VariantItem {
   isActive: boolean;
 }
 
+export interface TrialState {
+  status: "not_started" | "active" | "expired" | "legacy";
+  startedAt: string | null;
+  endsAt: string | null;
+  remainingDays: number | null;
+}
+
 export interface Seller {
+  trial?: TrialState;
   _id: string;
   slug: string;
   businessName: string;

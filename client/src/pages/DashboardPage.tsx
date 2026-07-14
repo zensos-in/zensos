@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
 import { api } from "../api/client";
@@ -276,6 +277,7 @@ function getOrderProductNames(order: Order): string {
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { seller, logout, updateProfile, refreshProfile } = useAuth();
   const { t } = useI18n();
   const { showError, showSuccess } = useToast();
@@ -3312,6 +3314,74 @@ export function DashboardPage() {
               {getApprovalLabel()}
             </span>
           </div>
+
+          {seller?.trial && seller.trial.status !== "legacy" && (
+            <div className={`flex items-start gap-3 rounded-2xl border px-5 py-4 shadow-card ${
+              seller.trial.status === "expired"
+                ? "border-rose-200 bg-rose-50 dark:border-rose-800/50 dark:bg-rose-950/40"
+                : seller.trial.status === "active"
+                ? "border-orange-200 bg-orange-50 dark:border-orange-800/50 dark:bg-orange-950/40"
+                : "border-sky-200 bg-sky-50 dark:border-sky-800/50 dark:bg-sky-950/40"
+            }`}>
+              <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-white text-sm font-bold ${
+                seller.trial.status === "expired"
+                  ? "bg-rose-500"
+                  : seller.trial.status === "active"
+                  ? "bg-orange-500"
+                  : "bg-sky-500"
+              }`}>
+                {seller.trial.status === "expired" ? "✕" : seller.trial.status === "active" ? "✓" : "ℹ"}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className={`text-sm font-bold ${
+                    seller.trial.status === "expired"
+                      ? "text-rose-800 dark:text-rose-300"
+                      : seller.trial.status === "active"
+                      ? "text-orange-800 dark:text-orange-300"
+                      : "text-sky-800 dark:text-sky-300"
+                  }`}>
+                    {seller.trial.status === "expired"
+                      ? "Free Trial Ended"
+                      : seller.trial.status === "active"
+                      ? "Free Trial"
+                      : "15-Day Free Trial"}
+                  </p>
+                  {seller.trial.status === "active" && (
+                    <span className="rounded-full bg-orange-600 text-white px-2 py-0.5 text-[10px] font-bold">
+                      {seller.trial.remainingDays} {seller.trial.remainingDays === 1 ? "day" : "days"} left
+                    </span>
+                  )}
+                </div>
+                <p className={`mt-0.5 text-xs ${
+                  seller.trial.status === "expired"
+                    ? "text-rose-700 dark:text-rose-400"
+                    : seller.trial.status === "active"
+                    ? "text-orange-700 dark:text-orange-400"
+                    : "text-sky-700 dark:text-sky-400"
+                }`}>
+                  {seller.trial.status === "expired"
+                    ? "Your 15-day free trial has ended. Choose a plan to reactivate your store."
+                    : seller.trial.status === "active"
+                    ? "Your free trial is currently active."
+                    : "Your free trial starts when you publish your store."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/#pricing")}
+                  className={`mt-2 text-xs font-bold underline focus:outline-none block ${
+                    seller.trial.status === "expired"
+                      ? "text-rose-800 hover:text-rose-600 dark:text-rose-300 dark:hover:text-rose-200"
+                      : seller.trial.status === "active"
+                      ? "text-orange-800 hover:text-orange-600 dark:text-orange-300 dark:hover:text-orange-200"
+                      : "text-sky-800 hover:text-sky-600 dark:text-sky-300 dark:hover:text-sky-200"
+                  }`}
+                >
+                  See Plans
+                </button>
+              </div>
+            </div>
+          )}
 
           {seller?.razorpayOnboardingError ? (
             <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 dark:border-rose-800/50 dark:bg-rose-950/40">
