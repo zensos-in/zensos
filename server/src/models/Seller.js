@@ -372,7 +372,9 @@ sellerSchema.pre("save", function (next) {
   if (this.isNew) {
     this.trialStatus = "not_started";
   }
-  next();
+  if (typeof next === "function") {
+    next();
+  }
 });
 
 module.exports = mongoose.model("Seller", sellerSchema);

@@ -146,6 +146,19 @@ async function processSubOrderTransfer(subOrder, razorpayPaymentId) {
   }
 
   if (!seller.razorpayAccountId || seller.razorpayAccountStatus !== "active") {
+    if (seller.approvalStatus === "approved") {
+      try {
+        const { provisionVendorLinkedAccount } = require("./razorpayLinkedAccount");
+        console.log(`[transfer] Attempting auto-provisioning for approved seller ${seller.businessName}...`);
+        await provisionVendorLinkedAccount(seller, { actor: "settlement-auto-provision" });
+        await seller.save();
+      } catch (err) {
+        console.error(`[transfer] Auto-provisioning failed for ${seller.businessName}:`, err.message);
+      }
+    }
+  }
+
+  if (!seller.razorpayAccountId || seller.razorpayAccountStatus !== "active") {
     subOrder.transferStatus = "failed";
     subOrder.settlementStatus = "failed";
     await subOrder.save();
