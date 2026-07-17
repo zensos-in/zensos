@@ -6,6 +6,7 @@ const auth = require("../middleware/auth");
 const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
+const { deleteImgbbImages } = require("../utils/imgbbDelete");
 
 const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
@@ -236,6 +237,8 @@ router.post("/", auth, async (req, res) => {
       description,
       imageUrl,
       imageUrls,
+      imageDeleteUrl,
+      imageDeleteUrls,
       notes,
       packSize,
       uom,
@@ -335,6 +338,8 @@ router.post("/", auth, async (req, res) => {
       description: description ? String(description).trim() : "",
       imageUrl: normalizedImageUrls[0],
       imageUrls: normalizedImageUrls,
+      imageDeleteUrl: typeof imageDeleteUrl === "string" ? imageDeleteUrl.trim() : "",
+      imageDeleteUrls: Array.isArray(imageDeleteUrls) ? imageDeleteUrls.map(u => String(u || "").trim()).filter(Boolean) : [],
       notes: notes ? String(notes).trim() : "",
       packSize: packSize ? String(packSize).trim() : "",
       uom: uom ? String(uom).trim() : "",
@@ -437,6 +442,8 @@ router.put("/:productId", auth, async (req, res) => {
       description,
       imageUrl,
       imageUrls,
+      imageDeleteUrl,
+      imageDeleteUrls,
       notes,
       packSize,
       uom,
@@ -507,6 +514,13 @@ router.put("/:productId", auth, async (req, res) => {
     if (description !== undefined) product.description = String(description).trim();
     product.imageUrls = normalizedImageUrls;
     product.imageUrl = normalizedImageUrls[0];
+    // Persist delete URLs when provided (allow empty string to clear)
+    if (imageDeleteUrl !== undefined) product.imageDeleteUrl = String(imageDeleteUrl || "").trim();
+    if (imageDeleteUrls !== undefined) {
+      product.imageDeleteUrls = Array.isArray(imageDeleteUrls)
+        ? imageDeleteUrls.map(u => String(u || "").trim()).filter(Boolean)
+        : [];
+    }
     if (notes !== undefined) product.notes = String(notes).trim();
     if (packSize !== undefined) product.packSize = String(packSize).trim();
     if (uom !== undefined) product.uom = String(uom).trim();
@@ -659,6 +673,13 @@ router.post("/:productId/confirm-delete", auth, async (req, res) => {
     seller.otpPurpose = null;
     seller.otpTargetId = null;
     await seller.save();
+
+    // Best-effort: delete uploaded images from ImgBB before removing from DB
+    const imgbbDeleteUrls = [
+      product.imageDeleteUrl,
+      ...(Array.isArray(product.imageDeleteUrls) ? product.imageDeleteUrls : []),
+    ].filter(Boolean);
+    await deleteImgbbImages(imgbbDeleteUrls);
 
     await product.deleteOne();
     return res.json({ message: "Product deleted successfully." });

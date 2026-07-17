@@ -92,6 +92,17 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // ImgBB delete_url for the primary image (enables cleanup on deletion)
+    imageDeleteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    // Parallel array to imageUrls — stores ImgBB delete_url for each image
+    imageDeleteUrls: {
+      type: [String],
+      default: [],
+    },
     notes: {
       type: String,
       trim: true,

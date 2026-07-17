@@ -6,6 +6,7 @@ const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
 const { collectKycIssues } = require("../utils/kycCompliance");
+const { deleteImgbbImages } = require("../utils/imgbbDelete");
 
 const { getStoreAccessState } = require("../utils/trialService");
 
@@ -150,7 +151,9 @@ router.put("/options", auth, async (req, res) => {
       whatsappNumber,
       callNumber,
       businessLogo,
+      businessLogoDeleteUrl,
       favicon,
+      faviconDeleteUrl,
       categories,
       defaultDeliveryCharge,
       deliveryMode,
@@ -173,7 +176,11 @@ router.put("/options", auth, async (req, res) => {
     if (typeof callNumber === "string") seller.callNumber = callNumber.trim();
     if (typeof businessLogo === "string")
       seller.businessLogo = businessLogo.trim();
+    if (typeof businessLogoDeleteUrl === "string")
+      seller.businessLogoDeleteUrl = businessLogoDeleteUrl.trim();
     if (typeof favicon === "string") seller.favicon = favicon.trim();
+    if (typeof faviconDeleteUrl === "string")
+      seller.faviconDeleteUrl = faviconDeleteUrl.trim();
     if (Array.isArray(categories)) seller.categories = categories;
     if (typeof defaultDeliveryCharge === "number" && defaultDeliveryCharge >= 0)
       seller.defaultDeliveryCharge = defaultDeliveryCharge;
@@ -316,6 +323,24 @@ router.post("/confirm-delete", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP." });
     }
 
+    // ── Collect all ImgBB delete URLs before wiping data ─────────────────
+    const products = await Product.find({ seller: seller._id });
+    const productImageDeleteUrls = products.flatMap((p) => [
+      p.imageDeleteUrl,
+      ...(Array.isArray(p.imageDeleteUrls) ? p.imageDeleteUrls : []),
+    ]).filter(Boolean);
+
+    const sellerImageDeleteUrls = [
+      seller.businessLogoDeleteUrl,
+      seller.faviconDeleteUrl,
+      ...(Array.isArray(seller.banners)
+        ? seller.banners.map((b) => b.deleteUrl).filter(Boolean)
+        : []),
+    ].filter(Boolean);
+
+    // Best-effort cleanup — failures are logged but never block the deletion
+    await deleteImgbbImages([...productImageDeleteUrls, ...sellerImageDeleteUrls]);
+
     await Product.deleteMany({ seller: seller._id });
 
     seller.banners = [];
@@ -326,7 +351,9 @@ router.post("/confirm-delete", auth, async (req, res) => {
     seller.freeDeliveryThreshold = 500;
     seller.paymentMode = "prepaid_only";
     seller.businessLogo = "";
+    seller.businessLogoDeleteUrl = "";
     seller.favicon = "";
+    seller.faviconDeleteUrl = "";
     seller.whatsappNumber = "";
     seller.callNumber = "";
     seller.storePublished = false;

@@ -13,6 +13,8 @@ const bannerSchema = new mongoose.Schema(
   {
     imageUrl: { type: String, trim: true },
     title: { type: String, trim: true, default: "" },
+    // ImgBB delete_url for this banner image
+    deleteUrl: { type: String, trim: true, default: "" },
   },
   { _id: false }
 );
@@ -106,6 +108,12 @@ const sellerSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // ImgBB delete_url for panDocumentUrl
+    panDocumentDeleteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     panVerificationStatus: {
       type: String,
       enum: ["unsubmitted", "pending", "verified", "rejected"],
@@ -135,12 +143,30 @@ const sellerSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // ImgBB delete_url for profileImageUrl
+    profileImageDeleteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     businessLogo: {
       type: String,
       trim: true,
       default: "",
     },
+    // ImgBB delete_url for businessLogo
+    businessLogoDeleteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     favicon: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    // ImgBB delete_url for favicon
+    faviconDeleteUrl: {
       type: String,
       trim: true,
       default: "",
@@ -160,7 +186,19 @@ const sellerSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // ImgBB delete_url for idProofUrl
+    idProofDeleteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     addressProofUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    // ImgBB delete_url for addressProofUrl
+    addressProofDeleteUrl: {
       type: String,
       trim: true,
       default: "",
