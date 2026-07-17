@@ -36,10 +36,12 @@ function normalizePan(value: string) {
 function ImageUploadField({
   value,
   onChange,
+  onDeleteUrl,
   placeholder,
 }: {
   value: string;
   onChange: (url: string) => void;
+  onDeleteUrl?: (deleteUrl: string) => void;
   placeholder: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -64,9 +66,13 @@ function ImageUploadField({
         method: "POST",
         body: form,
       });
-      const data = await response.json() as { success: boolean; data?: { url: string } };
+      const data = await response.json() as { success: boolean; data?: { url: string; delete_url?: string } };
       if (data.success && data.data?.url) {
         onChange(data.data.url);
+        // Propagate the delete_url so callers can persist it for later cleanup
+        if (onDeleteUrl && data.data.delete_url) {
+          onDeleteUrl(data.data.delete_url);
+        }
       } else {
         setUploadError("Upload failed. Check your ImgBB API key.");
       }
@@ -130,6 +136,7 @@ export function LoginPage() {
   const [pan, setPan] = useState("");
   const [panHolderName, setPanHolderName] = useState("");
   const [panDocumentUrl, setPanDocumentUrl] = useState("");
+  const [panDocumentDeleteUrl, setPanDocumentDeleteUrl] = useState("");
   const [upiId, setUpiId] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
   const [bankName, setBankName] = useState("");
@@ -137,7 +144,9 @@ export function LoginPage() {
   const [bankIfsc, setBankIfsc] = useState("");
   const [businessLogo, setBusinessLogo] = useState("");
   const [idProofUrl, setIdProofUrl] = useState("");
+  const [idProofDeleteUrl, setIdProofDeleteUrl] = useState("");
   const [addressProofUrl, setAddressProofUrl] = useState("");
+  const [addressProofDeleteUrl, setAddressProofDeleteUrl] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState<PhoneParts>({ countryCode: DEFAULT_COUNTRY_CODE, number: "" });
   const [callNumber, setCallNumber] = useState<PhoneParts>({ countryCode: DEFAULT_COUNTRY_CODE, number: "" });
   const [policyChecks, setPolicyChecks] = useState<Record<string, boolean>>(
@@ -399,9 +408,12 @@ export function LoginPage() {
           pan: normalizedPan,
           panHolderName: panHolderName.trim(),
           panDocumentUrl: panDocumentUrl.trim() || undefined,
+          panDocumentDeleteUrl: panDocumentDeleteUrl.trim() || undefined,
           businessLogo: businessLogo.trim() || undefined,
           idProofUrl: idProofUrl.trim() || undefined,
+          idProofDeleteUrl: idProofDeleteUrl.trim() || undefined,
           addressProofUrl: addressProofUrl.trim() || undefined,
+          addressProofDeleteUrl: addressProofDeleteUrl.trim() || undefined,
           whatsappNumber: formatPhone(whatsappNumber) || undefined,
           callNumber: formatPhone(callNumber) || undefined,
         });
@@ -451,9 +463,12 @@ export function LoginPage() {
         pan: normalizedPan,
         panHolderName: panHolderName.trim(),
         panDocumentUrl: panDocumentUrl.trim() || undefined,
+        panDocumentDeleteUrl: panDocumentDeleteUrl.trim() || undefined,
         businessLogo: businessLogo.trim() || undefined,
         idProofUrl: idProofUrl.trim() || undefined,
+        idProofDeleteUrl: idProofDeleteUrl.trim() || undefined,
         addressProofUrl: addressProofUrl.trim() || undefined,
+        addressProofDeleteUrl: addressProofDeleteUrl.trim() || undefined,
         whatsappNumber: formatPhone(whatsappNumber) || undefined,
         callNumber: formatPhone(callNumber) || undefined,
       });
@@ -845,6 +860,7 @@ export function LoginPage() {
                       <ImageUploadField
                         value={panDocumentUrl}
                         onChange={setPanDocumentUrl}
+                        onDeleteUrl={setPanDocumentDeleteUrl}
                         placeholder="Paste image URL of your PAN card..."
                       />
                     </label>
@@ -854,6 +870,7 @@ export function LoginPage() {
                       <ImageUploadField
                         value={idProofUrl}
                         onChange={setIdProofUrl}
+                        onDeleteUrl={setIdProofDeleteUrl}
                         placeholder="Paste image URL of your ID proof..."
                       />
                     </label>
@@ -863,6 +880,7 @@ export function LoginPage() {
                       <ImageUploadField
                         value={addressProofUrl}
                         onChange={setAddressProofUrl}
+                        onDeleteUrl={setAddressProofDeleteUrl}
                         placeholder="Paste image URL of your address proof..."
                       />
                     </label>
@@ -1135,6 +1153,7 @@ export function LoginPage() {
                   <ImageUploadField
                     value={panDocumentUrl}
                     onChange={setPanDocumentUrl}
+                    onDeleteUrl={setPanDocumentDeleteUrl}
                     placeholder="Paste image URL of your PAN card..."
                   />
                 </label>

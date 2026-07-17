@@ -18,6 +18,7 @@ const {
   panHash,
   recordComplianceEvent,
 } = require("../utils/kycCompliance");
+const { deleteImgbbImages } = require("../utils/imgbbDelete");
 
 const { getStoreAccessState } = require("../utils/trialService");
 
@@ -362,12 +363,15 @@ router.post("/register", auth, async (req, res) => {
       pan,
       panHolderName,
       panDocumentUrl,
+      panDocumentDeleteUrl,
       businessType = "individual",
       businessLogo,
       whatsappNumber,
       callNumber,
       idProofUrl,
+      idProofDeleteUrl,
       addressProofUrl,
+      addressProofDeleteUrl,
       termsAccepted,
       privacyPolicy,
       returnRefundPolicy,
@@ -442,7 +446,9 @@ router.post("/register", auth, async (req, res) => {
     if (whatsappNumber) seller.whatsappNumber = String(whatsappNumber).trim();
     if (callNumber) seller.callNumber = String(callNumber).trim();
     if (typeof idProofUrl === "string") seller.idProofUrl = idProofUrl.trim();
+    if (typeof idProofDeleteUrl === "string") seller.idProofDeleteUrl = idProofDeleteUrl.trim();
     if (typeof addressProofUrl === "string") seller.addressProofUrl = addressProofUrl.trim();
+    if (typeof addressProofDeleteUrl === "string") seller.addressProofDeleteUrl = addressProofDeleteUrl.trim();
     if (typeof privacyPolicy === "string") seller.privacyPolicy = privacyPolicy.trim();
     if (typeof returnRefundPolicy === "string") seller.returnRefundPolicy = returnRefundPolicy.trim();
     if (typeof termsAndConditions === "string") seller.termsAndConditions = termsAndConditions.trim();
@@ -466,6 +472,7 @@ router.post("/register", auth, async (req, res) => {
     seller.panHash = panHash(normalizedPan);
     seller.panHolderName = normalizedPanHolderName;
     seller.panDocumentUrl = normalizedPanDocumentUrl;
+    if (typeof panDocumentDeleteUrl === "string") seller.panDocumentDeleteUrl = panDocumentDeleteUrl.trim();
     if (businessGST) {
       seller.kycDetailsEncrypted.gst = encrypt(businessGST);
       seller.businessGST = maskText(businessGST, 4);
@@ -544,14 +551,20 @@ router.put("/me", auth, async (req, res) => {
       pan,
       panHolderName,
       panDocumentUrl,
+      panDocumentDeleteUrl,
       businessType,
       profileImageUrl,
+      profileImageDeleteUrl,
       businessLogo,
+      businessLogoDeleteUrl,
       favicon,
+      faviconDeleteUrl,
       whatsappNumber,
       callNumber,
       idProofUrl,
+      idProofDeleteUrl,
       addressProofUrl,
+      addressProofDeleteUrl,
       privacyPolicy,
       returnRefundPolicy,
       termsAndConditions,
@@ -589,12 +602,17 @@ router.put("/me", auth, async (req, res) => {
     if (typeof bankName === "string") seller.bankName = bankName.trim();
     if (typeof bankIfsc === "string") seller.bankIfsc = bankIfsc.trim().toUpperCase();
     if (typeof profileImageUrl === "string") seller.profileImageUrl = profileImageUrl.trim();
+    if (typeof profileImageDeleteUrl === "string") seller.profileImageDeleteUrl = profileImageDeleteUrl.trim();
     if (typeof businessLogo === "string") seller.businessLogo = businessLogo.trim();
+    if (typeof businessLogoDeleteUrl === "string") seller.businessLogoDeleteUrl = businessLogoDeleteUrl.trim();
     if (typeof favicon === "string") seller.favicon = favicon.trim();
+    if (typeof faviconDeleteUrl === "string") seller.faviconDeleteUrl = faviconDeleteUrl.trim();
     if (typeof whatsappNumber === "string") seller.whatsappNumber = whatsappNumber.trim();
     if (typeof callNumber === "string") seller.callNumber = callNumber.trim();
     if (typeof idProofUrl === "string") seller.idProofUrl = idProofUrl.trim();
+    if (typeof idProofDeleteUrl === "string") seller.idProofDeleteUrl = idProofDeleteUrl.trim();
     if (typeof addressProofUrl === "string") seller.addressProofUrl = addressProofUrl.trim();
+    if (typeof addressProofDeleteUrl === "string") seller.addressProofDeleteUrl = addressProofDeleteUrl.trim();
     if (typeof privacyPolicy === "string") seller.privacyPolicy = privacyPolicy.trim();
     if (typeof returnRefundPolicy === "string") seller.returnRefundPolicy = returnRefundPolicy.trim();
     if (typeof termsAndConditions === "string") seller.termsAndConditions = termsAndConditions.trim();
@@ -650,6 +668,7 @@ router.put("/me", auth, async (req, res) => {
     seller.panHolderName = nextPanHolderName;
     seller.kycDetailsEncrypted.panHolderName = encrypt(nextPanHolderName);
     if (typeof panDocumentUrl === "string") seller.panDocumentUrl = panDocumentUrl.trim();
+    if (typeof panDocumentDeleteUrl === "string") seller.panDocumentDeleteUrl = panDocumentDeleteUrl.trim();
     if (typeof businessGST === "string" && businessGST.trim()) {
       if (!businessGST.includes("*")) { // Only encrypt if it's a new raw value
         seller.kycDetailsEncrypted.gst = encrypt(businessGST);
@@ -836,6 +855,27 @@ router.post("/delete-account", auth, async (req, res) => {
     if (!verifyHashedOtp(String(otp).trim(), seller.otp)) {
       return res.status(400).json({ message: "Invalid OTP." });
     }
+
+    // ── Best-effort: clean up all ImgBB images before deleting DB records ──
+    const products = await Product.find({ seller: seller._id });
+    const productImageDeleteUrls = products.flatMap((p) => [
+      p.imageDeleteUrl,
+      ...(Array.isArray(p.imageDeleteUrls) ? p.imageDeleteUrls : []),
+    ]).filter(Boolean);
+
+    const sellerImageDeleteUrls = [
+      seller.businessLogoDeleteUrl,
+      seller.faviconDeleteUrl,
+      seller.profileImageDeleteUrl,
+      seller.panDocumentDeleteUrl,
+      seller.idProofDeleteUrl,
+      seller.addressProofDeleteUrl,
+      ...(Array.isArray(seller.banners)
+        ? seller.banners.map((b) => b.deleteUrl).filter(Boolean)
+        : []),
+    ].filter(Boolean);
+
+    await deleteImgbbImages([...productImageDeleteUrls, ...sellerImageDeleteUrls]);
 
     await Product.deleteMany({ seller: seller._id });
     await Order.deleteMany({ seller: seller._id });

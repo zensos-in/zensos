@@ -50,13 +50,13 @@ type ProductFormVariant = {
 
 type ProductForm = {
   title: string; description: string; price: string; mrp: string; packSize: string; uom: string;
-  imageUrls: string[]; notes: string; categories: string[]; categoryInput: string;
+  imageUrls: string[]; imageDeleteUrls: string[]; notes: string; categories: string[]; categoryInput: string;
   variants: ProductFormVariant[]; isRecommended: boolean;
 };
 const PRODUCT_TITLE_MAX_LENGTH = 60;
 const emptyProductForm: ProductForm = {
   title: "", description: "", price: "", mrp: "", packSize: "", uom: "",
-  imageUrls: [""], notes: "", categories: [], categoryInput: "", variants: [], isRecommended: false,
+  imageUrls: [""], imageDeleteUrls: [""], notes: "", categories: [], categoryInput: "", variants: [], isRecommended: false,
 };
 
 const statusClasses: Record<OrderStatus, string> = {
@@ -104,10 +104,12 @@ function reorderItems<T>(items: T[], fromIndex: number, toIndex: number) {
 function ImageUploadField({
   value,
   onChange,
+  onDeleteUrl,
   placeholder = "https://...",
 }: {
   value: string;
   onChange: (url: string) => void;
+  onDeleteUrl?: (deleteUrl: string) => void;
   placeholder?: string;
 }) {
   const [uploading, setUploading] = useState(false);
@@ -131,9 +133,13 @@ function ImageUploadField({
         method: "POST",
         body: form,
       });
-      const data = await res.json() as { success: boolean; data?: { url: string } };
+      const data = await res.json() as { success: boolean; data?: { url: string; delete_url?: string } };
       if (data.success && data.data?.url) {
         onChange(data.data.url);
+        // Propagate the delete_url so callers can persist it for later cleanup
+        if (onDeleteUrl && data.data.delete_url) {
+          onDeleteUrl(data.data.delete_url);
+        }
       } else {
         setUploadError("Upload failed. Check your ImgBB API key.");
       }
@@ -303,16 +309,21 @@ export function DashboardPage() {
   const [profilePAN, setProfilePAN] = useState(seller?.pan || "");
   const [profilePANHolderName, setProfilePANHolderName] = useState(seller?.panHolderName || "");
   const [profilePANDocumentUrl, setProfilePANDocumentUrl] = useState(seller?.panDocumentUrl || "");
+  const [profilePANDocumentDeleteUrl, setProfilePANDocumentDeleteUrl] = useState(seller?.panDocumentDeleteUrl || "");
   const [profileBusinessType, setProfileBusinessType] = useState(seller?.businessType || "individual");
   const [profileLogo, setProfileLogo] = useState(seller?.businessLogo || "");
+  const [profileLogoDeleteUrl, setProfileLogoDeleteUrl] = useState(seller?.businessLogoDeleteUrl || "");
   const [profileFavicon, setProfileFavicon] = useState(seller?.favicon || "");
+  const [profileFaviconDeleteUrl, setProfileFaviconDeleteUrl] = useState(seller?.faviconDeleteUrl || "");
   const [profileCategory, setProfileCategory] = useState(seller?.businessCategory || "");
   const [profileBankAccountName, setProfileBankAccountName] = useState(seller?.bankAccountName || "");
   const [profileBankName, setProfileBankName] = useState(seller?.bankName || "");
   const [profileBankAccountNumber, setProfileBankAccountNumber] = useState(seller?.bankAccountNumber || "");
   const [profileBankIfsc, setProfileBankIfsc] = useState(seller?.bankIfsc || "");
   const [profileIdProof, setProfileIdProof] = useState(seller?.idProofUrl || "");
+  const [profileIdProofDeleteUrl, setProfileIdProofDeleteUrl] = useState(seller?.idProofDeleteUrl || "");
   const [profileAddressProof, setProfileAddressProof] = useState(seller?.addressProofUrl || "");
+  const [profileAddressProofDeleteUrl, setProfileAddressProofDeleteUrl] = useState(seller?.addressProofDeleteUrl || "");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [privacyPolicy, setPrivacyPolicy] = useState<string>(DEFAULT_POLICY_CONTENT.privacyPolicy);
   const [returnRefundPolicy, setReturnRefundPolicy] = useState<string>(DEFAULT_POLICY_CONTENT.returnRefundPolicy);
@@ -339,7 +350,10 @@ export function DashboardPage() {
 
   // ── Store options
   const [storeLogo, setStoreLogo] = useState(seller?.businessLogo || "");
+  const [storeLogoDeleteUrl, setStoreLogoDeleteUrl] = useState(seller?.businessLogoDeleteUrl || "");
   const [storeFavicon, setStoreFavicon] = useState(seller?.favicon || "");
+  const [storeFaviconDeleteUrl, setStoreFaviconDeleteUrl] = useState(seller?.faviconDeleteUrl || "");
+  const [newBannerDeleteUrl, setNewBannerDeleteUrl] = useState("");
   const [storeWhatsapp, setStoreWhatsapp] = useState<PhoneParts>(parsePhone(seller?.whatsappNumber || ""));
   const [storeCall, setStoreCall] = useState<PhoneParts>(parsePhone(seller?.callNumber || ""));
   const [storeDeliveryMode, setStoreDeliveryMode] = useState<"always_free" | "flat_rate">(seller?.deliveryMode || "always_free");
@@ -397,18 +411,25 @@ export function DashboardPage() {
     setProfilePAN(seller.pan || "");
     setProfilePANHolderName(seller.panHolderName || "");
     setProfilePANDocumentUrl(seller.panDocumentUrl || "");
+    setProfilePANDocumentDeleteUrl(seller.panDocumentDeleteUrl || "");
     setProfileBusinessType(seller.businessType || "individual");
     setProfileLogo(seller.businessLogo || "");
+    setProfileLogoDeleteUrl(seller.businessLogoDeleteUrl || "");
     setProfileFavicon(seller.favicon || "");
+    setProfileFaviconDeleteUrl(seller.faviconDeleteUrl || "");
     setProfileCategory(seller.businessCategory || "");
     setProfileBankAccountName(seller.bankAccountName || "");
     setProfileBankName(seller.bankName || "");
     setProfileBankAccountNumber(seller.bankAccountNumber || "");
     setProfileBankIfsc(seller.bankIfsc || "");
     setProfileIdProof(seller.idProofUrl || "");
+    setProfileIdProofDeleteUrl(seller.idProofDeleteUrl || "");
     setProfileAddressProof(seller.addressProofUrl || "");
+    setProfileAddressProofDeleteUrl(seller.addressProofDeleteUrl || "");
     setStoreLogo(seller.businessLogo || "");
+    setStoreLogoDeleteUrl(seller.businessLogoDeleteUrl || "");
     setStoreFavicon(seller.favicon || "");
+    setStoreFaviconDeleteUrl(seller.faviconDeleteUrl || "");
     setStoreWhatsapp(parsePhone(seller.whatsappNumber || ""));
     setStoreCall(parsePhone(seller.callNumber || ""));
     setStoreDeliveryMode(seller.deliveryMode || "always_free");
@@ -686,12 +707,17 @@ export function DashboardPage() {
           : normalizedProfilePAN,
         panHolderName: profilePANHolderName.trim(),
         panDocumentUrl: profilePANDocumentUrl.trim(),
+        panDocumentDeleteUrl: profilePANDocumentDeleteUrl.trim(),
         businessType: profileBusinessType,
         businessLogo: profileLogo.trim(),
+        businessLogoDeleteUrl: profileLogoDeleteUrl.trim(),
         favicon: profileFavicon.trim(),
+        faviconDeleteUrl: profileFaviconDeleteUrl.trim(),
         businessCategory: profileCategory.trim(),
         idProofUrl: profileIdProof.trim(),
+        idProofDeleteUrl: profileIdProofDeleteUrl.trim(),
         addressProofUrl: profileAddressProof.trim(),
+        addressProofDeleteUrl: profileAddressProofDeleteUrl.trim(),
       });
       setSuccess("Profile saved.");
     } catch (error) { setError(getApiErrorMessage(error, "Could not save profile.")); }
@@ -704,7 +730,9 @@ export function DashboardPage() {
     try {
       await api.put("/store/options", {
         businessLogo: storeLogo.trim(),
+        businessLogoDeleteUrl: storeLogoDeleteUrl.trim(),
         favicon: storeFavicon.trim(),
+        faviconDeleteUrl: storeFaviconDeleteUrl.trim(),
         whatsappNumber: formatPhone(storeWhatsapp),
         callNumber: formatPhone(storeCall),
         banners, socialLinks, categories,
@@ -984,6 +1012,7 @@ export function DashboardPage() {
       packSize: prod.packSize || "",
       uom: prod.uom || "",
       imageUrls: getProductImages(prod).length > 0 ? getProductImages(prod) : [""],
+      imageDeleteUrls: Array.isArray(prod.imageDeleteUrls) ? prod.imageDeleteUrls : [],
       notes: prod.notes || "",
       categories: getProductCategories(prod),
       categoryInput: "",
@@ -1096,6 +1125,9 @@ export function DashboardPage() {
         mrp: Number(productForm.mrp) || 0,
         imageUrl: normalizedImages[0],
         imageUrls: normalizedImages,
+        // ImgBB delete URLs — stored so server can clean up on product/account deletion
+        imageDeleteUrl: productForm.imageDeleteUrls[0] || "",
+        imageDeleteUrls: productForm.imageDeleteUrls.filter(Boolean),
         notes: productForm.notes.trim(),
         category: catTrimmed,
         categories: selectedCategories,
@@ -1520,12 +1552,12 @@ export function DashboardPage() {
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Branding</p>
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Business Logo</span>
-                <ImageUploadField value={storeLogo} onChange={setStoreLogo} placeholder="upload an image file or paste an URL" />
+                <ImageUploadField value={storeLogo} onChange={setStoreLogo} onDeleteUrl={setStoreLogoDeleteUrl} placeholder="upload an image file or paste an URL" />
               </label>
               {storeLogo && <img src={normalizeImageUrl(storeLogo)} alt="logo preview" className="h-16 w-16 rounded-xl object-contain border border-slate-200 dark:border-slate-700" />}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Favicon</span>
-                <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} placeholder="upload an image file or paste an URL" />
+                <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} onDeleteUrl={setStoreFaviconDeleteUrl} placeholder="upload an image file or paste an URL" />
               </label>
             </div>
 
@@ -1589,14 +1621,14 @@ export function DashboardPage() {
                 <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Banner Image</span>
-                    <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} placeholder="Banner Image URL" />
+                    <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} onDeleteUrl={setNewBannerDeleteUrl} placeholder="Banner Image URL" />
                   </label>
                   <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="Banner title (optional)" value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} />
                   <button
                     onClick={() => {
                       if (newBannerUrl.trim() && banners.length < 5) {
-                        setBanners(prev => [...prev, { imageUrl: newBannerUrl.trim(), title: newBannerTitle.trim() }]);
-                        setNewBannerUrl(""); setNewBannerTitle("");
+                        setBanners(prev => [...prev, { imageUrl: newBannerUrl.trim(), title: newBannerTitle.trim(), deleteUrl: newBannerDeleteUrl.trim() }]);
+                        setNewBannerUrl(""); setNewBannerTitle(""); setNewBannerDeleteUrl("");
                       }
                     }}
                     className="w-full rounded-lg bg-[#ff751f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
@@ -2046,6 +2078,11 @@ export function DashboardPage() {
                                 next[index] = nextUrl;
                                 return { ...p, imageUrls: next };
                               })}
+                              onDeleteUrl={(delUrl) => setProductForm((p) => {
+                                const next = [...p.imageDeleteUrls];
+                                next[index] = delUrl;
+                                return { ...p, imageDeleteUrls: next };
+                              })}
                               placeholder="Upload an image file or paste an image URL"
                             />
                           </div>
@@ -2054,6 +2091,7 @@ export function DashboardPage() {
                             onClick={() => setProductForm((p) => ({
                               ...p,
                               imageUrls: p.imageUrls.length > 1 ? p.imageUrls.filter((_, i) => i !== index) : [""],
+                              imageDeleteUrls: p.imageDeleteUrls.length > 1 ? p.imageDeleteUrls.filter((_, i) => i !== index) : [""],
                             }))}
                             className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60 shrink-0"
                           >Remove</button>
@@ -3677,7 +3715,7 @@ export function DashboardPage() {
                       <img src={profilePANDocumentUrl} alt="PAN Document" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profilePANDocumentUrl} onChange={setProfilePANDocumentUrl} />
+                  <ImageUploadField value={profilePANDocumentUrl} onChange={setProfilePANDocumentUrl} onDeleteUrl={setProfilePANDocumentDeleteUrl} />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">ID Proof <span className="text-rose-500">*</span></p>
@@ -3687,7 +3725,7 @@ export function DashboardPage() {
                       <img src={profileIdProof} alt="ID Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profileIdProof} onChange={setProfileIdProof} />
+                  <ImageUploadField value={profileIdProof} onChange={setProfileIdProof} onDeleteUrl={setProfileIdProofDeleteUrl} />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Address Proof <span className="text-rose-500">*</span></p>
@@ -3697,7 +3735,7 @@ export function DashboardPage() {
                       <img src={profileAddressProof} alt="Address Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profileAddressProof} onChange={setProfileAddressProof} />
+                  <ImageUploadField value={profileAddressProof} onChange={setProfileAddressProof} onDeleteUrl={setProfileAddressProofDeleteUrl} />
                 </div>
               </div>
             </article>
