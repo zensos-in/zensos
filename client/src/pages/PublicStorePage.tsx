@@ -483,7 +483,6 @@ export function PublicStorePage() {
   const [shippingSameAsBilling, setShippingSameAsBilling] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("prepaid");
   const [note, setNote] = useState("");
-  const [platformCommissionPercentage, setPlatformCommissionPercentage] = useState(1);
 
   const checkoutInputClassName =
     "w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100";
@@ -501,17 +500,7 @@ export function PublicStorePage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [proofSuccess, setProofSuccess] = useState("");
   const [activePolicy, setActivePolicy] = useState<PolicyKey | null>(null);
-  useEffect(() => {
-    async function fetchCommission() {
-      try {
-        const response = await api.get<{ commissionPercentage: number; commissionMode: "added" }>("/orders/commission");
-        setPlatformCommissionPercentage(Number(response.data.commissionPercentage) || 1);
-      } catch {
-        setPlatformCommissionPercentage(1);
-      }
-    }
-    void fetchCommission();
-  }, []);
+
 
   useEffect(() => {
     async function fetchStore() {
@@ -669,8 +658,6 @@ export function PublicStorePage() {
 
     return seller.defaultDeliveryCharge ?? 0;
   }, [itemsTotal, seller]);
-
-  const platformFee = 0;
   const grandTotal = itemsTotal + deliveryCharge;
   const cartCount = Object.values(cart).reduce((s, i) => s + i.quantity, 0);
   const allowsPrepaid = seller?.paymentMode !== "cod_only";

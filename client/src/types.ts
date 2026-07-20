@@ -56,8 +56,11 @@ export interface Seller {
   bankAccountNumber?: string;
   bankIfsc?: string;
   profileImageUrl: string;
+  profileImageDeleteUrl?: string;
   businessLogo: string;
+  businessLogoDeleteUrl?: string;
   favicon: string;
+  faviconDeleteUrl?: string;
   businessAddress: string;
   businessGST: string;
   whatsappNumber: string;
@@ -80,10 +83,13 @@ export interface Seller {
   termsAcceptedAt?: string | null;
   createdAt?: string;
   idProofUrl?: string;
+  idProofDeleteUrl?: string;
   addressProofUrl?: string;
+  addressProofDeleteUrl?: string;
   pan?: string;
   panHolderName?: string;
   panDocumentUrl?: string;
+  panDocumentDeleteUrl?: string;
   panVerificationStatus?: "unsubmitted" | "pending" | "verified" | "rejected";
   kycStatus?: "incomplete" | "pending" | "verified" | "rejected";
   onboardingProgress?: "otp_verified" | "profile_submitted" | "kyc_pending" | "kyc_verified" | "approved";
@@ -118,6 +124,8 @@ export interface Product {
   description: string;
   imageUrl: string;
   imageUrls?: string[];
+  imageDeleteUrl?: string;
+  imageDeleteUrls?: string[];
   notes: string;
   packSize?: string;
   uom?: string;

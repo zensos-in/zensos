@@ -38,11 +38,18 @@ interface RegisterInput {
   pan: string;
   panHolderName: string;
   panDocumentUrl?: string;
+  panDocumentDeleteUrl?: string;
   businessLogo?: string;
+  businessLogoDeleteUrl?: string;
+  favicon?: string;
+  faviconDeleteUrl?: string;
   whatsappNumber?: string;
   callNumber?: string;
   idProofUrl?: string;
+  idProofDeleteUrl?: string;
   addressProofUrl?: string;
+  addressProofDeleteUrl?: string;
+  profileImageDeleteUrl?: string;
   privacyPolicy?: string;
   returnRefundPolicy?: string;
   termsAndConditions?: string;
@@ -61,18 +68,24 @@ interface UpdateProfileInput {
   bankAccountNumber?: string;
   bankIfsc?: string;
   profileImageUrl?: string;
+  profileImageDeleteUrl?: string;
   businessLogo?: string;
+  businessLogoDeleteUrl?: string;
   favicon?: string;
+  faviconDeleteUrl?: string;
   whatsappNumber?: string;
   callNumber?: string;
   idProofUrl?: string;
+  idProofDeleteUrl?: string;
   addressProofUrl?: string;
+  addressProofDeleteUrl?: string;
   privacyPolicy?: string;
   returnRefundPolicy?: string;
   termsAndConditions?: string;
   pan?: string;
   panHolderName?: string;
   panDocumentUrl?: string;
+  panDocumentDeleteUrl?: string;
   businessType?: string;
 }
 
