@@ -670,8 +670,8 @@ export function PublicStorePage() {
     return seller.defaultDeliveryCharge ?? 0;
   }, [itemsTotal, seller]);
 
-  const platformFee = Math.round(itemsTotal * 100 * platformCommissionPercentage / 100) / 100;
-  const grandTotal = itemsTotal + deliveryCharge + platformFee;
+  const platformFee = 0;
+  const grandTotal = itemsTotal + deliveryCharge;
   const cartCount = Object.values(cart).reduce((s, i) => s + i.quantity, 0);
   const allowsPrepaid = seller?.paymentMode !== "cod_only";
   const allowsCod = seller?.paymentMode === "cod_only" || seller?.paymentMode === "both";
@@ -1670,10 +1670,6 @@ rzp.open(); } catch (err: any) {
                 <span className="font-semibold text-slate-800">
                   {deliveryCharge === 0 ? "Free" : <>&#8377;{deliveryCharge.toLocaleString("en-IN")}</>}
                 </span>
-              </div>
-              <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
-                <span>Platform charges</span>
-                <span className="font-semibold text-slate-800">&#8377;{platformFee.toLocaleString("en-IN")}</span>
               </div>
               <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200 text-sm">
                 <span>Total Payable</span><span>&#8377;{grandTotal.toLocaleString("en-IN")}</span>

@@ -1292,7 +1292,7 @@ export function DashboardPage() {
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
     { key: "orders", label: t("nav.orders", "Orders"), icon: "orders" },
     { key: "reports", label: t("nav.reports", "Reports"), icon: "reports" },
-    // { key: "earnings", label: t("nav.earnings", "Earnings & Payouts"), icon: "earnings" }, // hidden — re-enable when ready
+    { key: "earnings", label: t("nav.earnings", "Earnings & Payouts"), icon: "earnings" },
     { key: "profile", label: t("nav.profile", "Profile"), icon: "profile" },
     { key: "policies", label: t("nav.policies", "Policies"), icon: "policies" },
   ];

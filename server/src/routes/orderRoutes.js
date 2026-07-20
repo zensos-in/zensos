@@ -408,8 +408,8 @@ router.post("/", async (req, res) => {
       }
 
       const commissionPaise = calculatePlatformFeePaise(itemRevenuePaise, platformFeePercentage);
-      const vendorAmountPaise = itemRevenuePaise + deliveryChargePaise;
-      const totalSubOrderPaise = vendorAmountPaise + commissionPaise;
+      const totalSubOrderPaise = itemRevenuePaise + deliveryChargePaise;
+      const vendorAmountPaise = totalSubOrderPaise - commissionPaise;
       grandTotalPaise += totalSubOrderPaise;
 
       // Create Sub-Order
