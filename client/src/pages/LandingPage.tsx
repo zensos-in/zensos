@@ -750,9 +750,9 @@ export function LandingPage() {
               </div>
 
               {/* Right Side */}
-              <div className="flex flex-col items-center md:items-end justify-end pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 md:pl-8 shrink-0">
-                <div className="text-center md:text-right mb-4">
-                  <div className="flex items-baseline justify-center md:justify-end gap-1">
+              <div className="flex flex-col items-center justify-end pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-slate-300 md:pl-8 shrink-0">
+                <div className="text-center mb-4">
+                  <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl sm:text-5xl font-black" style={{ color: "#0b183f" }}>₹0</span>
                     <span className="text-sm font-semibold text-slate-400">/ 15 Days</span>
                   </div>
