@@ -63,6 +63,7 @@ export function LandingPage() {
   }, [location]);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openPlan, setOpenPlan] = useState<string | null>(null);
   // const [email, setEmail] = useState("");
   // const [subscribed, setSubscribed] = useState(false);
 
@@ -153,9 +154,9 @@ export function LandingPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register"
-              className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
+              className="whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
               style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Sign Up →
+              Start for Free →
             </Link>
             {/* Mobile hamburger */}
             <button onClick={() => setMenuOpen(!menuOpen)} className="ml-1 flex md:hidden flex-col gap-1.5 p-1">
@@ -181,7 +182,7 @@ export function LandingPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register" className="mt-1 block rounded-xl py-3 text-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Sign Up →
+              Start for Free →
             </Link>
           </div>
         )}
@@ -219,21 +220,21 @@ export function LandingPage() {
             </h1>
 
             <p className="mb-8 text-lg leading-relaxed text-slate-400 sm:text-xl lg:max-w-xl">
-              Super-easy, plug-n-play e-commerce platform <span className="lg:block">with <strong className="text-orange-400">0% commission</strong></span>
+              Super-easy, plug-n-play e-commerce platform <span className="lg:block">with <strong className="text-orange-400">0% commission</strong> on Sales.</span>
             </p>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <button onClick={() => navigate("/login?tab=register")}
                 className="group flex w-full items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-2xl transition-all hover:scale-105 hover:shadow-orange-500/40 sm:w-auto"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)", boxShadow: "0 8px 32px rgba(255,117,31,0.45)" }}>
-                Get Started
+                Start for Free
                 <svg className="transition-transform group-hover:translate-x-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
-              <button onClick={() => scrollTo("how-it-works")}
+              <button onClick={() => scrollTo("pricing")}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
                 style={{ borderColor: "rgba(255,255,255,0.25)" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                See How It Works
+                Get Started
               </button>
             </div>
 
@@ -297,7 +298,7 @@ export function LandingPage() {
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: "💰", title: "Zero Commission", desc: "Keep 100% of every sale. We never take a cut from your hard-earned revenue.", color: "#ff751f" },
+              { icon: "💰", title: "Zero Commission on Sales", desc: "We only take the Payment Handling Charges of the Payment Gateway.", color: "#ff751f" },
               { icon: "⚡", title: "Direct Payments", desc: "Don't have to worry about a payment gateway. We've got you covered.", color: "#6366f1" },
               { icon: "🛒", title: "Exclusive Storefront", desc: "Get a dedicated storefront exclusively for your business in under 10 minutes.", color: "#10b981" },
               { icon: "📲", title: "Mobile First", desc: "Your store looks stunning on every device — phones, tablets, and desktops.", color: "#f59e0b" },
@@ -506,8 +507,8 @@ export function LandingPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {[
-                    { feature: "Transaction Fees", other: "Heavy commissions (5% – 35% per order)", zensos: "0% Commission (Keep 100% of your earnings)" },
-                    { feature: "Payout Timeline", other: "Delayed settlements (2 – 28 business days)", zensos: "Instant Payouts (Direct-to-bank payments)" },
+                    { feature: "Transaction Fees", other: "Heavy commissions (5% – 35% per order)", zensos: "0% Commission (Only Payment Handling Charges)" },
+                    { feature: "Payout Timeline", other: "Delayed settlements (7 – 28 business days)", zensos: "T+2 days (Direct-to-bank payments)" },
                     { feature: "Store Customization", other: "Rigid, cookie-cutter templates", zensos: "Flexible Banner Listing Services" },
                     { feature: "Product Merchandising", other: "Generic, uninspired product catalogs", zensos: "Smart Showcases with Recommended Sections" },
                     { feature: "Product Configurations", other: "Complex or limited variant setups", zensos: "Seamless Multi-Variant options enabled" },
@@ -694,7 +695,7 @@ export function LandingPage() {
       <section id="pricing" className="py-12 sm:py-16" style={{ background: "#fff7f0" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={pricingSection.ref}
-            className={`text-center mb-14 transition-all duration-700 ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+            className={`text-center mb-6 transition-all duration-700 ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
               style={{ background: "rgba(255,117,31,0.18)", color: "#ff751f", border: "1px solid rgba(255,117,31,0.3)" }}>
               <span className="inline-block h-2 w-2 rounded-full animate-pulse" style={{ background: "#ff751f" }} />
@@ -706,6 +707,65 @@ export function LandingPage() {
             <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">No hidden fees. No commission. Pay only for the plan that fits your business.</p>
           </div>
 
+          {/* 15 Days Free Trial Banner Card */}
+          <div className={`mb-10 w-full rounded-3xl p-6 sm:p-8 transition-all duration-700 ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+            style={{
+              background: "rgba(255,255,255,0.95)",
+              border: "2px solid rgba(255,117,31,0.25)",
+              boxShadow: "0 10px 30px rgba(255,117,31,0.12), 0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              {/* Left Side */}
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2"
+                  style={{ background: "rgba(255,117,31,0.12)", color: "#ff751f" }}>
+                  🎉 Special Offer
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#0b183f" }}>
+                  15 Days Free Trial
+                </h3>
+                <p className="mt-1 text-sm text-slate-500 font-medium">
+                  Try all Starter plan features for free.
+                </p>
+
+                {/* 3x3 Feature Grid */}
+                <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-3">
+                  {[
+                    "List up to 10 products",
+                    "Up to 2 store banners",
+                    "Printable PDF of order copy",
+                    "Payment Gateway Integration",
+                    "Settlement in T+2 days",
+                    "Free ZENSOS subdomain",
+                    "Real-time Store Analytics",
+                    "Email Support",
+                    "Trust Badge",
+                  ].map((feat) => (
+                    <div key={feat} className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#6366f1" }}>✓</span>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Side */}
+              <div className="flex flex-col items-center justify-end pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-slate-300 md:pl-8 shrink-0">
+                <div className="text-center mb-4">
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl sm:text-5xl font-black" style={{ color: "#0b183f" }}>₹0</span>
+                    <span className="text-sm font-semibold text-slate-400">/ 15 Days</span>
+                  </div>
+                </div>
+                <button onClick={() => navigate("/login?tab=register")}
+                  className="w-full sm:w-auto rounded-2xl px-7 py-3.5 text-sm font-bold text-white transition-all hover:scale-105 shadow-md hover:shadow-orange-500/30"
+                  style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
+                  Start for Free →
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
               {
@@ -715,16 +775,15 @@ export function LandingPage() {
                 strikePrice: "₹999",
                 color: "#6366f1",
                 features: [
-                  "List up to 10 products",
-                  "Up to 2 store banners",
-                  "Up to 5 variants per product",
-                  "Printable PDF of order copy",
-                  "Payment Gateway Integration",
-                  "Settlement in T+2 days",
-                  "Free ZENSOS subdomain",
-                  "Real-time Store Analytics",
-                  "Email Support",
-                  "Trust Badge",
+                  { label: "List up to 10 products" },
+                  { label: "Up to 2 store banners" },
+                  { label: "Printable PDF of order copy" },
+                  { label: "Payment Gateway Integration" },
+                  { label: "Settlement in T+2 days" },
+                  { label: "Free ZENSOS subdomain" },
+                  { label: "Real-time Store Analytics" },
+                  { label: "Email Support" },
+                  { label: "Trust Badge" },
                 ],
                 cta: "Get Started", popular: false,
               },
@@ -735,19 +794,18 @@ export function LandingPage() {
                 strikePrice: "₹1,499",
                 color: "#ff751f",
                 features: [
-                  "List up to 18 products",
-                  "Up to 3 store banners",
-                  "Up to 8 variants per product",
-                  "Printable PDF of order copy",
-                  "Payment Gateway Integration",
-                  "Settlement in T+2 days",
-                  "Free ZENSOS subdomain",
-                  "Real-time Store Analytics",
-                  "Email and Call Support",
-                  "Trust Badge",
-                  "Delivery Partner Integration",
-                  "Instagram Reels Integration",
-                  "Coupon Code Integration",
+                  { label: "List up to 20 products" },
+                  { label: "Up to 3 store banners" },
+                  { label: "Printable PDF of order copy" },
+                  { label: "Payment Gateway Integration" },
+                  { label: "Settlement in T+2 days" },
+                  { label: "Free ZENSOS subdomain" },
+                  { label: "Real-time Store Analytics" },
+                  { label: "Email and Call Support" },
+                  { label: "Trust Badge" },
+                  { label: "Delivery Partner Integration", comingSoon: true },
+                  { label: "Instagram Reels Integration", comingSoon: true },
+                  { label: "Coupon Code Integration", comingSoon: true },
                 ],
                 cta: "Start Growing", popular: true,
               },
@@ -758,21 +816,20 @@ export function LandingPage() {
                 strikePrice: "₹2,499",
                 color: "#10b981",
                 features: [
-                  "List up to 30 products",
-                  "Up to 5 store banners",
-                  "Up to 10 variants per product",
-                  "Printable PDF of order copy",
-                  "Payment Gateway Integration",
-                  "Settlement in T+2 days",
-                  "Free ZENSOS subdomain",
-                  "Real-time Store Analytics",
-                  "Priority Support on Call",
-                  "Trust Badge",
-                  "Delivery Partner Integration",
-                  "Instagram Reels Integration",
-                  "Coupon Code Integration",
-                  "Affiliate Program Integration",
-                  "Google Reviews Integration",
+                  { label: "List up to 30 products" },
+                  { label: "Up to 5 store banners" },
+                  { label: "Printable PDF of order copy" },
+                  { label: "Payment Gateway Integration" },
+                  { label: "Settlement in T+2 days" },
+                  { label: "Free ZENSOS subdomain" },
+                  { label: "Real-time Store Analytics" },
+                  { label: "Priority Support on Call" },
+                  { label: "Trust Badge" },
+                  { label: "Delivery Partner Integration", comingSoon: true },
+                  { label: "Instagram Reels Integration", comingSoon: true },
+                  { label: "Coupon Code Integration", comingSoon: true },
+                  { label: "Affiliate Program Integration", comingSoon: true },
+                  { label: "Google Reviews Integration", comingSoon: true },
                 ],
                 cta: "Go Business", popular: false,
               },
@@ -798,22 +855,44 @@ export function LandingPage() {
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-4xl font-black" style={{ color: popular ? "#fff" : "#0b183f" }}>{strikePrice}</span>
                     <span className="text-base font-semibold line-through opacity-50" style={{ color: popular ? "#fff" : "#0b183f" }}>{price}</span>
-                    <span className="text-xs font-semibold" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>+ 18% GST</span>
+                    <span className="text-xs font-semibold" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>+ 18% GST &nbsp;/Monthly</span>
                   </div>
                   {/* Handling charge note */}
                   <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
                     style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
-                    +1% per transaction · Platform Payment Handling Charges
+                    +3% per transaction<br />Payment Handling Charges
                   </p>
                 </div>
-                <ul className="mb-8 space-y-2.5">
-                  {features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+
+                {/* View Features accordion toggle */}
+                <button
+                  onClick={() => setOpenPlan(openPlan === name ? null : name)}
+                  className="flex items-center gap-1.5 mb-3 text-sm font-bold"
+                  style={{ color: popular ? "#ff9a5c" : "#ff751f", background: "none", border: "none", padding: 0 }}>
+                  <span>{openPlan === name ? "Hide Features" : "View Features"}</span>
+                  <svg
+                    style={{ transform: openPlan === name ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {/* Collapsible features list */}
+                {openPlan === name && (
+                  <ul className="mb-6 space-y-2.5 overflow-hidden" style={{ animation: "fadeSlideDown 0.25s ease" }}>
+                    {features.map(({ label, comingSoon }) => (
+                      <li key={label} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
+                        <span>
+                          {label}
+                          {comingSoon && (
+                            <span className="ml-1.5 text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <button onClick={() => navigate("/login?tab=register")}
                   className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 ${popular ? "text-white" : ""}`}
                   style={popular ? { background: `linear-gradient(135deg,#ff751f,#ff4500)`, boxShadow: "0 8px 20px rgba(255,117,31,0.4)" } : { background: `${color}18`, color }}>
@@ -873,11 +952,11 @@ export function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => navigate("/login?tab=register")}
-                className="rounded-2xl px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-105"
+              <a href="https://shankaraonline.com/" target="_blank" rel="noopener noreferrer"
+                className="inline-block rounded-2xl px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:scale-105"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
                 Let's Build Together →
-              </button>
+              </a>
             </div>
             <div className={`transition-all duration-700 delay-200 ${communitySection.inView ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
               <div className="relative">
@@ -907,12 +986,12 @@ export function LandingPage() {
           {/* Mosaic pill cards */}
           <div className="flex flex-wrap gap-3 justify-center">
             {[
-              { id: "getting-started", label: "Getting Started"                   },
-              { id: "payments",        label: "Payments & Settlements"            },
-              { id: "pricing",         label: "Pricing & Charges"                 },
-              { id: "store-growth",    label: "Store, Products & Growth"          },
-              { id: "delivery",        label: "Inventory, Delivery & Fulfillment" },
-              { id: "support",         label: "Support & Security"                },
+              { id: "getting-started", label: "Getting Started" },
+              { id: "payments", label: "Payments & Settlements" },
+              { id: "pricing", label: "Pricing & Charges" },
+              { id: "store-growth", label: "Store, Products & Growth" },
+              { id: "delivery", label: "Inventory, Delivery & Fulfillment" },
+              { id: "support", label: "Support & Security" },
             ].map((cat) => (
               <Link
                 key={cat.id}
@@ -1058,7 +1137,7 @@ export function LandingPage() {
                 <li className="pt-2">
                   <div className="flex gap-2">
                     <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
-                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
+                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Start for Free</button>
                   </div>
                 </li>
               </ul>

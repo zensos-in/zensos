@@ -254,9 +254,9 @@ export function FAQPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register"
-              className="rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
+              className="whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
               style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Sign Up →
+              Start for Free →
             </Link>
             {/* Mobile hamburger */}
             <button onClick={() => setMenuOpen(!menuOpen)} className="ml-1 flex md:hidden flex-col gap-1.5 p-1">
@@ -282,7 +282,7 @@ export function FAQPage() {
               Sign In
             </Link>
             <Link to="/login?tab=register" className="mt-1 block rounded-xl py-3 text-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-              Sign Up →
+              Start for Free →
             </Link>
           </div>
         )}
@@ -414,7 +414,7 @@ export function FAQPage() {
                 <li className="pt-2">
                   <div className="flex gap-2">
                     <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
-                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
+                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Start for Free</button>
                   </div>
                 </li>
               </ul>

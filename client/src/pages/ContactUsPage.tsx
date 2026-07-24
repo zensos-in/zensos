@@ -318,7 +318,7 @@ export function ContactUsPage() {
             <div>
               <h4 className="mb-5 text-base font-extrabold uppercase tracking-widest" style={{ color: "#ff751f" }}>Product</h4>
               <ul className="space-y-1.5">
-                {[["Features", "features"], ["How It Works", "how-it-works"], ["Pricing", "pricing"], ["Value Added Services", "value-added-services"]].map(([label, id]) => (
+                {[["Features", "features"], ["How It Works", "how-it-works"], ["Pricing", "pricing"], ["Value Added Services", "value-added-services"], ["FAQ", "faq"]].map(([label, id]) => (
                   <li key={label}>
                     <button onClick={() => handleFooterNavigate(id)} className="flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition-colors hover:text-orange-400"><span className="text-orange-400 text-xs">›</span>{label}</button>
                   </li>
@@ -345,7 +345,7 @@ export function ContactUsPage() {
                 <li className="pt-2">
                   <div className="flex gap-2">
                     <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
-                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Sign Up</button>
+                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Start for Free</button>
                   </div>
                 </li>
               </ul>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import axios from "axios";
 import { api } from "../api/client";
 import { AppIcon } from "../components/ui/AppIcon";
@@ -498,6 +498,14 @@ export function AdminPage() {
   const [financeActionLoading, setFinanceActionLoading] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+
+  // Reset modal scroll to top whenever a new seller is opened
+  useEffect(() => {
+    if (selectedSeller && modalScrollRef.current) {
+      modalScrollRef.current.scrollTop = 0;
+    }
+  }, [selectedSeller?._id]);
 
   const authHeaders = useMemo(
     () => (token ? { Authorization: `Bearer ${token}` } : undefined),
@@ -1292,21 +1300,7 @@ export function AdminPage() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:space-y-4 sm:px-6 sm:py-5">
-              <div className="sm:hidden">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Review actions</p>
-                <SellerReviewActionHandlers
-                  seller={selectedSeller}
-                  actionLoading={sellerActionLoading}
-                  compact
-                  confirmSellerAction={confirmSellerAction}
-                  updateKycStatus={updateKycStatus}
-                  updateApproval={updateApproval}
-                  retryLinkedAccount={retryLinkedAccount}
-                />
-                <div className="my-3 border-t border-slate-200 dark:border-slate-800" />
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Seller details</p>
-              </div>
+            <div ref={modalScrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-3 sm:space-y-4 sm:px-6 sm:py-5">
               {loadingSellerDetail ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
                   Loading full seller profile…
@@ -1539,9 +1533,24 @@ export function AdminPage() {
                   }
                 />
               </div>
+
+              {/* Mobile review actions — placed at bottom so Registered Details is first visible */}
+              <div className="sm:hidden">
+                <div className="my-3 border-t border-slate-200 dark:border-slate-800" />
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Review actions</p>
+                <SellerReviewActionHandlers
+                  seller={selectedSeller}
+                  actionLoading={sellerActionLoading}
+                  compact
+                  confirmSellerAction={confirmSellerAction}
+                  updateKycStatus={updateKycStatus}
+                  updateApproval={updateApproval}
+                  retryLinkedAccount={retryLinkedAccount}
+                />
+              </div>
             </div>
 
-            <div className="hidden shrink-0 border-t border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-4 dark:border-slate-800 dark:from-slate-900 dark:to-slate-950 sm:block">
+            <div className="hidden shrink-0 border-t border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-4 dark:border-slate-800 dark:from-slate-900 dark:to-slate-950 sm:block max-h-[45vh] overflow-y-auto">
               <SellerReviewActionHandlers
                 seller={selectedSeller}
                 actionLoading={sellerActionLoading}
