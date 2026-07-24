@@ -391,6 +391,7 @@ router.post("/register", auth, async (req, res) => {
       privacyPolicy,
       returnRefundPolicy,
       termsAndConditions,
+      plan,
     } = req.body;
 
     if (!businessName) {
@@ -508,12 +509,22 @@ router.post("/register", auth, async (req, res) => {
     seller.onboardingProgress = "profile_submitted";
 
     if (seller.subscriptionStatus === "NONE" || !seller.subscriptionStatus) {
-      seller.currentPlan = "TRIAL";
-      seller.subscriptionStatus = "ACTIVE";
-      seller.storeEnabled = true;
-      const now = new Date();
-      seller.subscriptionEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
-      seller.trialEndDate = seller.subscriptionEndDate;
+      const selectedPlan = plan && ["TRIAL", "STARTER", "GROWTH", "BUSINESS"].includes(plan.toUpperCase()) 
+        ? plan.toUpperCase() 
+        : "TRIAL";
+
+      seller.currentPlan = selectedPlan;
+
+      if (selectedPlan === "TRIAL") {
+        seller.subscriptionStatus = "ACTIVE";
+        seller.storeEnabled = true;
+        const now = new Date();
+        seller.subscriptionEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+        seller.trialEndDate = seller.subscriptionEndDate;
+      } else {
+        seller.subscriptionStatus = "PENDING";
+        seller.storeEnabled = false;
+      }
     }
     applyKycStateFromPan(seller);
     recordComplianceEvent(seller, "vendor_registration_pan_submitted", "seller", {

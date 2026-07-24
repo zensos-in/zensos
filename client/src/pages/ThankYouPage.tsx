@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
@@ -33,8 +33,19 @@ function formatOrderDate(date: Date) {
 export function ThankYouPage() {
   const { showError } = useToast();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<PublicOrderStatus[]>([]);
+
+  useEffect(() => {
+    if (!location.state?.fromApp) {
+      navigate("/", { replace: true });
+    }
+  }, [location.state, navigate]);
+
+  if (!location.state?.fromApp) {
+    return null;
+  }
 
   const [error, setError] = useState("");
   const [orderDate] = useState(() => new Date());

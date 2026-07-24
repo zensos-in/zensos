@@ -24,7 +24,7 @@ import { compressImage } from "../utils/imageCompressor";
 
 type Mode = "login" | "register";
 type Step = "contact" | "otp" | "profile";
-type RegisterSection = "contact" | "business" | "bank" | "address" | "kyc" | "policies";
+type RegisterSection = "contact" | "business" | "bank" | "address" | "kyc" | "policies" | "plan";
 
 const IMGBB_KEY = import.meta.env.VITE_IMGBB_API_KEY as string | undefined;
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
@@ -159,6 +159,9 @@ export function LoginPage() {
   const allPoliciesAccepted = Object.values(policyChecks).every(Boolean);
 
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>(
+    searchParams.get("plan")?.toUpperCase() || "TRIAL"
+  );
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
@@ -222,6 +225,7 @@ export function LoginPage() {
     { key: "address", label: "Address" },
     { key: "kyc", label: "KYC" },
     { key: "policies", label: "Policies" },
+    { key: "plan", label: "Plan" },
   ];
   const registerSectionIndex = registerSections.findIndex((item) => item.key === registerSection);
   const isFirstRegisterSection = registerSectionIndex <= 0;
@@ -416,6 +420,7 @@ export function LoginPage() {
           addressProofDeleteUrl: addressProofDeleteUrl.trim() || undefined,
           whatsappNumber: formatPhone(whatsappNumber) || undefined,
           callNumber: formatPhone(callNumber) || undefined,
+          plan: selectedPlan,
         });
         navigate("/dashboard", { replace: true });
       } else {
@@ -471,6 +476,7 @@ export function LoginPage() {
         addressProofDeleteUrl: addressProofDeleteUrl.trim() || undefined,
         whatsappNumber: formatPhone(whatsappNumber) || undefined,
         callNumber: formatPhone(callNumber) || undefined,
+        plan: selectedPlan,
       });
       navigate("/dashboard", { replace: true });
     } catch (err) {
@@ -604,7 +610,7 @@ export function LoginPage() {
                       Step {registerSectionIndex + 1} of {registerSections.length}
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  <div className="flex flex-wrap gap-2">
                     {registerSections.map((item, index) => (
                       <button
                         key={item.key}
@@ -612,7 +618,7 @@ export function LoginPage() {
                         onClick={() => {
                           if (index <= registerSectionIndex) goToRegisterSection(index);
                         }}
-                        className={`min-h-10 rounded-xl border px-2 py-2 text-center text-[11px] font-semibold transition ${index === registerSectionIndex
+                        className={`flex-1 sm:flex-none min-h-10 min-w-[70px] rounded-xl border px-3 py-2 text-center text-[12px] font-semibold transition ${index === registerSectionIndex
                           ? "border-orange-500 bg-white text-orange-700 shadow-sm dark:border-orange-500 dark:bg-slate-950 dark:text-orange-400"
                           : index < registerSectionIndex
                             ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-400"
@@ -907,6 +913,48 @@ export function LoginPage() {
                     >
                       View full Terms & Conditions
                     </button>
+                  </div>
+                )}
+                {mode === "register" && registerSection === "plan" && (
+                  <div className="sm:col-span-2 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-sm font-semibold text-slate-700">Choose your subscription plan</p>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {["TRIAL", "STARTER", "GROWTH", "BUSINESS"].map((planName) => (
+                        <label
+                          key={planName}
+                          className={`relative flex cursor-pointer flex-col rounded-xl border p-4 shadow-sm focus:outline-none transition-all ${
+                            selectedPlan === planName
+                              ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
+                              : "border-slate-200 bg-white hover:bg-slate-50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="plan"
+                            value={planName}
+                            checked={selectedPlan === planName}
+                            onChange={() => setSelectedPlan(planName)}
+                            className="sr-only"
+                          />
+                          <span className="flex flex-1 items-center justify-between">
+                            <span className="flex flex-col">
+                              <span className="block text-sm font-bold text-slate-900">{planName === "TRIAL" ? "15-Day Free Trial" : planName}</span>
+                              {planName !== "TRIAL" && (
+                                <span className="mt-1 flex items-center text-xs font-semibold text-slate-500">
+                                  Paid Plan
+                                </span>
+                              )}
+                            </span>
+                            <AppIcon
+                              name="check"
+                              className={`h-5 w-5 text-orange-600 transition-opacity ${
+                                selectedPlan === planName ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
 

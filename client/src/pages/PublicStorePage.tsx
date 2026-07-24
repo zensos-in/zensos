@@ -1002,6 +1002,7 @@ if (paymentMethod === "cod") {
 
   navigate(`/thank-you?${params.toString()}`, {
     replace: true,
+    state: { fromApp: true },
   });
   setSubmitting(false);
   return;
@@ -1080,6 +1081,7 @@ const options = {
 
       navigate(`/thank-you?${params.toString()}`, {
         replace: true,
+        state: { fromApp: true },
       });
     } catch (error) {
       console.error(error);

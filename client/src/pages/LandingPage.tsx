@@ -153,7 +153,7 @@ export function LandingPage() {
               style={{ color: scrolled ? "#0b183f" : "#fff", textShadow: scrolled ? "none" : "0 1px 4px rgba(0,0,0,0.3)" }}>
               Sign In
             </Link>
-            <Link to="/login?tab=register"
+            <Link to="/login?tab=register&plan=TRIAL"
               className="whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
               style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
               Start for Free →
@@ -181,7 +181,7 @@ export function LandingPage() {
             <Link to="/login" className="mt-2 block rounded-xl py-2.5 text-center text-sm font-bold" style={{ color: "#ff751f" }}>
               Sign In
             </Link>
-            <Link to="/login?tab=register" className="mt-1 block rounded-xl py-3 text-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
+            <Link to="/login?tab=register&plan=TRIAL" className="mt-1 block rounded-xl py-3 text-center text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
               Start for Free →
             </Link>
           </div>
@@ -224,7 +224,7 @@ export function LandingPage() {
             </p>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
-              <button onClick={() => navigate("/login?tab=register")}
+              <button onClick={() => navigate("/login?tab=register&plan=TRIAL")}
                 className="group flex w-full items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold text-white shadow-2xl transition-all hover:scale-105 hover:shadow-orange-500/40 sm:w-auto"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)", boxShadow: "0 8px 32px rgba(255,117,31,0.45)" }}>
                 Start for Free
@@ -757,7 +757,7 @@ export function LandingPage() {
                     <span className="text-sm font-semibold text-slate-400">/ 15 Days</span>
                   </div>
                 </div>
-                <button onClick={() => navigate("/login?tab=register")}
+                <button onClick={() => navigate("/login?tab=register&plan=TRIAL")}
                   className="w-full sm:w-auto rounded-2xl px-7 py-3.5 text-sm font-bold text-white transition-all hover:scale-105 shadow-md hover:shadow-orange-500/30"
                   style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
                   Start for Free →
@@ -893,7 +893,7 @@ export function LandingPage() {
                     ))}
                   </ul>
                 )}
-                <button onClick={() => navigate("/login?tab=register")}
+                <button onClick={() => navigate(`/login?tab=register&plan=${name.toUpperCase()}`)}
                   className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 ${popular ? "text-white" : ""}`}
                   style={popular ? { background: `linear-gradient(135deg,#ff751f,#ff4500)`, boxShadow: "0 8px 20px rgba(255,117,31,0.4)" } : { background: `${color}18`, color }}>
                   {cta} →
@@ -1051,7 +1051,7 @@ export function LandingPage() {
             )} */}
 
             <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <button onClick={() => navigate("/login?tab=register")}
+              <button onClick={() => navigate("/login?tab=register&plan=TRIAL")}
                 className="rounded-2xl px-8 py-4 text-base font-bold text-white shadow-xl transition-all hover:scale-105"
                 style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)", boxShadow: "0 8px 32px rgba(255,117,31,0.45)" }}>
                 Start Selling →
@@ -1137,7 +1137,7 @@ export function LandingPage() {
                 <li className="pt-2">
                   <div className="flex gap-2">
                     <a href="mailto:naik@shankaraonline.com" className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100 inline-block" style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>Partner With Us</a>
-                    <button onClick={() => navigate("/login?tab=register")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Start for Free</button>
+                    <button onClick={() => navigate("/login?tab=register&plan=TRIAL")} className="rounded-xl px-4 py-2 text-sm font-bold shadow-lg transition-all hover:scale-105 hover:shadow-xl active:scale-100" style={{ background: "#ffffff", color: "#ff751f" }}>Start for Free</button>
                   </div>
                 </li>
               </ul>

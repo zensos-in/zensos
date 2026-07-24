@@ -53,6 +53,7 @@ interface RegisterInput {
   privacyPolicy?: string;
   returnRefundPolicy?: string;
   termsAndConditions?: string;
+  plan?: string;
 }
 
 interface UpdateProfileInput {
