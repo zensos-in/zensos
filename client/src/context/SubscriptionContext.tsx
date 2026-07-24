@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import api from "../api/axios";
-import { Subscription, PlanType } from "../types";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { api } from "../api/client";
+import type { Subscription, PlanType } from "../types";
 import { useAuth } from "./AuthContext";
 
 interface SubscriptionContextType {
@@ -15,7 +15,9 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, user, checkAuth } = useAuth();
+  const { seller, refreshProfile } = useAuth();
+  const isAuthenticated = !!seller;
+
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,10 +25,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const response = await api.get("/subscriptions/my");
+      const response = await api.get("/subscription/my");
       setSubscription(response.data.subscription);
-      // We can also trigger checkAuth to update the seller object in AuthContext if needed
-      await checkAuth();
+      // Refresh seller in AuthContext so subscription status fields stay in sync
+      await refreshProfile();
     } catch (error) {
       console.error("Failed to fetch subscription:", error);
     } finally {
@@ -36,7 +38,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isAuthenticated) {
-      refreshSubscription();
+      void refreshSubscription();
     } else {
       setSubscription(null);
     }
@@ -44,19 +46,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated]);
 
   const purchaseSubscription = async (planType: PlanType) => {
-    const response = await api.post("/subscriptions/purchase", { planType });
+    const response = await api.post("/subscription/purchase", { planType });
     return response.data;
   };
 
   const verifyPurchase = async (paymentData: any) => {
-    const response = await api.post("/subscriptions/verify", paymentData);
+    const response = await api.post("/subscription/verify", paymentData);
     await refreshSubscription();
     return response.data;
   };
 
   const dismissExpiredPopup = async () => {
-    await api.post("/subscriptions/dismiss-popup");
-    await checkAuth(); // refresh user.subscriptionExpiredPopupShown
+    await api.post("/subscription/dismiss-popup");
+    await refreshProfile(); // refresh seller.subscriptionExpiredPopupShown
   };
 
   return (

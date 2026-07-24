@@ -1,4 +1,3 @@
-import React from "react";
 import { AppIcon } from "./ui/AppIcon";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,7 +21,7 @@ export function SubscriptionReminderBanner() {
   let bgColor = "bg-blue-50 dark:bg-blue-900/20";
   let textColor = "text-blue-800 dark:text-blue-200";
   let iconColor = "text-blue-600 dark:text-blue-400";
-  let iconName = "info";
+  let iconName: "pending" | "lock" | "inactive" = "pending";
   let message = "";
 
   if (diffDays > 7 && diffDays <= 15) {
@@ -31,19 +30,19 @@ export function SubscriptionReminderBanner() {
     bgColor = "bg-orange-50 dark:bg-orange-900/20";
     textColor = "text-orange-800 dark:text-orange-200";
     iconColor = "text-orange-600 dark:text-orange-400";
-    iconName = "warning";
+    iconName = "lock";
     message = `Your ${planName} expires soon. Upgrade to avoid store interruption.`;
   } else if (diffDays > 0 && diffDays <= 2) {
     bgColor = "bg-red-50 dark:bg-red-900/20";
     textColor = "text-red-800 dark:text-red-200";
     iconColor = "text-red-600 dark:text-red-400";
-    iconName = "error";
+    iconName = "inactive";
     message = `Your ${planName} expires ${diffDays === 1 ? "tomorrow" : "in 2 days"}. Purchase a subscription now.`;
   } else if (diffDays === 0) {
     bgColor = "bg-red-100 dark:bg-red-900/40";
     textColor = "text-red-900 dark:text-red-100";
     iconColor = "text-red-700 dark:text-red-400";
-    iconName = "error";
+    iconName = "inactive";
     message = isTrial ? "Trial expires today." : "Subscription expires today.";
   } else {
     // If negative somehow, we don't show the banner (expired modal should handle it)

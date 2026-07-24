@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AppIcon } from "./ui/AppIcon";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../context/SubscriptionContext";
-import { PlanType } from "../types";
+import type { PlanType } from "../types";
 
 export function DashboardSubscriptionWidget() {
   const { seller } = useAuth();
@@ -90,7 +90,7 @@ export function DashboardSubscriptionWidget() {
     <div id="subscription-widget" className="surface-card-strong rounded-2xl p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <AppIcon name="workspace_premium" className="text-orange-500" />
+          <AppIcon name="earnings" className="text-orange-500" />
           Subscription Management
         </h3>
         <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${

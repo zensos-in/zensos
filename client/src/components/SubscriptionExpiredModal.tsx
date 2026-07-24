@@ -1,4 +1,3 @@
-import React from "react";
 import { AppIcon } from "./ui/AppIcon";
 import { useAuth } from "../context/AuthContext";
 import { useSubscription } from "../context/SubscriptionContext";
@@ -18,7 +17,7 @@ export function SubscriptionExpiredModal() {
   const handleRenew = () => {
     // Dismiss the popup visually by scrolling to the subscription widget or 
     // simply closing the modal so they can interact with the dashboard widget
-    handleLater();
+    void handleLater();
     const widget = document.getElementById("subscription-widget");
     if (widget) {
       widget.scrollIntoView({ behavior: "smooth" });
@@ -29,7 +28,7 @@ export function SubscriptionExpiredModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="surface-card-strong w-full max-w-md rounded-2xl p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 mb-4">
-          <AppIcon name="error" className="text-[24px]" />
+          <AppIcon name="inactive" className="text-[24px]" />
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
           Subscription Expired
