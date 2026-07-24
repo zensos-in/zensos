@@ -16,21 +16,7 @@ type PublicOrderStatus = {
 const SUCCESS_STATUSES: OrderStatus[] = ["paid", "delivered"];
 const POLL_INTERVAL_MS = 3000;
 
-// "Seller Notified" and "Order being prepared" steps intentionally removed
-const NEXT_STEPS: { icon: Parameters<typeof AppIcon>[0]["name"]; title: string; description: string; done: boolean }[] = [
-  {
-    icon: "check",
-    title: "Order received",
-    description: "We've received your order and payment.",
-    done: true,
-  },
-  {
-    icon: "truck",
-    title: "Order on the way",
-    description: "You'll receive updates on WhatsApp / SMS.",
-    done: false,
-  },
-];
+
 
 function formatOrderDate(date: Date) {
   return date.toLocaleString("en-IN", {
@@ -97,7 +83,7 @@ export function ThankYouPage() {
     orders.length === orderIds.length &&
     orders.every((o) => o.paymentStatus !== "cancelled");
   const anyCancelled = orders.some((o) => o.paymentStatus === "cancelled");
-  const isSuccess = allSuccessful || orderAccepted;
+
 
   useEffect(() => {
     if (orderIds.length === 0 || allSuccessful || orderAccepted || anyCancelled) return;
@@ -105,9 +91,7 @@ export function ThankYouPage() {
     return () => window.clearInterval(poller);
   }, [allSuccessful, anyCancelled, fetchStatuses, orderAccepted, orderIds.length]);
 
-  const storeName = sellerSlug
-    ? sellerSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : "";
+
 
   return (
     <main className="min-h-screen w-full bg-slate-50 px-4 py-10 dark:bg-slate-950">
@@ -154,26 +138,70 @@ export function ThankYouPage() {
                   : "If you just finished the UPI payment, keep this page open — it refreshes automatically."}
           </p>
 
-          {/* Security pill */}
-          {isSuccess && (
+          {/* Security pill — only shown for online successful payments */}
+          {allSuccessful && (
             <div className="mt-5 inline-flex items-center gap-2.5 rounded-full border border-orange-200 bg-orange-50 px-5 py-2.5 text-sm font-semibold text-orange-700 shadow-sm dark:border-orange-800/60 dark:bg-orange-950/60 dark:text-orange-300">
               <AppIcon name="policies" className="text-[17px]" />
               Your payment is secure and protected
             </div>
           )}
+
+          {/* Order ID */}
+          <div className="mt-6 flex flex-col items-center gap-1.5">
+            {orderIds.map((orderId) => {
+              const order = orders.find((item) => item._id === orderId);
+              const status = order?.paymentStatus || "pending";
+              return (
+                <div key={orderId} className="flex flex-wrap items-center justify-center gap-2 text-sm">
+                  <span className="text-slate-400">Order ID:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{orderId}</span>
+                  <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+                    {status}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Date & Time */}
+            <div className="mt-1 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>Date &amp; Time:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100">{formatOrderDate(orderDate)}</span>
+            </div>
+          </div>
+
+          {/* Action buttons: Left Back to Store, Right View Orders */}
+          <div className="mt-8 flex w-full max-w-md items-center justify-between gap-4">
+            <Link
+              to={sellerSlug ? `/store/${sellerSlug}` : "/"}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:scale-105 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <AppIcon name="store" className="text-[15px]" />
+              Back to Store
+            </Link>
+
+            <Button
+              type="button"
+              onClick={() => void fetchStatuses()}
+              loading={loading}
+              variant="secondary"
+              className="rounded-2xl px-5 py-2.5 text-sm font-bold shadow-sm"
+            >
+              <AppIcon name="orders" className="text-[15px]" />
+              View Orders
+            </Button>
+          </div>
         </div>
 
-        {/* ── Two-column card ──────────────────────────────────────────── */}
+        {/* ── Two-column card (Hidden/Commented Out) ───────────────────── */}
+        {/*
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-slate-100 dark:sm:divide-slate-800">
 
-            {/* Left — Order Details */}
             <div className="p-6 sm:p-7">
               <p className="mb-5 text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
                 Order Details
               </p>
               <div className="space-y-5">
-                {/* Order ID rows */}
                 {orderIds.map((orderId) => {
                   const order = orders.find((item) => item._id === orderId);
                   const status = order?.paymentStatus || "pending";
@@ -193,7 +221,6 @@ export function ThankYouPage() {
                   );
                 })}
 
-                {/* Date & Time */}
                 <div className="flex items-start gap-3.5">
                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <AppIcon name="pending" className="text-[16px]" />
@@ -206,7 +233,6 @@ export function ThankYouPage() {
                   </div>
                 </div>
 
-                {/* Store */}
                 {storeName && (
                   <div className="flex items-start gap-3.5">
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
@@ -221,19 +247,17 @@ export function ThankYouPage() {
               </div>
             </div>
 
-            {/* Right — What Happens Next */}
             <div className="border-t border-slate-100 p-6 dark:border-slate-800 sm:border-t-0 sm:p-7">
               <p className="mb-5 text-[10px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
                 What happens next?
               </p>
               <div className="relative space-y-5 pl-[0.125rem]">
-                {/* Vertical dashed connector */}
                 <div
                   className="absolute left-[1.05rem] top-9 h-[calc(100%-2.5rem)] w-px border-l-2 border-dashed border-orange-100 dark:border-orange-900/60"
                   aria-hidden
                 />
 
-                {NEXT_STEPS.map((step, index) => (
+                {nextSteps.map((step, index) => (
                   <div key={index} className="relative flex items-start gap-3.5">
                     <span
                       className={`relative z-10 flex h-[2.125rem] w-[2.125rem] shrink-0 items-center justify-center rounded-xl border-2 ${step.done
@@ -245,7 +269,9 @@ export function ThankYouPage() {
                     </span>
                     <div className="pt-0.5">
                       <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{step.title}</p>
-                      <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">{step.description}</p>
+                      {step.description && (
+                        <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">{step.description}</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -253,7 +279,6 @@ export function ThankYouPage() {
             </div>
           </div>
 
-          {/* Bottom action bar */}
           <div className="flex flex-col gap-2 border-t border-slate-100 px-6 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-2">
               {sellerSlug && (
@@ -278,6 +303,7 @@ export function ThankYouPage() {
             </Button>
           </div>
         </div>
+        */}
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <footer className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">
