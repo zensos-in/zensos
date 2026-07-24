@@ -178,6 +178,7 @@ export interface OrderItem {
 
 export interface Order {
   _id: string;
+  customOrderId?: string;
   seller: string;
   product: Product | null;
   items: OrderItem[];

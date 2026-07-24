@@ -997,6 +997,8 @@ if (paymentMethod === "cod") {
   }
   params.set("orderIds", orderIds.join(","));
   params.set("paymentMethod", "cod");
+  const codPhone = formatPhone(billingContact.phone);
+  if (codPhone) params.set("customerPhone", codPhone);
 
   navigate(`/thank-you?${params.toString()}`, {
     replace: true,
@@ -1073,6 +1075,8 @@ const options = {
       }
       params.set("orderIds", orderIds.join(","));
       params.set("paymentMethod", "prepaid");
+      const prepaidPhone = formatPhone(billingContact.phone);
+      if (prepaidPhone) params.set("customerPhone", prepaidPhone);
 
       navigate(`/thank-you?${params.toString()}`, {
         replace: true,

@@ -10,6 +10,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PublicStorePage } from "./pages/PublicStorePage";
 import { ThankYouPage } from "./pages/ThankYouPage";
+import { CustomerOrdersPage } from "./pages/CustomerOrdersPage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { TermsOfUsePage } from "./pages/TermsOfUsePage";
 import { RefundPolicyPage } from "./pages/RefundPolicyPage";
@@ -89,6 +90,7 @@ function AppShell() {
           <Routes>
             <Route path="/store/:sellerSlug" element={<PublicStorePage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />
+            <Route path="/my-orders" element={<CustomerOrdersPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

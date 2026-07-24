@@ -378,7 +378,12 @@ export function DashboardPage() {
   const [categories, setCategories] = useState<string[]>(seller?.categories || []);
 
   // ── Reports
-  const [reportDays, setReportDays] = useState(30);
+  type ReportPreset = "7d" | "15d" | "1m" | "this_month" | "last_month" | "90d" | "1y" | "max" | "custom";
+  type ReportDuration = { preset: ReportPreset; startDate?: string; endDate?: string };
+  const [reportDuration, setReportDuration] = useState<ReportDuration>({ preset: "1m" });
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [report, setReport] = useState<{
     totalOrders: number; totalRevenue: number;
     topProducts: { title: string; unitsSold: number; revenue: number }[];
@@ -510,13 +515,71 @@ export function DashboardPage() {
     }
   }, [tab]);
 
+  function getReportParams(duration: ReportDuration): Record<string, string> {
+    const now = new Date();
+    switch (duration.preset) {
+      case "7d": return { days: "7" };
+      case "15d": return { days: "15" };
+      case "1m": return { days: "30" };
+      case "90d": return { days: "90" };
+      case "1y": return { days: "365" };
+      case "max": return { all: "true" };
+      case "this_month": {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return {
+          startDate: start.toISOString().slice(0, 10),
+          endDate: end.toISOString().slice(0, 10),
+        };
+      }
+      case "last_month": {
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0);
+        return {
+          startDate: start.toISOString().slice(0, 10),
+          endDate: end.toISOString().slice(0, 10),
+        };
+      }
+      case "custom":
+        return duration.startDate && duration.endDate
+          ? { startDate: duration.startDate, endDate: duration.endDate }
+          : { days: "30" };
+      default: return { days: "30" };
+    }
+  }
+
+  function getReportLabel(duration: ReportDuration): string {
+    const now = new Date();
+    switch (duration.preset) {
+      case "7d": return "Last 7 days";
+      case "15d": return "Last 15 days";
+      case "1m": return "Last 30 days";
+      case "90d": return "Last 90 days";
+      case "1y": return "Last 1 year";
+      case "max": return "All time";
+      case "this_month":
+        return "This month (" + now.toLocaleString("en-IN", { month: "long" }) + ")";
+      case "last_month": {
+        const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return "Last month (" + last.toLocaleString("en-IN", { month: "long" }) + ")";
+      }
+      case "custom":
+        return duration.startDate && duration.endDate
+          ? duration.startDate + " → " + duration.endDate
+          : "Custom range";
+      default: return "Last 30 days";
+    }
+  }
+
   async function loadReport() {
     setLoadingReport(true);
     try {
+      const params = getReportParams(reportDuration);
+      const query = new URLSearchParams(params).toString();
       const r = await api.get<{
         totalOrders: number; totalRevenue: number;
         topProducts: { title: string; unitsSold: number; revenue: number }[];
-      }>(`/orders/my/report?days=${reportDays}`);
+      }>(`/orders/my/report?${query}`);
       setReport(r.data);
     } catch { setError("Could not load report."); }
     finally { setLoadingReport(false); }
@@ -534,7 +597,7 @@ export function DashboardPage() {
     }
   }
 
-  useEffect(() => { if (tab === "reports") void loadReport(); }, [tab, reportDays]);
+  useEffect(() => { if (tab === "reports") void loadReport(); }, [tab, reportDuration]);
   useEffect(() => { if (tab === "earnings") void loadEarnings(); }, [tab]);
 
   const stats = useMemo(() => {
@@ -2817,7 +2880,7 @@ export function DashboardPage() {
                       <article key={order._id} className={`rounded-2xl border p-3 transition ${isUnread ? "border-zinc-400 bg-zinc-200 shadow-md dark:border-zinc-600 dark:bg-zinc-800" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70"}`}>
                         {/* Order No + Status */}
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>#{order._id.slice(-8).toUpperCase()}</p>
+                          <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-500 dark:text-slate-400"}`}>#{order.customOrderId || order._id.slice(-8).toUpperCase()}</p>
                           <span className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />{STATUS_LABEL[order.paymentStatus]}
                           </span>
@@ -2864,7 +2927,7 @@ export function DashboardPage() {
                           <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
                             {/* Order No */}
                             <td className="py-3 pr-4 pl-5">
-                              <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>#{order._id.slice(-8).toUpperCase()}</p>
+                              <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>#{order.customOrderId || order._id.slice(-8).toUpperCase()}</p>
                             </td>
                             {/* Customer Name */}
                             <td className="py-3 pr-4">
@@ -3019,21 +3082,85 @@ export function DashboardPage() {
                 <h2 className="mt-2 font-heading text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Sales performance at a glance</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Track order volume, revenue quality, and top-selling products in the same visual language as the rest of your dashboard.</p>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="inline-flex rounded-full border border-white/80 bg-white/85 p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
-                  {[7, 30].map((d) => (
+              <div className="flex flex-col gap-3">
+                {/* Duration preset pills */}
+                <div className="flex flex-wrap gap-1.5 rounded-2xl border border-white/80 bg-white/85 p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
+                  {([
+                    { preset: "7d" as const, label: "7 Days" },
+                    { preset: "15d" as const, label: "15 Days" },
+                    { preset: "1m" as const, label: "1 Month" },
+                    { preset: "this_month" as const, label: "This Month" },
+                    { preset: "last_month" as const, label: "Last Month" },
+                    { preset: "90d" as const, label: "90 Days" },
+                    { preset: "1y" as const, label: "1 Year" },
+                    { preset: "max" as const, label: "Maximum" },
+                    { preset: "custom" as const, label: "Custom" },
+                  ]).map(({ preset, label }) => (
                     <button
-                      key={d}
-                      onClick={() => setReportDays(d)}
-                      className={reportDays === d ? "rounded-full border border-orange-500 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 shadow-sm dark:text-orange-350 dark:border-orange-800/80 dark:bg-orange-950/30" : "rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"}
+                      key={preset}
+                      onClick={() => {
+                        if (preset === "custom") {
+                          setShowCustomPicker(true);
+                        } else {
+                          setShowCustomPicker(false);
+                          setReportDuration({ preset });
+                        }
+                      }}
+                      className={
+                        reportDuration.preset === preset
+                          ? "rounded-xl border border-orange-500 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-600 shadow-sm dark:border-orange-800/80 dark:bg-orange-950/30 dark:text-orange-300"
+                          : "rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                      }
                     >
-                      {d === 7 ? "Last 7 days" : "Last 30 days"}
+                      {label}
                     </button>
                   ))}
                 </div>
-                <button onClick={handleExport} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white">
-                  <AppIcon name="download" className="text-[18px]" /> Export Report
-                </button>
+
+                {/* Custom date range picker */}
+                {showCustomPicker && (
+                  <div className="flex flex-wrap items-end gap-2 rounded-2xl border border-orange-200 bg-orange-50/70 px-4 py-3 dark:border-orange-900/50 dark:bg-orange-950/20">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold uppercase text-slate-500">From</label>
+                      <input
+                        type="date"
+                        value={customStart}
+                        max={customEnd || undefined}
+                        onChange={(e) => setCustomStart(e.target.value)}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm focus:border-orange-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-semibold uppercase text-slate-500">To</label>
+                      <input
+                        type="date"
+                        value={customEnd}
+                        min={customStart || undefined}
+                        onChange={(e) => setCustomEnd(e.target.value)}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm focus:border-orange-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                    <button
+                      disabled={!customStart || !customEnd}
+                      onClick={() => {
+                        setReportDuration({ preset: "custom", startDate: customStart, endDate: customEnd });
+                        setShowCustomPicker(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-orange-700 dark:hover:bg-orange-600"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    {getReportLabel(reportDuration)}
+                  </span>
+                  <button onClick={handleExport} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white">
+                    <AppIcon name="download" className="text-[18px]" /> Export Report
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -3058,7 +3185,7 @@ export function DashboardPage() {
                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><AppIcon name="orders" className="text-[26px]" /></span>
                   </div>
                   <p className="mt-6 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{report.totalOrders}</p>
-                  <p className="mt-2 text-xs text-slate-500">{"Across the last " + reportDays + " days"}</p>
+                  <p className="mt-2 text-xs text-slate-500">{getReportLabel(reportDuration)}</p>
                 </article>
                 <article className="rounded-[26px] border border-white/70 bg-gradient-to-br from-white via-orange-50/80 to-amber-50/70 p-5 shadow-card dark:border-orange-900/35 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
                   <div className="flex items-start justify-between gap-3">
@@ -3166,7 +3293,7 @@ export function DashboardPage() {
                           <p className="text-[11px] font-semibold uppercase" style={{ color: "#94a3b8" }}>Lead product revenue</p>
                           <p className="mt-1 text-3xl font-bold text-white">{reportTopProduct ? "₹" + reportTopProduct.revenue.toLocaleString("en-IN") : "₹0"}</p>
                         </div>
-                        <span className="self-start sm:self-auto rounded-full border border-orange-400/40 px-3 py-1 text-xs font-semibold" style={{ backgroundColor: "rgba(251,146,60,0.15)", color: "#fed7aa" }}>{"Last " + reportDays + " days"}</span>
+                        <span className="self-start sm:self-auto rounded-full border border-orange-400/40 px-3 py-1 text-xs font-semibold" style={{ backgroundColor: "rgba(251,146,60,0.15)", color: "#fed7aa" }}>{getReportLabel(reportDuration)}</span>
                       </div>
                       <div className="mt-4 h-2 overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>
                         <div className="h-full rounded-full bg-[#ff751f]" style={{ width: String(Math.max(8, reportTopProductRevenueShare)) + "%" }} />
@@ -3178,7 +3305,7 @@ export function DashboardPage() {
                     <p className="text-xs font-semibold uppercase text-slate-500">Report summary</p>
                     <div className="mt-4 space-y-3">
                       {[
-                        { label: "Active period", value: "Last " + reportDays + " days" },
+                        { label: "Active period", value: getReportLabel(reportDuration) },
                         { label: "Products generating sales", value: String(report.topProducts.length) },
                         { label: "Total units sold", value: String(reportTotalUnits) },
                         { label: "Average revenue per order", value: "₹" + reportAverageOrderValue.toLocaleString("en-IN") },

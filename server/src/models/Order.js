@@ -72,6 +72,11 @@ const orderSchema = new mongoose.Schema(
       index: true,
       default: null,
     },
+    customOrderId: {
+      type: String,
+      index: true,
+      default: "",
+    },
     razorpayOrderId: {
       type: String,
       index: true,

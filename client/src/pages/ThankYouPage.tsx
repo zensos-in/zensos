@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
@@ -9,6 +9,7 @@ import type { OrderStatus } from "../types";
 
 type PublicOrderStatus = {
   _id: string;
+  customOrderId?: string;
   paymentStatus: OrderStatus;
   paymentMethod?: "prepaid" | "cod";
 };
@@ -32,6 +33,7 @@ function formatOrderDate(date: Date) {
 export function ThankYouPage() {
   const { showError } = useToast();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<PublicOrderStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,6 +41,7 @@ export function ThankYouPage() {
 
   const sellerSlug = searchParams.get("sellerSlug") || "";
   const requestedPaymentMethod = searchParams.get("paymentMethod") || "";
+  const customerPhone = searchParams.get("customerPhone") || "";
   const orderIds = useMemo(
     () =>
       (searchParams.get("orderIds") || "")
@@ -154,7 +157,7 @@ export function ThankYouPage() {
               return (
                 <div key={orderId} className="flex flex-wrap items-center justify-center gap-2 text-sm">
                   <span className="text-slate-400">Order ID:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{orderId}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{order?.customOrderId || orderId}</span>
                   <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
                     {status}
                   </span>
@@ -181,8 +184,13 @@ export function ThankYouPage() {
 
             <Button
               type="button"
-              onClick={() => void fetchStatuses()}
-              loading={loading}
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (sellerSlug) params.set("sellerSlug", sellerSlug);
+                if (customerPhone) params.set("customerPhone", customerPhone);
+                navigate(`/my-orders?${params.toString()}`);
+              }}
+              disabled={!sellerSlug || !customerPhone}
               variant="secondary"
               className="rounded-2xl px-5 py-2.5 text-sm font-bold shadow-sm"
             >

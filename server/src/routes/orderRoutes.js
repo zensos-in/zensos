@@ -412,10 +412,18 @@ router.post("/", async (req, res) => {
       const vendorAmountPaise = totalSubOrderPaise - commissionPaise;
       grandTotalPaise += totalSubOrderPaise;
 
+      // Generate custom Order ID
+      const orderCount = await Order.countDocuments({ seller: seller._id });
+      const seqNum = String(orderCount + 1).padStart(3, '0');
+      const sellerPrefix = (seller.slug || "").substring(0, 2).toUpperCase().padEnd(2, 'X');
+      const businessPrefix = (seller.businessName || "").substring(0, 2).toUpperCase().padEnd(2, 'X');
+      const customOrderId = `${sellerPrefix}${businessPrefix}${seqNum}`;
+
       // Create Sub-Order
       const subOrder = await Order.create({
         seller: seller._id,
         parentOrder: parentOrder._id,
+        customOrderId,
         razorpayOrderId: "", // will update post Razorpay Order creation
         items: lines.map((line) => ({
           product: line.productId,
@@ -644,12 +652,32 @@ router.get("/my", auth, async (req, res) => {
 
 router.get("/my/report", auth, async (req, res) => {
   try {
-    const days = Number(req.query.days) || 30;
-    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    // Support three modes:
+    //  1. ?days=N           — last N days (original behaviour)
+    //  2. ?startDate=&endDate= — custom date range (ISO date strings)
+    //  3. ?all=true         — all time (maximum)
+    let dateFilter = {};
+
+    if (req.query.all === "true") {
+      // No date filter — all orders
+    } else if (req.query.startDate && req.query.endDate) {
+      const start = new Date(String(req.query.startDate));
+      const end = new Date(String(req.query.endDate));
+      // end of the end day
+      end.setHours(23, 59, 59, 999);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({ message: "Invalid startDate or endDate" });
+      }
+      dateFilter = { createdAt: { $gte: start, $lte: end } };
+    } else {
+      const days = Math.max(1, Number(req.query.days) || 30);
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      dateFilter = { createdAt: { $gte: since } };
+    }
 
     const orders = await Order.find({
       seller: req.sellerId,
-      createdAt: { $gte: since },
+      ...dateFilter,
       paymentStatus: { $ne: "cancelled" },
     })
       .populate("product", "title price")
@@ -691,7 +719,6 @@ router.get("/my/report", auth, async (req, res) => {
     );
 
     return res.json({
-      period: days,
       totalOrders: orders.length,
       totalRevenue,
       topProducts,
@@ -700,6 +727,7 @@ router.get("/my/report", auth, async (req, res) => {
     return res.status(500).json({ message: "Unable to generate report" });
   }
 });
+
 
 router.get("/public/status", async (req, res) => {
   try {
@@ -727,12 +755,42 @@ router.get("/public/status", async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .select("_id paymentStatus paymentMethod updatedAt createdAt")
+      .select("_id customOrderId paymentStatus paymentMethod updatedAt createdAt")
       .sort({ createdAt: -1 });
 
     return res.json({ orders });
   } catch (error) {
     return res.status(500).json({ message: "Unable to fetch order statuses" });
+  }
+});
+
+// Public: fetch all orders for a customer (by phone) from a specific seller
+router.get("/public/by-customer", async (req, res) => {
+  try {
+    const sellerSlug = String(req.query.sellerSlug || "").trim();
+    const customerPhone = String(req.query.customerPhone || "").trim();
+
+    if (!sellerSlug || !customerPhone) {
+      return res.status(400).json({ message: "sellerSlug and customerPhone are required" });
+    }
+
+    const seller = await Seller.findOne({ slug: sellerSlug }).select("_id");
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    const orders = await Order.find({
+      seller: seller._id,
+      customerPhone,
+    })
+      .select("_id customOrderId paymentStatus paymentMethod amount deliveryCharge items quantity customerName createdAt")
+      .populate("items.product", "title imageUrl")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json({ orders });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch customer orders" });
   }
 });
 
