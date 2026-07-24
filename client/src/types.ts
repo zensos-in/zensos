@@ -42,7 +42,30 @@ export interface TrialState {
   remainingDays: number | null;
 }
 
+export type PlanType = "NONE" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS";
+export type SubscriptionStatus = "NONE" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "PENDING";
+
+export interface Subscription {
+  _id: string;
+  seller: string;
+  planType: PlanType;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string;
+  trialUsed: boolean;
+  autoRenew: boolean;
+  paymentId: string;
+  orderId: string;
+  amountPaid: number;
+}
+
 export interface Seller {
+  currentPlan?: PlanType;
+  subscriptionStatus?: SubscriptionStatus;
+  subscriptionEndDate?: string | null;
+  trialEndDate?: string | null;
+  storeEnabled?: boolean;
+  subscriptionExpiredPopupShown?: boolean;
   trial?: TrialState;
   _id: string;
   slug: string;

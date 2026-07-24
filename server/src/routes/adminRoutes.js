@@ -2,6 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
 const { ADMIN_SELLER_OMIT, toAdminSellerView } = require("../utils/adminSellerView");
+const { sendSubscriptionReminderEmail } = require("../utils/mailer");
 
 const router = express.Router();
 
@@ -547,6 +548,35 @@ router.post("/sellers/:sellerId/linked-account/retry", adminAuth, async (req, re
       detail: error.message,
       missingFields: error.missingFields || [],
     });
+  }
+});
+
+router.post("/sellers/:sellerId/send-subscription-email", adminAuth, async (req, res) => {
+  try {
+    const seller = await Seller.findById(req.params.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+    
+    if (!seller.businessEmail) {
+      return res.status(400).json({ message: "Seller does not have an email address" });
+    }
+
+    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+    
+    await sendSubscriptionReminderEmail({
+      email: seller.businessEmail,
+      businessName: seller.businessName,
+      planName: seller.currentPlan || "Starter",
+      status: seller.subscriptionStatus,
+      endDate: seller.subscriptionEndDate || seller.trialEndDate,
+      dashboardUrl: FRONTEND_URL
+    });
+
+    return res.json({ message: "Subscription reminder email sent successfully" });
+  } catch (error) {
+    console.error("[send-subscription-email]", error);
+    return res.status(500).json({ message: "Unable to send subscription reminder email", error: error.message });
   }
 });
 

@@ -139,7 +139,7 @@ function ReviewStatusPill({
   );
 }
 
-type SellerActionKey = "kyc-verify" | "kyc-reject" | "approve" | "reject" | "pending" | "retry-linked";
+type SellerActionKey = "kyc-verify" | "kyc-reject" | "approve" | "reject" | "pending" | "retry-linked" | "send-email";
 
 function ReviewActionButton({
   label,
@@ -498,6 +498,7 @@ export function AdminPage() {
   const [financeActionLoading, setFinanceActionLoading] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [emailSendingId, setEmailSendingId] = useState<string | null>(null);
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
   // Reset modal scroll to top whenever a new seller is opened
@@ -747,6 +748,29 @@ export function AdminPage() {
       }
     } finally {
       setSellerActionLoading(null);
+    }
+  }
+
+  async function sendSubscriptionEmail(sellerId: string) {
+    if (!token) return;
+    setError("");
+    setSuccess("");
+    setEmailSendingId(sellerId);
+    try {
+      await api.post(
+        `/admin/sellers/${sellerId}/send-subscription-email`,
+        {},
+        { headers: authHeaders }
+      );
+      setSuccess("Subscription reminder email sent successfully.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || "Unable to send subscription email.");
+      } else {
+        setError("Unable to send subscription email.");
+      }
+    } finally {
+      setEmailSendingId(null);
     }
   }
 
@@ -1134,6 +1158,7 @@ export function AdminPage() {
               <tr className="text-xs uppercase text-slate-500">
                 <th className="px-4 py-3">Business</th>
                 <th className="px-4 py-3">Contact</th>
+                <th className="px-4 py-3">Plan</th>
                 <th className="px-4 py-3">Registered</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
@@ -1143,14 +1168,14 @@ export function AdminPage() {
               {loading ? (
                 [...Array.from({ length: 6 })].map((_, i) => (
                   <tr key={i} className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="px-4 py-4" colSpan={5}>
+                    <td className="px-4 py-4" colSpan={6}>
                       <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
                     </td>
                   </tr>
                 ))
               ) : filteredSellers.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={5}>
+                  <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={6}>
                     No sellers found for this filter.
                   </td>
                 </tr>
@@ -1166,6 +1191,10 @@ export function AdminPage() {
                     <td className="px-4 py-3">
                       <p className="text-slate-700 dark:text-slate-200">{seller.phone}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-300">{seller.businessEmail || "—"}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-700 dark:text-slate-200 capitalize">{seller.currentPlan || "None"}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300 capitalize">{seller.subscriptionStatus || "—"}</p>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {new Date(seller.createdAt || "").toLocaleString("en-IN")}
@@ -1185,6 +1214,14 @@ export function AdminPage() {
                         </Button>
                         <Button variant="danger" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>
                           Reject
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="px-2.5 py-1 text-xs"
+                          onClick={() => void sendSubscriptionEmail(seller._id)}
+                          disabled={emailSendingId === seller._id}
+                        >
+                          {emailSendingId === seller._id ? "Sending…" : "Send Email"}
                         </Button>
                       </div>
                     </td>
@@ -1214,14 +1251,27 @@ export function AdminPage() {
                   <p className="font-semibold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-300">{seller.phone}</p>
                 </div>
-                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || status) as ApprovalStatus)}`}>
-                  {seller.approvalStatus || status}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || status) as ApprovalStatus)}`}>
+                    {seller.approvalStatus || status}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase text-slate-500 tracking-wider">
+                    {seller.currentPlan || "None"} &middot; {seller.subscriptionStatus || "—"}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => void openSellerDetail(seller)}>View</Button>
                 <Button variant="success" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "approved", "approve")}>Approve</Button>
                 <Button variant="danger" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>Reject</Button>
+                <Button
+                  variant="secondary"
+                  className="px-2.5 py-1 text-xs"
+                  onClick={() => void sendSubscriptionEmail(seller._id)}
+                  disabled={emailSendingId === seller._id}
+                >
+                  {emailSendingId === seller._id ? "Sending…" : "Send Email"}
+                </Button>
               </div>
             </Card>
           ))

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
+export function ProtectedRoute({ children, requiresActiveSubscription = false }: { children: ReactNode, requiresActiveSubscription?: boolean }) {
   const { seller, loading } = useAuth();
 
   if (loading) {
@@ -21,6 +21,12 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!seller) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requiresActiveSubscription && seller.subscriptionStatus === "EXPIRED") {
+    // If the seller is expired and trying to access a protected route (like Products, Settings)
+    // redirect them to the dashboard where they will see the expiration popup.
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

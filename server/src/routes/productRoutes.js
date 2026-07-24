@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Product = require("../models/Product");
 const Seller = require("../models/Seller");
 const auth = require("../middleware/auth");
+const checkSubscription = require("../middleware/checkSubscription");
 const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
@@ -10,7 +11,17 @@ const { deleteImgbbImages } = require("../utils/imgbbDelete");
 
 const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
-const MAX_PRODUCTS_PER_SELLER = 10;
+
+function getPlanLimits(planType) {
+  switch (planType) {
+    case "BUSINESS": return { maxProducts: 30, maxBanners: 5 };
+    case "GROWTH": return { maxProducts: 20, maxBanners: 3 };
+    case "STARTER": return { maxProducts: 10, maxBanners: 2 };
+    case "TRIAL":
+    default:
+      return { maxProducts: 10, maxBanners: 2 };
+  }
+}
 
 function isAdminPreviewRequest(req) {
   if (String(req.query.preview || "") !== "admin") return false;
@@ -230,7 +241,7 @@ function isValidEmail(email) {
 }
 
 // ─── POST /products — Create product (auth) ───────────────────────────────
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, checkSubscription, async (req, res) => {
   try {
     const {
       title,
@@ -324,11 +335,12 @@ router.post("/", auth, async (req, res) => {
     }
 
     // This is intentionally enforced by the API, not just the dashboard.
+    const limits = getPlanLimits(seller.currentPlan);
     const productCount = await Product.countDocuments({ seller: seller._id });
-    if (productCount >= MAX_PRODUCTS_PER_SELLER) {
+    if (productCount >= limits.maxProducts) {
       return res.status(403).json({
-        message: `You can list up to ${MAX_PRODUCTS_PER_SELLER} products. Delete a product before adding another.`,
-        productLimit: MAX_PRODUCTS_PER_SELLER,
+        message: `Your current plan allows up to ${limits.maxProducts} products. Upgrade your plan to add more.`,
+        productLimit: limits.maxProducts,
       });
     }
 
@@ -405,7 +417,7 @@ router.get("/public/:sellerSlug", async (req, res) => {
 });
 
 // ─── PATCH /products/:productId/toggle — Toggle isActive (auth) ──────────
-router.patch("/:productId/toggle", auth, async (req, res) => {
+router.patch("/:productId/toggle", auth, checkSubscription, async (req, res) => {
   try {
     const product = await Product.findOne({
       _id: req.params.productId,
@@ -426,7 +438,7 @@ router.patch("/:productId/toggle", auth, async (req, res) => {
 });
 
 // ─── PUT /products/:productId — Update product (auth) ────────────────────
-router.put("/:productId", auth, async (req, res) => {
+router.put("/:productId", auth, checkSubscription, async (req, res) => {
   try {
     const product = await Product.findOne({
       _id: req.params.productId,
@@ -579,13 +591,13 @@ router.put("/:productId", auth, async (req, res) => {
 });
 
 // ─── DELETE /products/:productId — Delete product (auth) ─────────────────
-router.delete("/:productId", auth, async (req, res) => {
+router.delete("/:productId", auth, checkSubscription, async (req, res) => {
   return res.status(400).json({
     message: "Product deletion now requires email OTP verification.",
   });
 });
 
-router.post("/:productId/request-delete-otp", auth, async (req, res) => {
+router.post("/:productId/request-delete-otp", auth, checkSubscription, async (req, res) => {
   try {
     const product = await Product.findOne({
       _id: req.params.productId,
@@ -630,7 +642,7 @@ router.post("/:productId/request-delete-otp", auth, async (req, res) => {
   }
 });
 
-router.post("/:productId/confirm-delete", auth, async (req, res) => {
+router.post("/:productId/confirm-delete", auth, checkSubscription, async (req, res) => {
   try {
     const { otp } = req.body;
     if (!otp) {

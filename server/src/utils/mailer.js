@@ -359,4 +359,43 @@ async function sendContactEmail({ name, email, phone, message }) {
   });
 }
 
-module.exports = { sendOtpEmail, sendOrderConfirmationEmail, sendContactEmail };
+async function sendSubscriptionReminderEmail({ email, businessName, planName, status, endDate, dashboardUrl }) {
+  const transporter = getTransporter();
+  const safeBusiness = escapeHtml(businessName);
+  
+  const isExpired = status === "EXPIRED";
+  const subject = isExpired 
+    ? `Your Zensos subscription has expired` 
+    : `Your Zensos subscription is expiring soon`;
+    
+  const headline = isExpired 
+    ? "Subscription Expired" 
+    : "Subscription Reminder";
+    
+  const message = isExpired
+    ? `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) expired on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>. Your store is currently inactive and customers cannot place new orders.`
+    : `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) is set to expire on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>.`;
+
+  const actionText = isExpired ? "Renew Now" : "Renew Subscription";
+
+  await transporter.sendMail({
+    from: `"Zensos" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: subject,
+    text: `${headline}\n\nHi ${businessName},\n\n${message.replace(/<[^>]+>/g, '')}\n\nPlease log in to your dashboard to renew your subscription or choose a different plan:\n${dashboardUrl}`,
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
+        <div style="margin-bottom:24px;">
+          <span style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Zensos</span>
+        </div>
+        <p style="color:#475569;margin:0 0 16px;font-size:15px;line-height:1.5;">Hi ${safeBusiness},</p>
+        <h1 style="color:#0f172a;margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.35;">${headline}</h1>
+        <p style="color:#475569;margin:0 0 24px;font-size:14px;line-height:1.6;">${message}</p>
+        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:14px;">${actionText}</a>
+        <p style="color:#64748b;margin:24px 0 0;font-size:12px;line-height:1.5;">If you have any questions, please contact our support team.</p>
+      </div>
+    `
+  });
+}
+
+module.exports = { sendOtpEmail, sendOrderConfirmationEmail, sendContactEmail, sendSubscriptionReminderEmail };
