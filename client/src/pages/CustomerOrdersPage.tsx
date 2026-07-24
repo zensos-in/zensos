@@ -16,6 +16,7 @@ type CustomerOrderItem = {
 
 type CustomerOrder = {
   _id: string;
+  customOrderId?: string;
   paymentStatus: OrderStatus;
   paymentMethod: PaymentMethod;
   amount: number;

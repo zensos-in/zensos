@@ -35,7 +35,7 @@ export function ThankYouPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<PublicOrderStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
   const [orderDate] = useState(() => new Date());
 
@@ -54,7 +54,6 @@ export function ThankYouPage() {
   const fetchStatuses = useCallback(async () => {
     if (orderIds.length === 0) {
       setError("Missing payment reference. Please return to the store.");
-      setLoading(false);
       return;
     }
     try {
@@ -65,8 +64,6 @@ export function ThankYouPage() {
       setError("");
     } catch {
       setError("Unable to verify payment status right now.");
-    } finally {
-      setLoading(false);
     }
   }, [orderIds, sellerSlug]);
 
