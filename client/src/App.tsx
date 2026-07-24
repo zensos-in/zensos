@@ -71,15 +71,15 @@ function AppShell() {
                 </Link>
               )}
               {location.pathname === "/contact-us" && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:gap-3">
                   <Link to="/login"
-                    className="rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 text-slate-700 dark:text-slate-300">
+                    className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm font-semibold transition-all hover:opacity-80 text-slate-700 dark:text-slate-300">
                     Sign In
                   </Link>
                   <Link to="/login?tab=register"
-                    className="rounded-xl px-3.5 py-1.5 text-xs font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
+                    className="whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90 active:scale-100"
                     style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-                    Sign Up →
+                    Start for Free →
                   </Link>
                 </div>
               )}
