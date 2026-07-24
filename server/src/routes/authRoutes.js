@@ -16,6 +16,7 @@ const {
   maskPan,
   normalizePan,
   panHash,
+  bankAccountHash,
   recordComplianceEvent,
 } = require("../utils/kycCompliance");
 const { deleteImgbbImages } = require("../utils/imgbbDelete");
@@ -344,6 +345,20 @@ async function assertPanIsUnique(normalizedPan, sellerId) {
   }
 }
 
+async function assertBankAccountIsUnique(bankHash, sellerId) {
+  if (!bankHash) return;
+  const duplicate = await Seller.findOne({
+    bankAccountHash: bankHash,
+    _id: { $ne: sellerId },
+  }).select("_id");
+
+  if (duplicate) {
+    const error = new Error("This bank account is already linked to another seller account.");
+    error.statusCode = 409;
+    throw error;
+  }
+}
+
 // ─── POST /auth/register ──────────────────────────────────────────────────
 // Called after OTP verification for new sellers to complete their profile
 router.post("/register", auth, async (req, res) => {
@@ -463,8 +478,13 @@ router.post("/register", auth, async (req, res) => {
       seller.bankAccountName = maskText(bankAccountName, 3);
     }
     if (bankAccountNumber) {
-      seller.kycDetailsEncrypted.bankAccountNumber = encrypt(bankAccountNumber);
-      seller.bankAccountNumber = maskText(bankAccountNumber, 4);
+      if (!String(bankAccountNumber).includes("*")) {
+        const nextBankHash = bankAccountHash(bankAccountNumber);
+        await assertBankAccountIsUnique(nextBankHash, seller._id);
+        seller.kycDetailsEncrypted.bankAccountNumber = encrypt(bankAccountNumber);
+        seller.bankAccountNumber = maskText(bankAccountNumber, 4);
+        seller.bankAccountHash = nextBankHash;
+      }
     }
     seller.kycDetailsEncrypted.pan = encrypt(normalizedPan);
     seller.kycDetailsEncrypted.panHolderName = encrypt(normalizedPanHolderName);
@@ -486,6 +506,15 @@ router.post("/register", auth, async (req, res) => {
     seller.approvalStatus = "draft";
     seller.storePublished = false;
     seller.onboardingProgress = "profile_submitted";
+
+    if (seller.subscriptionStatus === "NONE" || !seller.subscriptionStatus) {
+      seller.currentPlan = "TRIAL";
+      seller.subscriptionStatus = "ACTIVE";
+      seller.storeEnabled = true;
+      const now = new Date();
+      seller.subscriptionEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+      seller.trialEndDate = seller.subscriptionEndDate;
+    }
     applyKycStateFromPan(seller);
     recordComplianceEvent(seller, "vendor_registration_pan_submitted", "seller", {
       panVerificationStatus: seller.panVerificationStatus,
@@ -505,6 +534,9 @@ router.post("/register", auth, async (req, res) => {
     }
     if (error.code === 11000 && error.keyPattern?.panHash) {
       return res.status(409).json({ message: "This PAN is already linked to another seller account." });
+    }
+    if (error.code === 11000 && error.keyPattern?.bankAccountHash) {
+      return res.status(409).json({ message: "This bank account is already linked to another seller account." });
     }
     return res.status(500).json({ message: "Could not complete registration" });
   }
@@ -630,8 +662,11 @@ router.put("/me", auth, async (req, res) => {
     }
     if (typeof bankAccountNumber === "string" && bankAccountNumber.trim()) {
       if (!bankAccountNumber.includes("*")) { // Only encrypt if it's a new raw value
+        const nextBankHash = bankAccountHash(bankAccountNumber);
+        await assertBankAccountIsUnique(nextBankHash, seller._id);
         seller.kycDetailsEncrypted.bankAccountNumber = encrypt(bankAccountNumber);
         seller.bankAccountNumber = maskText(bankAccountNumber, 4);
+        seller.bankAccountHash = nextBankHash;
       }
     }
     const existingPan = getPanCompliance(seller);
@@ -699,6 +734,9 @@ router.put("/me", auth, async (req, res) => {
     }
     if (error.code === 11000 && error.keyPattern?.panHash) {
       return res.status(409).json({ message: "This PAN is already linked to another seller account." });
+    }
+    if (error.code === 11000 && error.keyPattern?.bankAccountHash) {
+      return res.status(409).json({ message: "This bank account is already linked to another seller account." });
     }
     return res.status(500).json({ message: "Unable to update profile" });
   }

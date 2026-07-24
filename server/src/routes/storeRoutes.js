@@ -2,6 +2,7 @@ const express = require("express");
 const Seller = require("../models/Seller");
 const Product = require("../models/Product");
 const auth = require("../middleware/auth");
+const checkSubscription = require("../middleware/checkSubscription");
 const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
@@ -11,6 +12,17 @@ const { deleteImgbbImages } = require("../utils/imgbbDelete");
 const { getStoreAccessState } = require("../utils/trialService");
 
 const router = express.Router();
+
+function getPlanLimits(planType) {
+  switch (planType) {
+    case "BUSINESS": return { maxProducts: 30, maxBanners: 5 };
+    case "GROWTH": return { maxProducts: 20, maxBanners: 3 };
+    case "STARTER": return { maxProducts: 10, maxBanners: 2 };
+    case "TRIAL":
+    default:
+      return { maxProducts: 10, maxBanners: 2 };
+  }
+}
 
 function withPolicyDefaults(sellerDoc) {
   if (!sellerDoc) return sellerDoc;
@@ -97,7 +109,7 @@ router.get("/public/:sellerSlug", async (req, res) => {
   }
 });
 
-router.post("/publish", auth, async (req, res) => {
+router.post("/publish", auth, checkSubscription, async (req, res) => {
   try {
     const seller = await Seller.findById(req.sellerId);
     if (!seller) {
@@ -143,7 +155,7 @@ router.post("/publish", auth, async (req, res) => {
 });
 
 // ─── PUT /store/options — Update store options (auth) ─────────────────────
-router.put("/options", auth, async (req, res) => {
+router.put("/options", auth, checkSubscription, async (req, res) => {
   try {
     const {
       banners,
@@ -169,7 +181,15 @@ router.put("/options", auth, async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    if (Array.isArray(banners)) seller.banners = banners;
+    if (Array.isArray(banners)) {
+      const limits = getPlanLimits(seller.currentPlan);
+      if (banners.length > limits.maxBanners) {
+        return res.status(403).json({
+          message: `Your current plan allows up to ${limits.maxBanners} store banners. Upgrade your plan to add more.`
+        });
+      }
+      seller.banners = banners;
+    }
     if (Array.isArray(socialLinks)) seller.socialLinks = socialLinks;
     if (typeof whatsappNumber === "string")
       seller.whatsappNumber = whatsappNumber.trim();
@@ -202,7 +222,7 @@ router.put("/options", auth, async (req, res) => {
 });
 
 // Rename a seller product category and sync existing products that use it.
-router.patch("/categories/rename", auth, async (req, res) => {
+router.patch("/categories/rename", auth, checkSubscription, async (req, res) => {
   try {
     const fromCategory = String(req.body.from || "").trim();
     const toCategory = String(req.body.to || "").trim();

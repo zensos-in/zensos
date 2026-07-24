@@ -26,6 +26,16 @@ function panHash(value) {
   return crypto.createHash("sha256").update(`pan:${pan}`).digest("hex");
 }
 
+function normalizeBankAccount(value) {
+  return String(value || "").replace(/\s+/g, "").toUpperCase();
+}
+
+function bankAccountHash(value) {
+  const bank = normalizeBankAccount(value);
+  if (!bank) return "";
+  return crypto.createHash("sha256").update(`bank:${bank}`).digest("hex");
+}
+
 function getDecryptedPan(seller) {
   return decrypt(seller?.kycDetailsEncrypted?.pan || "");
 }
@@ -150,5 +160,7 @@ module.exports = {
   maskPan,
   normalizePan,
   panHash,
+  bankAccountHash,
+  normalizeBankAccount,
   recordComplianceEvent,
 };

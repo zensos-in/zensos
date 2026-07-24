@@ -11,6 +11,9 @@ import { openOrderPrintDocument } from "../utils/orderPrintDocument";
 import { useAuth } from "../context/AuthContext";
 import { useI18n } from "../context/I18nContext";
 import { useToast } from "../context/ToastContext";
+import { SubscriptionExpiredModal } from "../components/SubscriptionExpiredModal";
+import { SubscriptionReminderBanner } from "../components/SubscriptionReminderBanner";
+import { DashboardSubscriptionWidget } from "../components/DashboardSubscriptionWidget";
 import { BUSINESS_CATEGORY_OPTIONS } from "../constants/businessCategories";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
 import {
@@ -1347,6 +1350,8 @@ export function DashboardPage() {
 
       {/* Feedback banners */}
       {copyFeedback && <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-700">{copyFeedback}</p>}
+      <SubscriptionReminderBanner />
+      <SubscriptionExpiredModal />
 
       {/* Tab nav */}
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
@@ -1367,6 +1372,8 @@ export function DashboardPage() {
       {/* ═════════════════════════════════════ TAB: DASHBOARD ══ */}
       {tab === "dashboard" && (
         <div className="space-y-4">
+          <DashboardSubscriptionWidget />
+          
           {/* Row 1 — stat cards */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[

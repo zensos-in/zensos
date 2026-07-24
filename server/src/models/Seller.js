@@ -71,6 +71,11 @@ const sellerSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    bankAccountHash: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     bankIfsc: {
       type: String,
       trim: true,
@@ -345,6 +350,32 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       enum: ["not_started", "active", "expired"],
     },
+    currentPlan: {
+      type: String,
+      enum: ["NONE", "TRIAL", "STARTER", "GROWTH", "BUSINESS"],
+      default: "NONE",
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ["ACTIVE", "EXPIRED", "CANCELLED", "PENDING", "NONE"],
+      default: "NONE",
+    },
+    subscriptionEndDate: {
+      type: Date,
+      default: null,
+    },
+    trialEndDate: {
+      type: Date,
+      default: null,
+    },
+    storeEnabled: {
+      type: Boolean,
+      default: true,
+    },
+    subscriptionExpiredPopupShown: {
+      type: Boolean,
+      default: false,
+    },
     publishRequestedAt: {
       type: Date,
       default: null,
@@ -402,6 +433,13 @@ sellerSchema.index(
   {
     unique: true,
     partialFilterExpression: { panHash: { $type: "string", $gt: "" } },
+  }
+);
+sellerSchema.index(
+  { bankAccountHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { bankAccountHash: { $type: "string", $gt: "" } },
   }
 );
 sellerSchema.index({ kycStatus: 1, payoutStatus: 1, approvalStatus: 1 });

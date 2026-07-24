@@ -514,7 +514,13 @@ export function PublicStorePage() {
         });
         setSeller(r.data.seller);
         setProducts(r.data.products);
-      } catch { setError("Seller store unavailable."); }
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          setError("Store is temporarily unavailable.");
+        } else {
+          setError("Seller store unavailable.");
+        }
+      }
       finally { setLoading(false); }
     }
     void fetchStore();
