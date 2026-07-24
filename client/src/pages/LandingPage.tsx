@@ -714,7 +714,7 @@ export function LandingPage() {
               border: "2px solid rgba(255,117,31,0.25)",
               boxShadow: "0 10px 30px rgba(255,117,31,0.12), 0 2px 8px rgba(0,0,0,0.04)",
             }}>
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               {/* Left Side */}
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2"
@@ -750,12 +750,11 @@ export function LandingPage() {
               </div>
 
               {/* Right Side */}
-              <div className="flex flex-col items-center md:items-end justify-center pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 md:pl-8 shrink-0">
+              <div className="flex flex-col items-center md:items-end justify-end pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-slate-100 md:pl-8 shrink-0">
                 <div className="text-center md:text-right mb-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Trial Price</span>
                   <div className="flex items-baseline justify-center md:justify-end gap-1">
                     <span className="text-4xl sm:text-5xl font-black" style={{ color: "#0b183f" }}>₹0</span>
-                    <span className="text-sm font-semibold text-slate-400">/15 Days</span>
+                    <span className="text-sm font-semibold text-slate-400">/ 15 Days</span>
                   </div>
                 </div>
                 <button onClick={() => navigate("/login?tab=register")}
