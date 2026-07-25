@@ -72,7 +72,7 @@ export function SubscriptionReminderBanner({ onRenew }: { onRenew?: () => void }
             ? "bg-white text-slate-900 hover:bg-slate-50" 
             : "bg-blue-600 text-white hover:bg-blue-700"}`}
       >
-        Renew
+        Subscribe Now
       </button>
     </div>
   );

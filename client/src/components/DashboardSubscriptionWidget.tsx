@@ -130,7 +130,7 @@ export function DashboardSubscriptionWidget() {
         </div>
 
         <div className="flex flex-col justify-end bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-          <p className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-300">Renew or Upgrade</p>
+          <p className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-300">Subscribe or Upgrade</p>
           <select 
             value={selectedPlan}
             onChange={(e) => setSelectedPlan(e.target.value as PlanType)}

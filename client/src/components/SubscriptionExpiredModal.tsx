@@ -42,7 +42,7 @@ export function SubscriptionExpiredModal() {
             onClick={handleRenew}
             className="w-full sm:w-auto rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-red-700 active:scale-95 text-center"
           >
-            Renew Now
+            Subscribe Now
           </button>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
