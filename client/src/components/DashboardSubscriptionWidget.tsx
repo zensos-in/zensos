@@ -91,7 +91,7 @@ export function DashboardSubscriptionWidget() {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <AppIcon name="earnings" className="text-orange-500" />
-          Subscription Management
+          Subscriptions
         </h3>
         <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
           seller.subscriptionStatus === "ACTIVE" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
@@ -137,9 +137,9 @@ export function DashboardSubscriptionWidget() {
             className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 mb-3"
           >
             <option value="" disabled>Select a plan...</option>
-            <option value="STARTER">Starter Plan (₹999/mo) - 10 Products</option>
-            <option value="GROWTH">Growth Plan (₹1999/mo) - 20 Products</option>
-            <option value="BUSINESS">Business Plan (₹2999/mo) - 30 Products</option>
+            <option value="STARTER">Starter Plan (₹999/mo)</option>
+            <option value="GROWTH">Growth Plan (₹1499/mo)</option>
+            <option value="BUSINESS">Business Plan (₹2499/mo)</option>
           </select>
           
           <button 

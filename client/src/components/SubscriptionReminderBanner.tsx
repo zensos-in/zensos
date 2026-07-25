@@ -1,7 +1,7 @@
 import { AppIcon } from "./ui/AppIcon";
 import { useAuth } from "../context/AuthContext";
 
-export function SubscriptionReminderBanner() {
+export function SubscriptionReminderBanner({ onRenew }: { onRenew?: () => void }) {
   const { seller } = useAuth();
 
   if (!seller || !seller.subscriptionEndDate || seller.subscriptionStatus === "EXPIRED") {
@@ -57,10 +57,15 @@ export function SubscriptionReminderBanner() {
       </div>
       <button 
         onClick={() => {
-          const widget = document.getElementById("subscription-widget");
-          if (widget) {
-            widget.scrollIntoView({ behavior: "smooth" });
+          if (onRenew) {
+            onRenew();
           }
+          setTimeout(() => {
+            const widget = document.getElementById("subscription-widget");
+            if (widget) {
+              widget.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 100);
         }}
         className={`text-xs font-bold px-3 py-1.5 rounded-lg border border-transparent transition-colors shadow-sm
           ${diffDays <= 7 

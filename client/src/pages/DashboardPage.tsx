@@ -1413,7 +1413,7 @@ export function DashboardPage() {
 
       {/* Feedback banners */}
       {copyFeedback && <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-700">{copyFeedback}</p>}
-      <SubscriptionReminderBanner />
+      <SubscriptionReminderBanner onRenew={() => { setTab("dashboard"); setError(""); setSuccess(""); }} />
       <SubscriptionExpiredModal />
 
       {/* Tab nav */}

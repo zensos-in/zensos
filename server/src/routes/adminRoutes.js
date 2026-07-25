@@ -562,7 +562,7 @@ router.post("/sellers/:sellerId/send-subscription-email", adminAuth, async (req,
       return res.status(400).json({ message: "Seller does not have an email address" });
     }
 
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+    const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.zensos.in";
     
     await sendSubscriptionReminderEmail({
       email: seller.businessEmail,
@@ -570,7 +570,7 @@ router.post("/sellers/:sellerId/send-subscription-email", adminAuth, async (req,
       planName: seller.currentPlan || "Starter",
       status: seller.subscriptionStatus,
       endDate: seller.subscriptionEndDate || seller.trialEndDate,
-      dashboardUrl: FRONTEND_URL
+      dashboardUrl: `${FRONTEND_URL}/dashboard`
     });
 
     return res.json({ message: "Subscription reminder email sent successfully" });
