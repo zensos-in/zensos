@@ -3568,7 +3568,7 @@ export function DashboardPage() {
           {/* ── Razorpay Payout Account Status Banner ── */}
           {(() => {
             const rzpStatus = seller?.razorpayAccountStatus;
-            if (seller?.payoutStatus === "blocked" || seller?.kycStatus !== "verified" || seller?.panVerificationStatus !== "verified") {
+            if (seller?.kycStatus !== "verified" || seller?.panVerificationStatus !== "verified") {
               return (
                 <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/50 dark:bg-amber-950/40">
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-white text-sm">!</span>

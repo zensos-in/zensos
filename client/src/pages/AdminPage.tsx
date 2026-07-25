@@ -759,7 +759,7 @@ export function AdminPage() {
     try {
       await api.post(
         `/admin/sellers/${sellerId}/send-subscription-email`,
-        {},
+        { frontendUrl: window.location.origin },
         { headers: authHeaders }
       );
       setSuccess("Subscription reminder email sent successfully.");

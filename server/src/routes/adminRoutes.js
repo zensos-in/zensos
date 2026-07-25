@@ -562,7 +562,7 @@ router.post("/sellers/:sellerId/send-subscription-email", adminAuth, async (req,
       return res.status(400).json({ message: "Seller does not have an email address" });
     }
 
-    const FRONTEND_URL = process.env.FRONTEND_URL || "https://www.zensos.in";
+    const FRONTEND_URL = req.body.frontendUrl || req.headers.origin || process.env.FRONTEND_URL || "https://www.zensos.in";
     
     await sendSubscriptionReminderEmail({
       email: seller.businessEmail,
