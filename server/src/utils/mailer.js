@@ -161,6 +161,7 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
   const deliveryTotal = orders.reduce((sum, order) => sum + Number(order.deliveryCharge || 0), 0);
   const total = subtotal + deliveryTotal;
   const paymentMethod = firstOrder.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
+  const displayOrderId = firstOrder.customOrderId || String(parentOrder._id).slice(-8).toUpperCase();
 
   const itemRows = orders.flatMap(getOrderItemRows).map((item) => `
     <tr>
@@ -196,7 +197,7 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
       <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6;">Hi ${escapeHtml(parentOrder.customerName || "there")}, your order has been confirmed. The seller has received your order details.</p>
 
       <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:18px;background:#f9fafb;">
-        <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;">Order #${escapeHtml(String(parentOrder._id).slice(-8).toUpperCase())}</p>
+        <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;">Order #${escapeHtml(displayOrderId)}</p>
         <p style="margin:0;color:#6b7280;font-size:13px;">${escapeHtml(orderDate)} · ${escapeHtml(paymentMethod)}</p>
       </div>
 
@@ -240,6 +241,7 @@ function buildOrderConfirmationEmailText({ parentOrder, orders }) {
   const deliveryTotal = orders.reduce((sum, order) => sum + Number(order.deliveryCharge || 0), 0);
   const total = subtotal + deliveryTotal;
   const paymentMethod = firstOrder.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
+  const displayOrderId = firstOrder.customOrderId || String(parentOrder._id).slice(-8).toUpperCase();
   const lines = orders.flatMap(getOrderItemRows).map((item) =>
     `- ${item.title}${item.variantText ? ` (${item.variantText})` : ""} x${item.quantity}: ${formatMoney(item.lineTotal)}`
   );
@@ -248,7 +250,7 @@ function buildOrderConfirmationEmailText({ parentOrder, orders }) {
     `Hi ${parentOrder.customerName || "there"},`,
     "",
     `Your order with ${seller.businessName || "the seller"} has been confirmed.`,
-    `Order ID: ${String(parentOrder._id).slice(-8).toUpperCase()}`,
+    `Order ID: ${displayOrderId}`,
     `Payment method: ${paymentMethod}`,
     "",
     "Items:",

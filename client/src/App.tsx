@@ -89,6 +89,7 @@ function AppShell() {
           </header>
           <Routes>
             <Route path="/store/:sellerSlug" element={<PublicStorePage />} />
+            <Route path="/store/:sellerSlug/orders" element={<CustomerOrdersPage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />
             <Route path="/my-orders" element={<CustomerOrdersPage />} />
             <Route path="/login" element={<LoginPage />} />

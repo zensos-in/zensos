@@ -1,30 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
-import type { OrderStatus, PaymentMethod } from "../types";
+import type { Order, OrderStatus, Seller } from "../types";
+import { openOrderPrintDocument } from "../utils/orderPrintDocument";
 
-type CustomerOrderItem = {
-  productTitle: string;
-  productImageUrl?: string;
-  variantTitle?: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-};
-
-type CustomerOrder = {
-  _id: string;
-  customOrderId?: string;
-  paymentStatus: OrderStatus;
-  paymentMethod: PaymentMethod;
-  amount: number;
-  deliveryCharge: number;
-  quantity: number;
-  customerName: string;
-  createdAt: string;
-  items: CustomerOrderItem[];
+const STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Pending",
+  paid: "Paid",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
 };
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -58,33 +44,77 @@ function formatCurrency(amount: number) {
 
 export function CustomerOrdersPage() {
   const [searchParams] = useSearchParams();
-  const sellerSlug = searchParams.get("sellerSlug") || "";
-  const customerPhone = searchParams.get("customerPhone") || "";
+  const { sellerSlug: slugFromParam } = useParams<{ sellerSlug?: string }>();
+  const navigate = useNavigate();
 
-  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  // Token-based flow (from store "View Past Orders" button)
+  const tokenFromUrl = searchParams.get("token") || "";
+
+  // Legacy flow (from Thank You page — uses sellerSlug + customerPhone query params)
+  const legacySellerSlug = searchParams.get("sellerSlug") || "";
+  const legacyCustomerPhone = searchParams.get("customerPhone") || "";
+
+  // Resolve slug: from URL path param (/store/:sellerSlug/orders) or legacy query param
+  const sellerSlug = slugFromParam || legacySellerSlug;
+  const isTokenMode = Boolean(tokenFromUrl);
+  const isLegacyMode = Boolean(legacySellerSlug && legacyCustomerPhone);
+
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const fetchOrders = useCallback(async () => {
-    if (!sellerSlug || !customerPhone) {
-      setError("Missing store or customer information.");
-      setLoading(false);
+    // Token-based secure flow
+    if (isTokenMode && sellerSlug) {
+      try {
+        setLoading(true);
+        const response = await api.get<{ orders: Order[] }>(
+          "/orders/public/by-customer",
+          {
+            params: { sellerSlug },
+            headers: { Authorization: `Bearer ${tokenFromUrl}` },
+          }
+        );
+        setOrders(response.data.orders);
+        setError("");
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          setSessionExpired(true);
+          setError("Your session has expired. Please verify your identity again.");
+        } else {
+          setError("Unable to load your orders. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
       return;
     }
-    try {
-      setLoading(true);
-      const response = await api.get<{ orders: CustomerOrder[] }>(
-        "/orders/public/by-customer",
-        { params: { sellerSlug, customerPhone } }
-      );
-      setOrders(response.data.orders);
-      setError("");
-    } catch {
-      setError("Unable to load your orders. Please try again.");
-    } finally {
-      setLoading(false);
+
+    // Legacy flow — still works for Thank You page
+    if (isLegacyMode) {
+      try {
+        setLoading(true);
+        const response = await api.get<{ orders: Order[] }>(
+          "/orders/public/by-customer",
+          {
+            params: { sellerSlug: legacySellerSlug },
+            headers: { Authorization: `Bearer ${legacyCustomerPhone}` },
+          }
+        );
+        setOrders(response.data.orders);
+        setError("");
+      } catch {
+        setError("Unable to load your orders. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
-  }, [sellerSlug, customerPhone]);
+
+    setError("Missing store or customer information.");
+    setLoading(false);
+  }, [isTokenMode, isLegacyMode, sellerSlug, tokenFromUrl, legacySellerSlug, legacyCustomerPhone]);
 
   useEffect(() => {
     void fetchOrders();
@@ -109,6 +139,26 @@ export function CustomerOrdersPage() {
           </p>
         </div>
 
+        {/* ── Session expired prompt ────────────────────────────── */}
+        {sessionExpired && (
+          <div className="mb-6 flex flex-col items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-center dark:border-amber-800/60 dark:bg-amber-950/40">
+            <AppIcon name="lock" className="text-[32px] text-amber-500" />
+            <div>
+              <p className="font-bold text-amber-800 dark:text-amber-300">Session Expired</p>
+              <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                Your verification has expired. Please go back to the store and verify again.
+              </p>
+            </div>
+            <Link
+              to={storeHref}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#ff751f] px-5 py-2.5 text-sm font-bold text-white shadow transition hover:bg-orange-600"
+            >
+              <AppIcon name="store" className="text-[15px]" />
+              Back to Store
+            </Link>
+          </div>
+        )}
+
         {/* ── Loading ───────────────────────────────────────────── */}
         {loading && (
           <div className="flex flex-col items-center gap-4 py-16">
@@ -120,7 +170,7 @@ export function CustomerOrdersPage() {
         )}
 
         {/* ── Error ─────────────────────────────────────────────── */}
-        {!loading && error && (
+        {!loading && error && !sessionExpired && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-center text-sm text-rose-700 dark:border-rose-800/60 dark:bg-rose-950/60 dark:text-rose-300">
             {error}
           </div>
@@ -220,16 +270,29 @@ export function CustomerOrdersPage() {
 
                   {/* Card footer */}
                   <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
-                    {order.deliveryCharge > 0 ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Delivery: {formatCurrency(order.deliveryCharge)}
+                    <div>
+                      {order.deliveryCharge > 0 ? (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Delivery: {formatCurrency(order.deliveryCharge)}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-teal-600 dark:text-teal-400">Free delivery</p>
+                      )}
+                      <p className="mt-0.5 text-sm font-extrabold text-slate-900 dark:text-white">
+                        Total: {formatCurrency(total)}
                       </p>
-                    ) : (
-                      <p className="text-xs text-teal-600 dark:text-teal-400">Free delivery</p>
-                    )}
-                    <p className="text-sm font-extrabold text-slate-900 dark:text-white">
-                      Total: {formatCurrency(total)}
-                    </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openOrderPrintDocument(order, (order as any).seller as Seller, { status: STATUS_LABEL });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <AppIcon name="orders" className="text-[14px]" />
+                      Download PDF
+                    </button>
                   </div>
                 </div>
               );
@@ -238,15 +301,17 @@ export function CustomerOrdersPage() {
         )}
 
         {/* ── Back to Store ─────────────────────────────────────── */}
-        <div className="mt-10 flex justify-center">
-          <Link
-            to={storeHref}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:scale-105 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-          >
-            <AppIcon name="store" className="text-[15px]" />
-            Back to Store
-          </Link>
-        </div>
+        {!sessionExpired && (
+          <div className="mt-10 flex justify-center">
+            <Link
+              to={storeHref}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:scale-105 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <AppIcon name="store" className="text-[15px]" />
+              Back to Store
+            </Link>
+          </div>
+        )}
 
         {/* ── Footer ────────────────────────────────────────────── */}
         <footer className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400">

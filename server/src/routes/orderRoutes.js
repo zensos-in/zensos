@@ -3,6 +3,10 @@ const crypto = require("crypto");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Seller = require("../models/Seller");
+const CustomerOtp = require("../models/CustomerOtp");
+const { generateOtp, hashOtp, verifyOtp } = require("../utils/otp");
+const { sendOtpEmail } = require("../utils/mailer");
+const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const { getStoreAccessState } = require("../utils/trialService");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
@@ -755,7 +759,8 @@ router.get("/public/status", async (req, res) => {
     }
 
     const orders = await Order.find(query)
-      .select("_id customOrderId paymentStatus paymentMethod updatedAt createdAt")
+      .select("_id customOrderId paymentStatus paymentMethod updatedAt createdAt parentOrder")
+      .populate("parentOrder", "_id createdAt")
       .sort({ createdAt: -1 });
 
     return res.json({ orders });
@@ -764,14 +769,117 @@ router.get("/public/status", async (req, res) => {
   }
 });
 
-// Public: fetch all orders for a customer (by phone) from a specific seller
+// Public: fetch all orders for a customer from a specific seller (Secured by JWT)
 router.get("/public/by-customer", async (req, res) => {
   try {
-    const sellerSlug = String(req.query.sellerSlug || "").trim();
-    const customerPhone = String(req.query.customerPhone || "").trim();
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.replace("Bearer ", "").trim();
 
-    if (!sellerSlug || !customerPhone) {
-      return res.status(400).json({ message: "sellerSlug and customerPhone are required" });
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required to view orders." });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
+    } catch (err) {
+      return res.status(401).json({ message: "Session expired or invalid. Please verify again." });
+    }
+
+    if (decoded.role !== "customer") {
+      return res.status(403).json({ message: "Invalid token role." });
+    }
+
+    const sellerSlug = String(req.query.sellerSlug || "").trim();
+    if (!sellerSlug) {
+      return res.status(400).json({ message: "sellerSlug is required" });
+    }
+
+    const seller = await Seller.findOne({ slug: sellerSlug }).select("_id");
+    if (!seller || seller._id.toString() !== decoded.sellerId) {
+      return res.status(403).json({ message: "Token does not match the requested store." });
+    }
+
+    const orders = await Order.find({
+      seller: seller._id,
+      customerPhone: decoded.customerPhone,
+      customerEmail: new RegExp(`^${decoded.customerEmail}$`, "i"),
+    })
+      .select("_id customOrderId paymentStatus paymentMethod amount deliveryCharge items quantity customerName customerPhone customerEmail deliveryAddress billingAddress shippingAddress shippingSameAsBilling shippingCustomerName shippingCustomerPhone note createdAt seller")
+      .populate("items.product", "title imageUrl category")
+      .populate("seller", "businessName businessCategory businessEmail phone callNumber whatsappNumber businessGST businessAddress businessLogo")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json({ orders });
+  } catch (error) {
+    return res.status(500).json({ message: "Unable to fetch customer orders" });
+  }
+});
+
+// Public: request OTP to view past orders
+router.post("/public/request-otp", async (req, res) => {
+  try {
+    const { sellerSlug, customerPhone, customerEmail } = req.body;
+
+    if (!sellerSlug || !customerPhone || !customerEmail) {
+      return res.status(400).json({ message: "Store link, phone, and email are required." });
+    }
+
+    const seller = await Seller.findOne({ slug: sellerSlug }).select("_id businessName");
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    // Check if any order exists for this customer
+    const orderExists = await Order.exists({
+      seller: seller._id,
+      customerPhone: customerPhone.trim(),
+      customerEmail: new RegExp(`^${customerEmail.trim()}$`, "i"),
+    });
+
+    if (!orderExists) {
+      // Return a generic success message to prevent user enumeration
+      return res.json({ message: "If your details match our records, an OTP has been sent." });
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Delete any existing OTP for this customer/store combination
+    await CustomerOtp.deleteMany({
+      sellerId: seller._id,
+      customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail.trim().toLowerCase(),
+    });
+
+    await CustomerOtp.create({
+      sellerId: seller._id,
+      customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail.trim().toLowerCase(),
+      hashedOtp: hashOtp(otp),
+      expiresAt,
+    });
+
+    await sendOtpEmail(customerEmail.trim(), otp, {
+      businessName: seller.businessName,
+      purpose: "view your past orders",
+    });
+
+    return res.json({ message: "If your details match our records, an OTP has been sent." });
+  } catch (error) {
+    console.error("Error requesting customer OTP:", error);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+});
+
+// Public: verify OTP to view past orders
+router.post("/public/verify-otp", async (req, res) => {
+  try {
+    const { sellerSlug, customerPhone, customerEmail, otp } = req.body;
+
+    if (!sellerSlug || !customerPhone || !customerEmail || !otp) {
+      return res.status(400).json({ message: "All fields are required." });
     }
 
     const seller = await Seller.findOne({ slug: sellerSlug }).select("_id");
@@ -779,18 +887,74 @@ router.get("/public/by-customer", async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    const orders = await Order.find({
-      seller: seller._id,
-      customerPhone,
-    })
-      .select("_id customOrderId paymentStatus paymentMethod amount deliveryCharge items quantity customerName createdAt")
-      .populate("items.product", "title imageUrl")
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const otpDoc = await CustomerOtp.findOne({
+      sellerId: seller._id,
+      customerPhone: customerPhone.trim(),
+      customerEmail: customerEmail.trim().toLowerCase(),
+    });
 
-    return res.json({ orders });
+    if (!otpDoc || !verifyOtp(otp.trim(), otpDoc.hashedOtp)) {
+      return res.status(401).json({ message: "Invalid or expired OTP." });
+    }
+
+    // OTP is valid, delete it
+    await CustomerOtp.deleteOne({ _id: otpDoc._id });
+
+    // Issue a short-lived JWT for the customer
+    const token = jwt.sign(
+      { 
+        sellerId: seller._id.toString(), 
+        customerPhone: customerPhone.trim(), 
+        customerEmail: customerEmail.trim().toLowerCase(),
+        role: "customer"
+      }, 
+      process.env.JWT_SECRET || "dev_secret",
+      { expiresIn: "1h" }
+    );
+
+    return res.json({ token });
   } catch (error) {
-    return res.status(500).json({ message: "Unable to fetch customer orders" });
+    console.error("Error verifying customer OTP:", error);
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+});
+
+// Public: issue a customer token from a just-placed order (used by ThankYouPage)
+router.post("/public/token-from-order", async (req, res) => {
+  try {
+    const { parentOrderId, sellerSlug } = req.body;
+    if (!parentOrderId || !sellerSlug) {
+      return res.status(400).json({ message: "parentOrderId and sellerSlug are required." });
+    }
+
+    const ParentOrder = require("../models/ParentOrder");
+    const parentOrder = await ParentOrder.findById(parentOrderId)
+      .populate({ path: "subOrders", select: "seller customerPhone customerEmail" });
+
+    if (!parentOrder || !Array.isArray(parentOrder.subOrders) || parentOrder.subOrders.length === 0) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    const firstOrder = parentOrder.subOrders[0];
+    const seller = await Seller.findOne({ slug: sellerSlug }).select("_id");
+
+    if (!seller || seller._id.toString() !== firstOrder.seller.toString()) {
+      return res.status(403).json({ message: "Order does not belong to this store." });
+    }
+
+    const customerPhone = firstOrder.customerPhone || "";
+    const customerEmail = (firstOrder.customerEmail || "").toLowerCase();
+
+    const token = jwt.sign(
+      { sellerId: seller._id.toString(), customerPhone, customerEmail, role: "customer" },
+      process.env.JWT_SECRET || "dev_secret",
+      { expiresIn: "1h" }
+    );
+
+    return res.json({ token });
+  } catch (error) {
+    console.error("Error issuing token from order:", error);
+    return res.status(500).json({ message: "Something went wrong." });
   }
 });
 

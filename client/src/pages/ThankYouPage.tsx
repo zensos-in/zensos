@@ -12,6 +12,11 @@ type PublicOrderStatus = {
   customOrderId?: string;
   paymentStatus: OrderStatus;
   paymentMethod?: "prepaid" | "cod";
+  createdAt?: string;
+  parentOrder?: {
+    _id: string;
+    createdAt?: string;
+  };
 };
 
 const SUCCESS_STATUSES: OrderStatus[] = ["paid", "delivered"];
@@ -21,12 +26,8 @@ const POLL_INTERVAL_MS = 3000;
 
 function formatOrderDate(date: Date) {
   return date.toLocaleString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
+    dateStyle: "medium",
+    timeStyle: "short",
   });
 }
 
@@ -48,7 +49,7 @@ export function ThankYouPage() {
   }
 
   const [error, setError] = useState("");
-  const [orderDate] = useState(() => new Date());
+  const [loadingOrdersToken, setLoadingOrdersToken] = useState(false);
 
   const sellerSlug = searchParams.get("sellerSlug") || "";
   const requestedPaymentMethod = searchParams.get("paymentMethod") || "";
@@ -94,6 +95,9 @@ export function ThankYouPage() {
     orders.length === orderIds.length &&
     orders.every((o) => o.paymentStatus !== "cancelled");
   const anyCancelled = orders.some((o) => o.paymentStatus === "cancelled");
+
+  const orderDateString = orders[0]?.parentOrder?.createdAt || orders[0]?.createdAt;
+  const orderDate = orderDateString ? new Date(orderDateString) : new Date();
 
 
   useEffect(() => {
@@ -159,19 +163,19 @@ export function ThankYouPage() {
 
           {/* Order ID */}
           <div className="mt-6 flex flex-col items-center gap-1.5">
-            {orderIds.map((orderId) => {
-              const order = orders.find((item) => item._id === orderId);
-              const status = order?.paymentStatus || "pending";
-              return (
-                <div key={orderId} className="flex flex-wrap items-center justify-center gap-2 text-sm">
-                  <span className="text-slate-400">Order ID:</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{order?.customOrderId || orderId}</span>
-                  <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
-                    {status}
-                  </span>
-                </div>
-              );
-            })}
+            {orders.length > 0 && (
+              <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+                <span className="text-slate-400">Order ID:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-100">
+                  {orders[0].customOrderId || (orders[0].parentOrder?._id 
+                    ? String(orders[0].parentOrder._id).slice(-8).toUpperCase() 
+                    : String(orders[0]._id).slice(-8).toUpperCase())}
+                </span>
+                <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-orange-700 dark:bg-orange-950/60 dark:text-orange-400">
+                  {anyCancelled ? "cancelled" : (allSuccessful ? "paid" : (orderAccepted ? "pending" : orders[0].paymentStatus))}
+                </span>
+              </div>
+            )}
 
             {/* Date & Time */}
             <div className="mt-1 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -192,18 +196,29 @@ export function ThankYouPage() {
 
             <Button
               type="button"
-              onClick={() => {
-                const params = new URLSearchParams();
-                if (sellerSlug) params.set("sellerSlug", sellerSlug);
-                if (customerPhone) params.set("customerPhone", customerPhone);
-                navigate(`/my-orders?${params.toString()}`);
+              onClick={async () => {
+                const parentOrderId = orders[0]?.parentOrder?._id;
+                if (!sellerSlug || !parentOrderId) return;
+                setLoadingOrdersToken(true);
+                try {
+                  const res = await api.post<{ token: string }>("/orders/public/token-from-order", {
+                    parentOrderId,
+                    sellerSlug,
+                  });
+                  navigate(`/store/${sellerSlug}/orders?token=${encodeURIComponent(res.data.token)}`);
+                } catch {
+                  // Fallback: navigate without token (will show auth error on orders page)
+                  navigate(`/store/${sellerSlug}/orders`);
+                } finally {
+                  setLoadingOrdersToken(false);
+                }
               }}
-              disabled={!sellerSlug || !customerPhone}
+              disabled={!sellerSlug || !orders[0]?.parentOrder?._id || loadingOrdersToken}
               variant="secondary"
               className="rounded-2xl px-5 py-2.5 text-sm font-bold shadow-sm"
             >
               <AppIcon name="orders" className="text-[15px]" />
-              View Past Orders
+              {loadingOrdersToken ? "Loading..." : "View Past Orders"}
             </Button>
           </div>
         </div>

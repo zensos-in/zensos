@@ -10,6 +10,7 @@ import {
   EMPTY_CHECKOUT_CONTACT,
   type CheckoutContactAddress,
 } from "../components/forms/CheckoutAddressSection";
+import { CustomerLoginModal } from "../components/orders/CustomerLoginModal";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
 import { useI18n } from "../context/I18nContext";
 import { usePublicStoreHeader } from "../context/PublicStoreHeaderContext";
@@ -476,6 +477,7 @@ export function PublicStorePage() {
     unitPrice: number;
   }>>({});
   const [popupVariantError, setPopupVariantError] = useState("");
+  const [showCustomerLogin, setShowCustomerLogin] = useState(false);
 
   // Checkout fields
   const [billingContact, setBillingContact] = useState<CheckoutContactAddress>(EMPTY_CHECKOUT_CONTACT);
@@ -1976,6 +1978,16 @@ rzp.open(); } catch (err: any) {
           Terms & Conditions
         </button>
       </div>
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowCustomerLogin(true)}
+          className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          <AppIcon name="orders" className="text-[16px]" />
+          View Past Orders
+        </button>
+      </div>
       <p>
         <span className="inline-flex flex-wrap items-center justify-center gap-2 text-slate-500">
           <span>Powered by</span>
@@ -2007,8 +2019,16 @@ rzp.open(); } catch (err: any) {
         </div>
       </div>
     )}
+    {showCustomerLogin && sellerSlug && (
+      <CustomerLoginModal
+        sellerSlug={sellerSlug}
+        onClose={() => setShowCustomerLogin(false)}
+        onSuccess={(token, phone) => {
+          setShowCustomerLogin(false);
+          navigate(`/store/${sellerSlug}/orders?token=${encodeURIComponent(token)}`);
+        }}
+      />
+    )}
     </>
   );
 }
-
-
