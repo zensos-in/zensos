@@ -2023,7 +2023,7 @@ rzp.open(); } catch (err: any) {
       <CustomerLoginModal
         sellerSlug={sellerSlug}
         onClose={() => setShowCustomerLogin(false)}
-        onSuccess={(token, phone) => {
+        onSuccess={(token) => {
           setShowCustomerLogin(false);
           navigate(`/store/${sellerSlug}/orders?token=${encodeURIComponent(token)}`);
         }}

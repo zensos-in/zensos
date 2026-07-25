@@ -53,7 +53,6 @@ export function ThankYouPage() {
 
   const sellerSlug = searchParams.get("sellerSlug") || "";
   const requestedPaymentMethod = searchParams.get("paymentMethod") || "";
-  const customerPhone = searchParams.get("customerPhone") || "";
   const orderIds = useMemo(
     () =>
       (searchParams.get("orderIds") || "")

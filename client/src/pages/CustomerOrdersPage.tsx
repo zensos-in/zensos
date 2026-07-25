@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
@@ -45,7 +45,6 @@ function formatCurrency(amount: number) {
 export function CustomerOrdersPage() {
   const [searchParams] = useSearchParams();
   const { sellerSlug: slugFromParam } = useParams<{ sellerSlug?: string }>();
-  const navigate = useNavigate();
 
   // Token-based flow (from store "View Past Orders" button)
   const tokenFromUrl = searchParams.get("token") || "";
