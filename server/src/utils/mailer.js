@@ -376,7 +376,7 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
     ? `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) expired on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>. Your store is currently inactive and customers cannot place new orders.`
     : `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) is set to expire on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>.`;
 
-  const actionText = isExpired ? "Renew Now" : "Renew Subscription";
+  const actionText = isExpired ? "Subscribe Now" : "Upgrade Subscription";
 
   await transporter.sendMail({
     from: `"Zensos" <${process.env.SMTP_USER}>`,

@@ -203,7 +203,7 @@ export function ThankYouPage() {
               className="rounded-2xl px-5 py-2.5 text-sm font-bold shadow-sm"
             >
               <AppIcon name="orders" className="text-[15px]" />
-              View Orders
+              View Past Orders
             </Button>
           </div>
         </div>
