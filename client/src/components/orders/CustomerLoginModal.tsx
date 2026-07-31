@@ -5,7 +5,7 @@ import { AppIcon } from "../ui/AppIcon";
 type Props = {
   sellerSlug: string;
   onClose: () => void;
-  onSuccess: (token: string, phone: string) => void;
+  onSuccess: (token: string) => void;
 };
 
 export function CustomerLoginModal({ sellerSlug, onClose, onSuccess }: Props) {
@@ -60,7 +60,7 @@ export function CustomerLoginModal({ sellerSlug, onClose, onSuccess }: Props) {
         customerEmail: email.trim(),
         otp: otp.trim(),
       });
-      onSuccess(response.data.token, phone.trim());
+      onSuccess(response.data.token);
     } catch (err: any) {
       setError(err.response?.data?.message || "Invalid or expired OTP.");
     } finally {

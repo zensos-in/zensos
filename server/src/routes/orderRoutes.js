@@ -800,10 +800,13 @@ router.get("/public/by-customer", async (req, res) => {
       return res.status(403).json({ message: "Token does not match the requested store." });
     }
 
+    const phoneDigits = String(decoded.customerPhone || "").replace(/\D/g, "").slice(-10);
+    const emailClean = String(decoded.customerEmail || "").trim().toLowerCase();
+
     const orders = await Order.find({
       seller: seller._id,
-      customerPhone: decoded.customerPhone,
-      customerEmail: new RegExp(`^${decoded.customerEmail}$`, "i"),
+      customerPhone: phoneDigits ? new RegExp(`${phoneDigits}$`) : decoded.customerPhone,
+      customerEmail: new RegExp(`^${emailClean}$`, "i"),
     })
       .select("_id customOrderId paymentStatus paymentMethod amount deliveryCharge items quantity customerName customerPhone customerEmail deliveryAddress billingAddress shippingAddress shippingSameAsBilling shippingCustomerName shippingCustomerPhone note createdAt seller")
       .populate("items.product", "title imageUrl category")
@@ -826,21 +829,27 @@ router.post("/public/request-otp", async (req, res) => {
       return res.status(400).json({ message: "Store link, phone, and email are required." });
     }
 
+    const phoneDigits = String(customerPhone).replace(/\D/g, "").slice(-10);
+    const emailClean = String(customerEmail).trim().toLowerCase();
+
+    if (!phoneDigits || !emailClean) {
+      return res.status(400).json({ message: "Valid phone number and email are required." });
+    }
+
     const seller = await Seller.findOne({ slug: sellerSlug }).select("_id businessName");
     if (!seller) {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    // Check if any order exists for this customer
+    // Check if any order exists for this customer (matching phone digits and email)
     const orderExists = await Order.exists({
       seller: seller._id,
-      customerPhone: customerPhone.trim(),
-      customerEmail: new RegExp(`^${customerEmail.trim()}$`, "i"),
+      customerPhone: new RegExp(`${phoneDigits}$`),
+      customerEmail: new RegExp(`^${emailClean}$`, "i"),
     });
 
     if (!orderExists) {
-      // Return a generic success message to prevent user enumeration
-      return res.json({ message: "If your details match our records, an OTP has been sent." });
+      return res.status(404).json({ message: "No orders found matching this phone number and email address." });
     }
 
     const otp = generateOtp();
@@ -849,27 +858,27 @@ router.post("/public/request-otp", async (req, res) => {
     // Delete any existing OTP for this customer/store combination
     await CustomerOtp.deleteMany({
       sellerId: seller._id,
-      customerPhone: customerPhone.trim(),
-      customerEmail: customerEmail.trim().toLowerCase(),
+      customerPhone: phoneDigits,
+      customerEmail: emailClean,
     });
 
     await CustomerOtp.create({
       sellerId: seller._id,
-      customerPhone: customerPhone.trim(),
-      customerEmail: customerEmail.trim().toLowerCase(),
+      customerPhone: phoneDigits,
+      customerEmail: emailClean,
       hashedOtp: hashOtp(otp),
       expiresAt,
     });
 
-    await sendOtpEmail(customerEmail.trim(), otp, {
+    await sendOtpEmail(emailClean, otp, {
       businessName: seller.businessName,
-      purpose: "view your past orders",
+      purpose: "view_past_orders",
     });
 
-    return res.json({ message: "If your details match our records, an OTP has been sent." });
+    return res.json({ message: "OTP sent successfully to your email." });
   } catch (error) {
     console.error("Error requesting customer OTP:", error);
-    return res.status(500).json({ message: "Something went wrong." });
+    return res.status(500).json({ message: "Something went wrong sending OTP." });
   }
 });
 
@@ -882,6 +891,9 @@ router.post("/public/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "All fields are required." });
     }
 
+    const phoneDigits = String(customerPhone).replace(/\D/g, "").slice(-10);
+    const emailClean = String(customerEmail).trim().toLowerCase();
+
     const seller = await Seller.findOne({ slug: sellerSlug }).select("_id");
     if (!seller) {
       return res.status(404).json({ message: "Seller not found" });
@@ -889,8 +901,8 @@ router.post("/public/verify-otp", async (req, res) => {
 
     const otpDoc = await CustomerOtp.findOne({
       sellerId: seller._id,
-      customerPhone: customerPhone.trim(),
-      customerEmail: customerEmail.trim().toLowerCase(),
+      customerPhone: phoneDigits,
+      customerEmail: emailClean,
     });
 
     if (!otpDoc || !verifyOtp(otp.trim(), otpDoc.hashedOtp)) {
@@ -904,8 +916,8 @@ router.post("/public/verify-otp", async (req, res) => {
     const token = jwt.sign(
       { 
         sellerId: seller._id.toString(), 
-        customerPhone: customerPhone.trim(), 
-        customerEmail: customerEmail.trim().toLowerCase(),
+        customerPhone: phoneDigits, 
+        customerEmail: emailClean,
         role: "customer"
       }, 
       process.env.JWT_SECRET || "dev_secret",
