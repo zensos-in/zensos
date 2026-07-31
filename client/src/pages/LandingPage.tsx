@@ -766,7 +766,7 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 items-start">
             {[
               {
                 name: "Starter",
