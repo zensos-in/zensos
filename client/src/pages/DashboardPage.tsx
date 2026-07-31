@@ -14,6 +14,7 @@ import { useToast } from "../context/ToastContext";
 import { SubscriptionExpiredModal } from "../components/SubscriptionExpiredModal";
 import { SubscriptionReminderBanner } from "../components/SubscriptionReminderBanner";
 import { DashboardSubscriptionWidget } from "../components/DashboardSubscriptionWidget";
+import { PricingDrawer } from "../components/PricingDrawer";
 import { BUSINESS_CATEGORY_OPTIONS } from "../constants/businessCategories";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
 import {
@@ -297,6 +298,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   // ── Product form + edit mode
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
@@ -1413,8 +1415,9 @@ export function DashboardPage() {
 
       {/* Feedback banners */}
       {copyFeedback && <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-700">{copyFeedback}</p>}
-      <SubscriptionReminderBanner onRenew={() => { setTab("dashboard"); setError(""); setSuccess(""); }} />
+      <SubscriptionReminderBanner onRenew={() => { setTab("dashboard"); setError(""); setSuccess(""); setPricingOpen(true); }} />
       <SubscriptionExpiredModal />
+      <PricingDrawer open={pricingOpen} onClose={() => setPricingOpen(false)} />
 
       {/* Tab nav */}
       <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
