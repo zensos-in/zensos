@@ -766,7 +766,7 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 items-start">
             {[
               {
                 name: "Starter",
@@ -860,7 +860,7 @@ export function LandingPage() {
                   {/* Handling charge note */}
                   <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
                     style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
-                    +3% per transaction<br />Payment Handling Charges
+                    +3% per transaction (Payment Handling Charges)
                   </p>
                 </div>
 
