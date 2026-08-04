@@ -81,6 +81,17 @@ function getOtpEmailContent({ purpose, intent = "", businessName = "", productTi
       warning:
         "If you did not request a store reset, do not use this code. Your store data will stay as it is.",
     },
+    view_past_orders: {
+      subject: safeBusiness
+        ? `Your code to view orders at ${sanitizeSubjectLine(businessName)}`
+        : "Your verification code to view past orders",
+      headline: "View your past orders",
+      reason: safeBusiness
+        ? `You requested a one-time verification code to view your past orders at <strong>${safeBusiness}</strong>.`
+        : "You requested a one-time verification code to view your past orders.",
+      action: "Enter the code below on the store page to view your past orders.",
+      warning: "If you did not request to view your orders, you can safely ignore this email.",
+    },
   };
 
   return templates[purpose] || templates.auth;
