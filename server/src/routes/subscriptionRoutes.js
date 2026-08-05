@@ -93,6 +93,7 @@ router.post("/purchase", auth, async (req, res) => {
       currency: "INR",
       subscriptionId: subscription._id,
       planType,
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_mock_id",
     });
   } catch (error) {
     console.error("[POST /subscription/purchase error]", error);

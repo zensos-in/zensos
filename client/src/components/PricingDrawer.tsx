@@ -87,18 +87,37 @@ interface PricingDrawerProps {
   onClose: () => void;
 }
 
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
   const { seller } = useAuth();
   const { purchaseSubscription, verifyPurchase, loading } = useSubscription();
-  const [processing, setProcessing] = useState(false);
-
+  const [processingPlan, setProcessingPlan] = useState<PlanType | null>(null);
 
   if (!open || !seller) return null;
 
   const handlePurchase = async (planKey: PlanType) => {
-    setProcessing(true);
+    setProcessingPlan(planKey);
     try {
       const purchaseRes = await purchaseSubscription(planKey);
+      if (!purchaseRes || !purchaseRes.orderId) {
+        alert("Failed to create subscription order. Please try again.");
+        setProcessingPlan(null);
+        return;
+      }
+
       if (purchaseRes.orderId.startsWith("mock_order_")) {
         await verifyPurchase({
           razorpay_order_id: purchaseRes.orderId,
@@ -108,11 +127,21 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
         });
         alert(`Successfully subscribed to ${planKey}!`);
         onClose();
+        setProcessingPlan(null);
       } else {
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          alert("Failed to load Razorpay payment gateway. Please check your internet connection.");
+          setProcessingPlan(null);
+          return;
+        }
+
+        const razorpayKey = purchaseRes.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_mock_id";
+
         const options = {
-          key: "rzp_test_mock_id",
+          key: razorpayKey,
           amount: purchaseRes.amountPaise,
-          currency: purchaseRes.currency,
+          currency: purchaseRes.currency || "INR",
           name: "Zensos",
           description: `Subscription: ${planKey}`,
           order_id: purchaseRes.orderId,
@@ -129,27 +158,36 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
             } catch (err) {
               console.error(err);
               alert("Payment verification failed.");
+            } finally {
+              setProcessingPlan(null);
             }
           },
           prefill: {
-            name: seller.businessName,
-            email: seller.businessEmail,
-            contact: seller.phone,
+            name: seller.businessName || "",
+            email: seller.businessEmail || "",
+            contact: seller.phone || "",
           },
-          theme: { color: "#ff4500" },
+          theme: { color: "#ff751f" },
+          modal: {
+            ondismiss: function () {
+              setProcessingPlan(null);
+            },
+          },
         };
+
         const rzp = new (window as any).Razorpay(options);
         rzp.on("payment.failed", function (response: any) {
           console.error(response.error);
-          alert("Payment failed.");
+          alert("Payment failed: " + (response.error?.description || "Transaction failed"));
+          setProcessingPlan(null);
         });
         rzp.open();
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to initiate subscription purchase.");
-    } finally {
-      setProcessing(false);
+    } catch (error: any) {
+      console.error("Subscription purchase error:", error);
+      const errMsg = error?.response?.data?.message || error?.message || "Failed to initiate subscription purchase.";
+      alert(errMsg);
+      setProcessingPlan(null);
     }
   };
 
@@ -305,7 +343,7 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                   {/* CTA button */}
                   <button
                     onClick={() => handlePurchase(plan.planKey)}
-                    disabled={processing || loading}
+                    disabled={!!processingPlan || loading}
                     className="w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                     style={
                       plan.popular
@@ -313,7 +351,11 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                         : { background: `${plan.color}18`, color: plan.color }
                     }
                   >
-                    {processing ? "Processing..." : `${plan.cta} →`}
+                    {processingPlan === plan.planKey
+                      ? "Processing..."
+                      : seller.currentPlan === plan.planKey && seller.subscriptionStatus === "ACTIVE"
+                      ? "Renew Current Plan →"
+                      : `${plan.cta} →`}
                   </button>
                 </div>
               ))}
