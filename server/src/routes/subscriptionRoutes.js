@@ -10,8 +10,8 @@ const router = express.Router();
 
 const PLAN_PRICES = {
   STARTER: 999,
-  GROWTH: 1999,
-  BUSINESS: 2999,
+  GROWTH: 1499,
+  BUSINESS: 2499,
 };
 
 // ─── GET /subscription/my — Get current subscription info (auth) ─────────────
