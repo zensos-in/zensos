@@ -19,7 +19,7 @@ const {
   bankAccountHash,
   recordComplianceEvent,
 } = require("../utils/kycCompliance");
-const { deleteImgbbImages } = require("../utils/imgbbDelete");
+const { deleteR2Objects } = require("../utils/r2Storage");
 
 const { getStoreAccessState } = require("../utils/trialService");
 
@@ -905,7 +905,7 @@ router.post("/delete-account", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP." });
     }
 
-    // ── Best-effort: clean up all ImgBB images before deleting DB records ──
+    // ── Best-effort: clean up all images from Cloudflare R2 before deleting DB records ──
     const products = await Product.find({ seller: seller._id });
     const productImageDeleteUrls = products.flatMap((p) => [
       p.imageDeleteUrl,
@@ -924,7 +924,7 @@ router.post("/delete-account", auth, async (req, res) => {
         : []),
     ].filter(Boolean);
 
-    await deleteImgbbImages([...productImageDeleteUrls, ...sellerImageDeleteUrls]);
+    await deleteR2Objects({ keys: [...productImageDeleteUrls, ...sellerImageDeleteUrls] });
 
     await Product.deleteMany({ seller: seller._id });
     await Order.deleteMany({ seller: seller._id });

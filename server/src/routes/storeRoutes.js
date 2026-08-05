@@ -7,7 +7,7 @@ const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
 const { collectKycIssues } = require("../utils/kycCompliance");
-const { deleteImgbbImages } = require("../utils/imgbbDelete");
+const { deleteR2Objects } = require("../utils/r2Storage");
 
 const { getStoreAccessState } = require("../utils/trialService");
 
@@ -359,7 +359,7 @@ router.post("/confirm-delete", auth, async (req, res) => {
     ].filter(Boolean);
 
     // Best-effort cleanup — failures are logged but never block the deletion
-    await deleteImgbbImages([...productImageDeleteUrls, ...sellerImageDeleteUrls]);
+    await deleteR2Objects({ keys: [...productImageDeleteUrls, ...sellerImageDeleteUrls] });
 
     await Product.deleteMany({ seller: seller._id });
 

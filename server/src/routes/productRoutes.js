@@ -7,7 +7,7 @@ const checkSubscription = require("../middleware/checkSubscription");
 const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
-const { deleteImgbbImages } = require("../utils/imgbbDelete");
+const { deleteR2Objects } = require("../utils/r2Storage");
 
 const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
@@ -686,12 +686,12 @@ router.post("/:productId/confirm-delete", auth, checkSubscription, async (req, r
     seller.otpTargetId = null;
     await seller.save();
 
-    // Best-effort: delete uploaded images from ImgBB before removing from DB
-    const imgbbDeleteUrls = [
-      product.imageDeleteUrl,
-      ...(Array.isArray(product.imageDeleteUrls) ? product.imageDeleteUrls : []),
+    // Best-effort: delete uploaded images from Cloudflare R2 before removing from DB
+    const r2Keys = [
+      product.primaryImageDeleteUrl,
+      ...(product.imageDeleteUrls || []),
     ].filter(Boolean);
-    await deleteImgbbImages(imgbbDeleteUrls);
+    await deleteR2Objects({ keys: r2Keys });
 
     await product.deleteOne();
     return res.json({ message: "Product deleted successfully." });

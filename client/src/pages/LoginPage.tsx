@@ -21,12 +21,12 @@ import {
   type PhoneParts,
 } from "../utils/contactFields";
 import { compressImage } from "../utils/imageCompressor";
+import { uploadToR2 } from "../utils/r2Uploader";
 
 type Mode = "login" | "register";
 type Step = "contact" | "otp" | "profile";
 type RegisterSection = "contact" | "business" | "bank" | "address" | "kyc" | "policies" | "plan";
 
-const IMGBB_KEY = import.meta.env.VITE_IMGBB_API_KEY as string | undefined;
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 function normalizePan(value: string) {
@@ -37,11 +37,15 @@ function ImageUploadField({
   value,
   onChange,
   onDeleteUrl,
+  folder = "uploads",
+  isPrivate = false,
   placeholder,
 }: {
   value: string;
   onChange: (url: string) => void;
   onDeleteUrl?: (deleteUrl: string) => void;
+  folder?: string;
+  isPrivate?: boolean;
   placeholder: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,33 +55,24 @@ function ImageUploadField({
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!IMGBB_KEY) {
-      setUploadError("Add VITE_IMGBB_API_KEY in client/.env to enable uploads.");
-      return;
-    }
 
     setUploading(true);
     setUploadError("");
     try {
       const compressedFile = await compressImage(file, 0.75, 1200, 1200, false);
-      const form = new FormData();
-      form.append("image", compressedFile);
-      const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
-        method: "POST",
-        body: form,
+      const isPrivateDoc = isPrivate || folder === "kyc";
+      const { url, key } = await uploadToR2({
+        file: compressedFile,
+        folder,
+        isPrivate: isPrivateDoc,
       });
-      const data = await response.json() as { success: boolean; data?: { url: string; delete_url?: string } };
-      if (data.success && data.data?.url) {
-        onChange(data.data.url);
-        // Propagate the delete_url so callers can persist it for later cleanup
-        if (onDeleteUrl && data.data.delete_url) {
-          onDeleteUrl(data.data.delete_url);
-        }
-      } else {
-        setUploadError("Upload failed. Check your ImgBB API key.");
+      onChange(url);
+      if (onDeleteUrl) {
+        onDeleteUrl(key);
       }
-    } catch {
-      setUploadError("Upload failed. Check your internet connection.");
+    } catch (err: any) {
+      console.error(err);
+      setUploadError(err?.message || "Upload failed. Please try again.");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -96,7 +91,7 @@ function ImageUploadField({
         <label className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-orange-100 bg-orange-50/70 text-orange-700 shadow-sm px-4 py-2.5 text-sm font-semibold transition hover:bg-orange-100 sm:w-auto dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 dark:hover:bg-orange-950/60 ${uploading ? "pointer-events-none opacity-60" : ""}`}>
           <AppIcon name={uploading ? "pending" : "upload"} className="text-[18px]" />
           {uploading ? "Uploading..." : "Upload"}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFile} />
         </label>
       </div>
       {value ? (

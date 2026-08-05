@@ -448,21 +448,48 @@ function DocumentPreview({
   url?: string;
 }) {
   const trimmed = String(url || "").trim();
+  const [viewUrl, setViewUrl] = useState(trimmed);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!trimmed) {
+      setViewUrl("");
+      return;
+    }
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      setViewUrl(trimmed);
+      return;
+    }
+    setLoading(true);
+    api.get<{ viewUrl: string }>(`/upload/kyc-view-url?key=${encodeURIComponent(trimmed)}`)
+      .then((res) => {
+        if (res.data?.viewUrl) {
+          setViewUrl(res.data.viewUrl);
+        }
+      })
+      .catch((err) => console.error("Failed to load KYC document link:", err))
+      .finally(() => setLoading(false));
+  }, [trimmed]);
+
   return (
     <div className="space-y-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
       <div>
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{label}</p>
         <p className="text-xs text-slate-400">{hint}</p>
       </div>
-      {trimmed ? (
-        <a href={trimmed} target="_blank" rel="noreferrer" className="block group">
+      {loading ? (
+        <div className="flex h-48 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-500">
+          Loading secure preview...
+        </div>
+      ) : viewUrl ? (
+        <a href={viewUrl} target="_blank" rel="noreferrer" className="block group">
           <img
-            src={trimmed}
+            src={viewUrl}
             alt={label}
             className="h-48 w-full rounded-xl border border-slate-200 bg-slate-100 dark:bg-slate-900/60 object-contain transition group-hover:opacity-90 dark:border-slate-700"
           />
           <span className="mt-2 inline-flex text-xs font-semibold text-teal-700 dark:text-teal-300">
-            Open full image
+            Open document link ↗
           </span>
         </a>
       ) : (

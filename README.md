@@ -27,8 +27,7 @@ Zensos is a free platform for small sellers and home businesses to create their 
 | Backend | Node.js + Express 5 + MongoDB (Mongoose) |
 | Auth | Phone OTP (demo mode) → JWT (7-day) |
 | Payments | UPI deep-link + QR code |
-| Images | ImgBB free API (optional) |
-| Deploy | Vercel (two projects — client SPA + server serverless) |
+| Images | Cloudflare R2 (Dual-Bucket: Public CDN + Private KYC) |
 
 ---
 
@@ -44,8 +43,8 @@ zensos/
 └── server/    ← Express API
     └── src/
         ├── models/   Seller, Product, Order
-        ├── routes/   auth, products, orders, store
-        └── utils/    otp, slug, mailer
+        ├── routes/   auth, products, orders, store, upload
+        └── utils/    r2Storage, otp, slug, mailer
 ```
 
 ---
@@ -62,14 +61,13 @@ cd ../server && npm install
 ```bash
 cd server
 copy .env.example .env
-# Edit .env — set MONGO_URI and JWT_SECRET
+# Edit .env — set MONGO_URI, JWT_SECRET, and Cloudflare R2 credentials
 ```
 
 ### 3. Configure client
 ```bash
 cd client
 copy .env.example .env
-# Optional: add VITE_IMGBB_API_KEY for image uploads
 ```
 
 ### 4. Start
@@ -98,6 +96,14 @@ PORT=5000
 MONGO_URI=mongodb://...          # MongoDB Atlas or local
 JWT_SECRET=your_strong_secret
 
+# Cloudflare R2 Storage (Zero Egress Costs)
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_PUBLIC_BUCKET_NAME=zensos-public
+R2_PRIVATE_BUCKET_NAME=zensos-private-kyc
+R2_PUBLIC_DOMAIN=https://pub-xxxxxxxx.r2.dev
+
 # Optional — enable email OTP (currently in demo mode)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -109,9 +115,6 @@ SMTP_PASS=xxxx xxxx xxxx xxxx   # Gmail App Password
 ```env
 VITE_API_BASE_URL=/api           # Dev (uses Vite proxy)
 # VITE_API_BASE_URL=https://your-backend.vercel.app/api  ← Production
-
-# Optional — free image hosting (get key at https://api.imgbb.com)
-VITE_IMGBB_API_KEY=your_key_here
 ```
 
 ---
