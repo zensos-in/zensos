@@ -25,7 +25,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const response = await api.get("/subscription/my");
+      const response = await api.get("/subscriptions/my");
       setSubscription(response.data.subscription);
       // Refresh seller in AuthContext so subscription status fields stay in sync
       await refreshProfile();
@@ -46,18 +46,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated]);
 
   const purchaseSubscription = async (planType: PlanType) => {
-    const response = await api.post("/subscription/purchase", { planType });
+    const response = await api.post("/subscriptions/purchase", { planType });
     return response.data;
   };
 
   const verifyPurchase = async (paymentData: any) => {
-    const response = await api.post("/subscription/verify", paymentData);
+    const response = await api.post("/subscriptions/verify", paymentData);
     await refreshSubscription();
     return response.data;
   };
 
   const dismissExpiredPopup = async () => {
-    await api.post("/subscription/dismiss-popup");
+    await api.post("/subscriptions/dismiss-popup");
     await refreshProfile(); // refresh seller.subscriptionExpiredPopupShown
   };
 
