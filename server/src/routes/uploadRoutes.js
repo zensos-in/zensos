@@ -8,6 +8,37 @@ const {
 
 const router = express.Router();
 
+// Folders that are safe to allow without authentication (registration uploads)
+const PUBLIC_ALLOWED_FOLDERS = new Set(["kyc", "uploads", "logos", "products", "banners", "favicons"]);
+
+/**
+ * POST /api/upload/presigned-url/public
+ * Generate a presigned PUT URL for unauthenticated users (e.g. during registration).
+ * Restricted to a safe set of folders; private bucket uploads are NOT allowed here.
+ */
+router.post("/presigned-url/public", async (req, res) => {
+  try {
+    const { folder = "uploads", fileName = "image.jpg", fileType = "image/jpeg" } = req.body;
+
+    const sanitizedFolder = (folder || "uploads").replace(/^\/+|\/+$/g, "").split("/")[0];
+    if (!PUBLIC_ALLOWED_FOLDERS.has(sanitizedFolder)) {
+      return res.status(400).json({ message: "Uploads to this folder require authentication." });
+    }
+
+    const result = await generateUploadPresignedUrl({
+      folder: sanitizedFolder,
+      fileName,
+      contentType: fileType,
+      isPrivate: false, // public endpoint never writes to private bucket
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error("[POST /upload/presigned-url/public error]", error);
+    return res.status(500).json({ message: "Failed to generate presigned upload URL" });
+  }
+});
+
 /**
  * POST /api/upload/presigned-url
  * Generate a Cloudflare R2 presigned PUT URL for direct client upload.

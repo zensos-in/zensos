@@ -688,7 +688,7 @@ router.post("/:productId/confirm-delete", auth, checkSubscription, async (req, r
 
     // Best-effort: delete uploaded images from Cloudflare R2 before removing from DB
     const r2Keys = [
-      product.primaryImageDeleteUrl,
+      product.imageDeleteUrl,
       ...(product.imageDeleteUrls || []),
     ].filter(Boolean);
     await deleteR2Objects({ keys: r2Keys });

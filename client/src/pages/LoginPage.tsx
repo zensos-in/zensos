@@ -65,6 +65,7 @@ function ImageUploadField({
         file: compressedFile,
         folder,
         isPrivate: isPrivateDoc,
+        publicUpload: true, // Registration happens before auth — use unauthenticated endpoint
       });
       onChange(url);
       if (onDeleteUrl) {

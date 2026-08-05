@@ -351,8 +351,12 @@ router.post("/confirm-delete", auth, async (req, res) => {
     ]).filter(Boolean);
 
     const sellerImageDeleteUrls = [
+      seller.profileImageDeleteUrl,
       seller.businessLogoDeleteUrl,
       seller.faviconDeleteUrl,
+      seller.panDocumentDeleteUrl,
+      seller.idProofDeleteUrl,
+      seller.addressProofDeleteUrl,
       ...(Array.isArray(seller.banners)
         ? seller.banners.map((b) => b.deleteUrl).filter(Boolean)
         : []),

@@ -1619,12 +1619,12 @@ export function DashboardPage() {
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Branding</p>
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Business Logo</span>
-                <ImageUploadField value={storeLogo} onChange={setStoreLogo} onDeleteUrl={setStoreLogoDeleteUrl} placeholder="upload an image file or paste an URL" />
+                <ImageUploadField value={storeLogo} onChange={setStoreLogo} onDeleteUrl={setStoreLogoDeleteUrl} folder="logos" placeholder="upload an image file or paste an URL" />
               </label>
               {storeLogo && <img src={normalizeImageUrl(storeLogo)} alt="logo preview" className="h-16 w-16 rounded-xl object-contain border border-slate-200 dark:border-slate-700" />}
               <label className="block space-y-1">
                 <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Favicon</span>
-                <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} onDeleteUrl={setStoreFaviconDeleteUrl} placeholder="upload an image file or paste an URL" />
+                <ImageUploadField value={storeFavicon} onChange={setStoreFavicon} onDeleteUrl={setStoreFaviconDeleteUrl} folder="favicons" placeholder="upload an image file or paste an URL" />
               </label>
             </div>
 
@@ -1688,7 +1688,7 @@ export function DashboardPage() {
                 <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Banner Image</span>
-                    <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} onDeleteUrl={setNewBannerDeleteUrl} placeholder="Banner Image URL" />
+                    <ImageUploadField value={newBannerUrl} onChange={setNewBannerUrl} onDeleteUrl={setNewBannerDeleteUrl} folder="banners" placeholder="Banner Image URL" />
                   </label>
                   <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="Banner title (optional)" value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} />
                   <button
@@ -2140,6 +2140,7 @@ export function DashboardPage() {
                           <div className="flex-1">
                             <ImageUploadField
                               value={url}
+                              folder="products"
                               onChange={(nextUrl) => setProductForm((p) => {
                                 const next = [...p.imageUrls];
                                 next[index] = nextUrl;
@@ -3846,7 +3847,7 @@ export function DashboardPage() {
                       <img src={profilePANDocumentUrl} alt="PAN Document" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profilePANDocumentUrl} onChange={setProfilePANDocumentUrl} onDeleteUrl={setProfilePANDocumentDeleteUrl} />
+                  <ImageUploadField value={profilePANDocumentUrl} onChange={setProfilePANDocumentUrl} onDeleteUrl={setProfilePANDocumentDeleteUrl} folder="kyc" isPrivate />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">ID Proof <span className="text-rose-500">*</span></p>
@@ -3856,7 +3857,7 @@ export function DashboardPage() {
                       <img src={profileIdProof} alt="ID Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profileIdProof} onChange={setProfileIdProof} onDeleteUrl={setProfileIdProofDeleteUrl} />
+                  <ImageUploadField value={profileIdProof} onChange={setProfileIdProof} onDeleteUrl={setProfileIdProofDeleteUrl} folder="kyc" isPrivate />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Address Proof <span className="text-rose-500">*</span></p>
@@ -3866,7 +3867,7 @@ export function DashboardPage() {
                       <img src={profileAddressProof} alt="Address Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                     </a>
                   )}
-                  <ImageUploadField value={profileAddressProof} onChange={setProfileAddressProof} onDeleteUrl={setProfileAddressProofDeleteUrl} />
+                  <ImageUploadField value={profileAddressProof} onChange={setProfileAddressProof} onDeleteUrl={setProfileAddressProofDeleteUrl} folder="kyc" isPrivate />
                 </div>
               </div>
             </article>
