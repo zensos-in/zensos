@@ -22,12 +22,57 @@ import {
 } from "../utils/contactFields";
 import { compressImage } from "../utils/imageCompressor";
 import { uploadToR2 } from "../utils/r2Uploader";
+import { api } from "../api/client";
 
 type Mode = "login" | "register";
 type Step = "contact" | "otp" | "profile";
 type RegisterSection = "contact" | "business" | "bank" | "address" | "kyc" | "policies" | "plan";
 
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+
+// ── Plan metadata (prices must match server PLAN_PRICES) ──────────────────────
+const PLAN_META: Record<string, { price: string; amountPaise: number; color: string; subtitle: string; features: string[] }> = {
+  TRIAL: {
+    price: "Free",
+    amountPaise: 0,
+    color: "#10b981",
+    subtitle: "15-day free trial",
+    features: ["List up to 5 products", "1 store banner", "Payment gateway", "Basic analytics"],
+  },
+  STARTER: {
+    price: "₹999/mo",
+    amountPaise: 99900,
+    color: "#6366f1",
+    subtitle: "For sellers just getting started",
+    features: ["List up to 10 products", "2 store banners", "Payment gateway", "Email support", "Trust badge"],
+  },
+  GROWTH: {
+    price: "₹1,499/mo",
+    amountPaise: 149900,
+    color: "#ff751f",
+    subtitle: "For sellers ready to scale",
+    features: ["List up to 20 products", "3 store banners", "Payment gateway", "Email & call support", "Trust badge"],
+  },
+  BUSINESS: {
+    price: "₹2,499/mo",
+    amountPaise: 249900,
+    color: "#0ea5e9",
+    subtitle: "For established sellers",
+    features: ["List up to 30 products", "5 store banners", "Payment gateway", "Priority call support", "Trust badge"],
+  },
+};
+
+// ── Razorpay script loader ─────────────────────────────────────────────────────
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 function normalizePan(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
@@ -155,11 +200,14 @@ export function LoginPage() {
   const allPoliciesAccepted = Object.values(policyChecks).every(Boolean);
 
   const [submitting, setSubmitting] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(
     searchParams.get("plan")?.toUpperCase() || "TRIAL"
   );
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+
+  const isPaidPlan = selectedPlan !== "TRIAL";
 
   useEffect(() => {
     if (error) showError(error);
@@ -391,7 +439,129 @@ export function LoginPage() {
       });
 
       if (mode === "register") {
-        // Auto-complete registration with pre-filled data from Step 1
+        // ── Paid plan: trigger Razorpay payment first, then register ──────────
+        if (selectedPlan !== "TRIAL") {
+          setSubmitting(false);
+          setPaymentProcessing(true);
+          try {
+            // Create a Razorpay order (user is now authenticated after OTP verify)
+            const purchaseRes = await api.post<{
+              orderId: string;
+              amountPaise: number;
+              currency: string;
+              subscriptionId: string;
+              planType: string;
+              keyId: string;
+            }>("/subscriptions/purchase", { planType: selectedPlan });
+            const { orderId, amountPaise, currency, subscriptionId, keyId } = purchaseRes.data;
+
+            // Helper: complete registration after payment
+            const completeRegistration = async (paymentId: string, razorpayOrderId: string, signature: string) => {
+              // Verify payment on server
+              await api.post("/subscriptions/verify", {
+                razorpay_order_id: razorpayOrderId,
+                razorpay_payment_id: paymentId,
+                razorpay_signature: signature,
+                subscriptionId,
+              });
+              // Register the store
+              await register({
+                businessName: businessName.trim(),
+                businessCategory: selectedBusinessCategory || undefined,
+                termsAccepted: allPoliciesAccepted,
+                businessEmail: email.trim(),
+                businessAddress: formatAddress(businessAddress) || undefined,
+                businessAddressParts: businessAddress,
+                businessGST: businessGST.trim() || undefined,
+                upiId: upiId.trim() || undefined,
+                bankAccountName: bankAccountName.trim() || undefined,
+                bankName: bankName.trim() || undefined,
+                bankAccountNumber: bankAccountNumber.trim() || undefined,
+                bankIfsc: bankIfsc.trim().toUpperCase() || undefined,
+                pan: normalizedPan,
+                panHolderName: panHolderName.trim(),
+                panDocumentUrl: panDocumentUrl.trim() || undefined,
+                panDocumentDeleteUrl: panDocumentDeleteUrl.trim() || undefined,
+                businessLogo: businessLogo.trim() || undefined,
+                idProofUrl: idProofUrl.trim() || undefined,
+                idProofDeleteUrl: idProofDeleteUrl.trim() || undefined,
+                addressProofUrl: addressProofUrl.trim() || undefined,
+                addressProofDeleteUrl: addressProofDeleteUrl.trim() || undefined,
+                whatsappNumber: formatPhone(whatsappNumber) || undefined,
+                callNumber: formatPhone(callNumber) || undefined,
+                plan: selectedPlan,
+              });
+              navigate("/dashboard", { replace: true });
+            };
+
+            // Mock order path (dev / no Razorpay keys)
+            if (orderId.startsWith("mock_order_")) {
+              await completeRegistration(
+                "mock_payment_" + Date.now(),
+                orderId,
+                "mock_signature"
+              );
+              setPaymentProcessing(false);
+              return;
+            }
+
+            // Real Razorpay checkout
+            const scriptLoaded = await loadRazorpayScript();
+            if (!scriptLoaded) {
+              setError("Failed to load Razorpay payment gateway. Please check your internet connection.");
+              setPaymentProcessing(false);
+              return;
+            }
+
+            const rzpKey = keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_mock_id";
+            const options = {
+              key: rzpKey,
+              amount: amountPaise,
+              currency: currency || "INR",
+              name: "Zensos",
+              description: `${selectedPlan} Plan Subscription`,
+              order_id: orderId,
+              handler: async function (response: any) {
+                try {
+                  await completeRegistration(
+                    response.razorpay_payment_id,
+                    response.razorpay_order_id,
+                    response.razorpay_signature
+                  );
+                } catch (err) {
+                  setError(errMsg(err, "Payment verified but store setup failed. Please contact support."));
+                } finally {
+                  setPaymentProcessing(false);
+                }
+              },
+              prefill: {
+                name: businessName.trim() || "",
+                email: email.trim(),
+                contact: phoneDigits ? `+91${phoneDigits}` : "",
+              },
+              theme: { color: "#ff751f" },
+              modal: {
+                ondismiss: function () {
+                  setPaymentProcessing(false);
+                  setInfo("Payment was cancelled. Complete payment to activate your store.");
+                },
+              },
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on("payment.failed", function (response: any) {
+              setError("Payment failed: " + (response.error?.description || "Transaction failed. Please try again."));
+              setPaymentProcessing(false);
+            });
+            rzp.open();
+          } catch (err) {
+            setError(errMsg(err, "Could not initiate payment. Please try again."));
+            setPaymentProcessing(false);
+          }
+          return;
+        }
+
+        // ── Free TRIAL plan: register directly ────────────────────────────────
         await register({
           businessName: businessName.trim(),
           businessCategory: selectedBusinessCategory || undefined,
@@ -912,45 +1082,93 @@ export function LoginPage() {
                   </div>
                 )}
                 {mode === "register" && registerSection === "plan" && (
-                  <div className="sm:col-span-2 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-700">Choose your subscription plan</p>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {["TRIAL", "STARTER", "GROWTH", "BUSINESS"].map((planName) => (
-                        <label
-                          key={planName}
-                          className={`relative flex cursor-pointer flex-col rounded-xl border p-4 shadow-sm focus:outline-none transition-all ${
-                            selectedPlan === planName
-                              ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
-                              : "border-slate-200 bg-white hover:bg-slate-50"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="plan"
-                            value={planName}
-                            checked={selectedPlan === planName}
-                            onChange={() => setSelectedPlan(planName)}
-                            className="sr-only"
-                          />
-                          <span className="flex flex-1 items-center justify-between">
-                            <span className="flex flex-col">
-                              <span className="block text-sm font-bold text-slate-900">{planName === "TRIAL" ? "15-Day Free Trial" : planName}</span>
-                              {planName !== "TRIAL" && (
-                                <span className="mt-1 flex items-center text-xs font-semibold text-slate-500">
-                                  Paid Plan
-                                </span>
-                              )}
-                            </span>
-                            <AppIcon
-                              name="check"
-                              className={`h-5 w-5 text-orange-600 transition-opacity ${
-                                selectedPlan === planName ? "opacity-100" : "opacity-0"
-                              }`}
-                            />
-                          </span>
-                        </label>
-                      ))}
+                  <div className="sm:col-span-2 space-y-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">Choose your subscription plan</p>
+                      <p className="text-xs text-slate-500 mt-0.5">You can upgrade or change your plan anytime from the dashboard.</p>
                     </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {["TRIAL", "STARTER", "GROWTH", "BUSINESS"].map((planName) => {
+                        const meta = PLAN_META[planName];
+                        const isSelected = selectedPlan === planName;
+                        const isPaid = planName !== "TRIAL";
+                        return (
+                          <label
+                            key={planName}
+                            className={`relative flex cursor-pointer flex-col rounded-2xl border-2 p-4 transition-all ${
+                              isSelected
+                                ? "border-orange-500 bg-orange-50/80 shadow-md ring-2 ring-orange-200"
+                                : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="plan"
+                              value={planName}
+                              checked={isSelected}
+                              onChange={() => setSelectedPlan(planName)}
+                              className="sr-only"
+                            />
+                            {/* Header row */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-900">
+                                  {planName === "TRIAL" ? "15-Day Trial" : planName}
+                                </span>
+                                <span className="text-[11px] text-slate-500 mt-0.5">{meta.subtitle}</span>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <span
+                                  className="text-sm font-black"
+                                  style={{ color: meta.color }}
+                                >
+                                  {meta.price}
+                                </span>
+                                {isPaid && (
+                                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
+                                    <span>🔒</span> Pay to activate
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Features */}
+                            <ul className="mt-3 space-y-1">
+                              {meta.features.map((f) => (
+                                <li key={f} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                                  <span
+                                    className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white"
+                                    style={{ background: meta.color }}
+                                  >
+                                    ✓
+                                  </span>
+                                  {f}
+                                </li>
+                              ))}
+                            </ul>
+                            {/* Selected check */}
+                            {isSelected && (
+                              <div className="absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white">
+                                <AppIcon name="check" className="text-[10px]" />
+                              </div>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {/* Payment info banner for paid plans */}
+                    {isPaidPlan && (
+                      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                        <span className="mt-0.5 text-lg">💳</span>
+                        <div>
+                          <p className="text-xs font-bold text-amber-800">Payment required to activate</p>
+                          <p className="mt-0.5 text-[11px] text-amber-700">
+                            After OTP verification, a secure Razorpay checkout will open to complete your{" "}
+                            <strong>{selectedPlan}</strong> plan payment ({PLAN_META[selectedPlan]?.price} + 18% GST). Your store will be created once payment is confirmed.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-slate-400 text-center">Secure payments powered by Razorpay · +18% GST applicable on paid plans</p>
                   </div>
                 )}
 
@@ -972,7 +1190,11 @@ export function LoginPage() {
                       fullWidth
                       variant="brand"
                     >
-                      {isLastRegisterSection ? "Send OTP ->" : "Continue ->"}
+                      {isLastRegisterSection
+                        ? isPaidPlan
+                          ? <><AppIcon name="payments" className="text-[16px]" /> Send OTP &amp; Pay -&gt;</>  
+                          : "Send OTP ->"
+                        : "Continue ->"}
                     </Button>
                   </div>
                 ) : (
@@ -998,6 +1220,31 @@ export function LoginPage() {
                 Enter the 6-digit code sent to{" "}
                 <span className="font-semibold text-slate-700">{email.trim()}</span>.
               </p>
+              {/* Paid-plan payment reminder */}
+              {mode === "register" && isPaidPlan && !paymentProcessing && (
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <span className="mt-0.5 text-base">💳</span>
+                  <div>
+                    <p className="text-xs font-bold text-amber-800">Payment step next</p>
+                    <p className="text-[11px] text-amber-700 mt-0.5">
+                      After you verify the OTP, a secure Razorpay checkout will open for your{" "}
+                      <strong>{selectedPlan}</strong> plan ({PLAN_META[selectedPlan]?.price} + 18% GST).
+                    </p>
+                  </div>
+                </div>
+              )}
+              {/* Payment in progress overlay info */}
+              {paymentProcessing && (
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+                  <span className="mt-0.5 animate-spin text-base">⏳</span>
+                  <div>
+                    <p className="text-xs font-bold text-orange-800">Payment in progress</p>
+                    <p className="text-[11px] text-orange-700 mt-0.5">
+                      Complete the payment in the Razorpay window to activate your store.
+                    </p>
+                  </div>
+                </div>
+              )}
               {info && (
                 <p className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
                   {info}
@@ -1014,19 +1261,22 @@ export function LoginPage() {
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                     required
                     autoFocus
+                    disabled={paymentProcessing}
                   />
                   {otpError && <span className="text-xs text-rose-600">{otpError}</span>}
                 </label>
 
                 <Button
                   type="submit"
-                  disabled={submitting || !canVerifyOtp}
-                  loading={submitting}
+                  disabled={submitting || !canVerifyOtp || paymentProcessing}
+                  loading={submitting || paymentProcessing}
                   fullWidth
                   variant="brand"
                 >
                   {mode === "register"
-                    ? <><AppIcon name="check" className="text-[10px]" /> Verify & Create Store</>
+                    ? isPaidPlan
+                      ? <><AppIcon name="payments" className="text-[16px]" /> Verify &amp; Pay {PLAN_META[selectedPlan]?.price}</>
+                      : <><AppIcon name="check" className="text-[10px]" /> Verify &amp; Create Store</>
                     : "Verify OTP"}
                 </Button>
 
@@ -1034,11 +1284,13 @@ export function LoginPage() {
                   type="button"
                   variant="secondary"
                   fullWidth
+                  disabled={paymentProcessing}
                   onClick={() => {
                     setStep("contact");
                     setError("");
                     setInfo("");
                     setOtp("");
+                    setPaymentProcessing(false);
                   }}
                 >
                   {"<- Back"}
