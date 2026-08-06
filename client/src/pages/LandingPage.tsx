@@ -292,7 +292,7 @@ export function LandingPage() {
               Everything You Need to <span className="lg:block"><span style={{ color: "#ff751f" }}>Start & Scale</span> Your Online Store</span>
             </h2>
             <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
-              A high-performance selling platform built for modern entrepreneurs. No middlemen, no hidden fees. Keep 100% of what you earn.
+              A high-performance selling platform built for modern entrepreneurs. No middlemen, no hidden fees.
             </p>
           </div>
 

@@ -385,8 +385,6 @@ export function DashboardPage() {
     topProducts: { title: string; unitsSold: number; revenue: number }[];
   } | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
-  const [earningsData, setEarningsData] = useState<any>(null);
-  const [loadingEarnings, setLoadingEarnings] = useState(false);
 
   // ── Real-time order refresh
   const ordersIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -581,20 +579,7 @@ export function DashboardPage() {
     finally { setLoadingReport(false); }
   }
 
-  async function loadEarnings() {
-    setLoadingEarnings(true);
-    try {
-      const response = await api.get("/auth/earnings");
-      setEarningsData(response.data);
-    } catch {
-      setError("Could not load earnings metrics.");
-    } finally {
-      setLoadingEarnings(false);
-    }
-  }
-
   useEffect(() => { if (tab === "reports") void loadReport(); }, [tab, reportDuration]);
-  useEffect(() => { if (tab === "earnings") void loadEarnings(); }, [tab]);
 
   const stats = useMemo(() => {
     const now = Date.now();
@@ -1354,7 +1339,7 @@ export function DashboardPage() {
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
     { key: "orders", label: t("nav.orders", "Orders"), icon: "orders" },
     { key: "reports", label: t("nav.reports", "Reports"), icon: "reports" },
-    { key: "earnings", label: t("nav.earnings", "Earnings & Payouts"), icon: "earnings" },
+    { key: "earnings", label: t("nav.earnings", "Earnings"), icon: "earnings" },
     { key: "profile", label: t("nav.profile", "Profile"), icon: "profile" },
     { key: "policies", label: t("nav.policies", "Policies"), icon: "policies" },
   ];
@@ -3328,139 +3313,33 @@ export function DashboardPage() {
       )}
       {tab === "earnings" && (
         <div className="space-y-5">
-          {/* Earnings Header Summary Cards */}
-          {loadingEarnings ? (
-            <div className="text-center py-10 text-slate-500">Loading earnings ledger...</div>
-          ) : earningsData ? (
-            <>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <article className="rounded-3xl border border-orange-400 bg-orange-50/70 p-5 shadow-card dark:border-orange-800/80 dark:bg-orange-950/30">
-                  <p className="text-xs font-semibold uppercase text-orange-600 dark:text-orange-400">Gross Sales</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-orange-700 dark:text-orange-300">₹{earningsData.summary.grossRevenue.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-orange-600/85 dark:text-orange-400/80 mt-1">Product plus delivery before platform charges</p>
-                </article>
-                <article className="rounded-3xl border border-orange-400 bg-orange-50/70 p-5 shadow-card dark:border-orange-800/80 dark:bg-orange-950/30">
-                  <p className="text-xs font-semibold uppercase text-orange-600 dark:text-orange-400">Net Earnings</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-orange-700 dark:text-orange-300">₹{earningsData.summary.netEarnings.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-orange-600/85 dark:text-orange-400/80 mt-1">Vendor payable after platform charges</p>
-                </article>
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Platform Charges</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.platformChargesDeducted || 0).toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Deducted from gross sales</p>
-                </article>
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                  <p className="text-xs font-semibold uppercase text-slate-400">Delivery Earnings</p>
-                  <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{earningsData.summary.deliveryFees.toLocaleString("en-IN")}</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Delivery charges included in vendor payable</p>
-                </article>
-              </div>
-
-              <div className="mx-auto max-w-4xl space-y-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                    <p className="text-xs font-semibold uppercase text-slate-400">Pending Settlements</p>
-                    <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.pendingSettlements || 0).toLocaleString("en-IN")}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">Paid orders waiting for transfer</p>
-                  </article>
-                  <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900">
-                    <p className="text-xs font-semibold uppercase text-slate-400">Completed Settlements</p>
-                    <p className="mt-2 font-heading text-2xl font-bold text-slate-900 dark:text-white">₹{(earningsData.summary.completedSettlements || 0).toLocaleString("en-IN")}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">Transferred to linked account</p>
-                  </article>
-                </div>
-
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
-                  <div className="mb-4">
-                    <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Order-wise Earnings</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Platform charges are included in customer payment and deducted before settlement</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
-                          <th className="py-2.5 px-2">Order ID</th>
-                          <th className="py-2.5 px-2 text-right">Product</th>
-                          <th className="py-2.5 px-2 text-right">Delivery</th>
-                          <th className="py-2.5 px-2 text-right">Platform Fee</th>
-                          <th className="py-2.5 px-2 text-right">Net Earning</th>
-                          <th className="py-2.5 px-2">Settlement</th>
-                          <th className="py-2.5 px-2">Settlement Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(earningsData.orders || []).length === 0 ? (
-                          <tr>
-                            <td colSpan={7} className="text-center py-10 text-slate-500">No earnings orders recorded yet.</td>
-                          </tr>
-                        ) : (
-                          earningsData.orders.map((order: any) => (
-                            <tr key={order.orderId} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
-                              <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300">{String(order.orderId).slice(-8)}</td>
-                              <td className="py-3 px-2 text-right font-semibold">₹{Number(order.productAmount || 0).toLocaleString("en-IN")}</td>
-                              <td className="py-3 px-2 text-right">₹{Number(order.deliveryCharge || 0).toLocaleString("en-IN")}</td>
-                              <td className="py-3 px-2 text-right text-rose-600">₹{Number(order.platformFee || 0).toLocaleString("en-IN")}</td>
-                              <td className="py-3 px-2 text-right font-bold text-orange-600">₹{Number(order.netVendorEarning || 0).toLocaleString("en-IN")}</td>
-                              <td className="py-3 px-2 capitalize">{String(order.settlementStatus || "unsettled").replace(/_/g, " ")}</td>
-                              <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{order.settlementDate ? new Date(order.settlementDate).toLocaleDateString("en-IN") : "-"}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-
-                {/* Transaction Ledger Table */}
-                <article className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card dark:border-teal-900/35 dark:bg-slate-900/90">
-                  <div className="mb-4">
-                    <h3 className="font-heading text-base font-bold text-slate-800 dark:text-white">Transaction & Payout Ledger</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">Direct vendor settlements via Razorpay Route after payment capture</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-100 text-[10px] font-bold uppercase text-slate-400 dark:border-slate-800">
-                          <th className="py-2.5 px-2">Date</th>
-                          <th className="py-2.5 px-2">Transaction Ref</th>
-                          <th className="py-2.5 px-2">Purpose</th>
-                          <th className="py-2.5 px-2">Type</th>
-                          <th className="py-2.5 px-2 text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {earningsData.ledger.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="text-center py-10 text-slate-500">No direct settlements recorded yet.</td>
-                          </tr>
-                        ) : (
-                          earningsData.ledger.map((log: any) => (
-                            <tr key={log._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/40">
-                              <td className="py-3 px-2 text-slate-500 whitespace-nowrap">{new Date(log.createdAt).toLocaleDateString("en-IN")}</td>
-                              <td className="py-3 px-2 font-mono text-slate-700 dark:text-slate-300 font-semibold">{log.razorpayTransferId || "platform_ledger"}</td>
-                              <td className="py-3 px-2">
-                                <span className="capitalize">{log.purpose.replace(/_/g, " ")}</span>
-                              </td>
-                              <td className="py-3 px-2">
-                                <span className={`inline-block rounded-full px-2 py-0.5 font-bold uppercase text-[9px] ${log.type === "credit" ? "bg-orange-50 text-orange-700 border border-orange-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
-                                  {log.type}
-                                </span>
-                              </td>
-                              <td className={`py-3 px-2 text-right font-bold font-mono ${log.type === "credit" ? "text-orange-600" : "text-rose-600"}`}>
-                                {log.type === "credit" ? "+" : "-"}₹{(log.amountPaise / 100).toLocaleString("en-IN")}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-10 text-slate-500">Failed to load earnings metrics.</div>
-          )}
+          {/* Razorpay Login Banner */}
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 px-6 py-6 shadow-card dark:border-blue-900/40 dark:from-blue-950/40 dark:to-indigo-950/30 sm:flex-row sm:items-start">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 shadow-md">
+              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                Dear Seller, you can track your payments, settlements, payment gateway and handling charges directly on Razorpay.
+              </p>
+              <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                Please login with your registered phone number or email ID.
+              </p>
+            </div>
+            <a
+              href="https://dashboard.razorpay.com/signin"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Login to Razorpay
+            </a>
+          </div>
         </div>
       )}
       {tab === "profile" && (
