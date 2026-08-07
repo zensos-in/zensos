@@ -517,6 +517,7 @@ export function AdminPage() {
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [loadingSellerDetail, setLoadingSellerDetail] = useState(false);
   const [sellerActionLoading, setSellerActionLoading] = useState<SellerActionKey | null>(null);
+  const [manualRzpAccountId, setManualRzpAccountId] = useState("");
   const [platformFinance, setPlatformFinance] = useState<any>(null);
   const [settlementLogs, setSettlementLogs] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -737,6 +738,34 @@ export function AdminPage() {
         );
       } else {
         setError("Unable to retry Razorpay linked account provisioning.");
+      }
+    } finally {
+      setSellerActionLoading(null);
+    }
+  }
+
+  async function linkRazorpayAccount(sellerId: string, accountId: string) {
+    if (!token || !accountId.trim()) return;
+    setError("");
+    setSuccess("");
+    setSellerActionLoading("retry-linked");
+    try {
+      const response = await api.patch<{ seller: Seller; message: string }>(
+        `/admin/sellers/${sellerId}/razorpay-account`,
+        { razorpayAccountId: accountId.trim() },
+        { headers: authHeaders }
+      );
+      setSuccess(response.data.message || "Razorpay account linked.");
+      setManualRzpAccountId("");
+      await loadSellers(status);
+      if (selectedSeller?._id === sellerId && response.data.seller) {
+        setSelectedSeller(response.data.seller);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || "Unable to link Razorpay account.");
+      } else {
+        setError("Unable to link Razorpay account.");
       }
     } finally {
       setSellerActionLoading(null);
@@ -1555,9 +1584,38 @@ export function AdminPage() {
                   />
                 </div>
                 {selectedSeller.razorpayOnboardingError ? (
-                  <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
-                    <p className="font-semibold">Last onboarding error</p>
-                    <p className="mt-1">{selectedSeller.razorpayOnboardingError}</p>
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+                      <p className="font-semibold">Last onboarding error</p>
+                      <p className="mt-1">{selectedSeller.razorpayOnboardingError}</p>
+                    </div>
+                    {/* Manual link — shown when email-conflict blocks automatic provisioning */}
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 dark:border-amber-800 dark:bg-amber-950/30">
+                      <p className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Manual Razorpay account link</p>
+                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                        If the error says <em>"email already exists"</em>, find the existing account ID in the{" "}
+                        <a href="https://dashboard.razorpay.com/app/route/linked-accounts" target="_blank" rel="noreferrer" className="underline">Razorpay Route dashboard</a>{" "}
+                        and paste it below.
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          id="manual-rzp-account-id"
+                          type="text"
+                          value={manualRzpAccountId}
+                          onChange={(e) => setManualRzpAccountId(e.target.value)}
+                          placeholder="acc_XXXXXXXXXXXXXXXXX"
+                          className="flex-1 rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-amber-500 focus:outline-none dark:border-amber-700 dark:bg-slate-900 dark:text-slate-100"
+                        />
+                        <button
+                          id="btn-manual-link-rzp"
+                          disabled={!manualRzpAccountId.trim() || sellerActionLoading === "retry-linked"}
+                          onClick={() => linkRazorpayAccount(selectedSeller._id, manualRzpAccountId)}
+                          className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                        >
+                          {sellerActionLoading === "retry-linked" ? "Linking…" : "Link"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : null}
               </SectionCard>

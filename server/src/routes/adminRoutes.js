@@ -580,4 +580,44 @@ router.post("/sellers/:sellerId/send-subscription-email", adminAuth, async (req,
   }
 });
 
+// ─── PATCH /sellers/:sellerId/razorpay-account — Manually link Razorpay account ─
+// Used when Razorpay's "email already exists" error blocks automatic provisioning.
+// Admin pastes the existing acc_XXXXXX ID from the Razorpay dashboard.
+router.patch("/sellers/:sellerId/razorpay-account", adminAuth, async (req, res) => {
+  try {
+    const { razorpayAccountId } = req.body;
+    if (!razorpayAccountId || typeof razorpayAccountId !== "string" || !razorpayAccountId.trim()) {
+      return res.status(400).json({ message: "razorpayAccountId is required." });
+    }
+
+    const seller = await Seller.findById(req.params.sellerId);
+    if (!seller) return res.status(404).json({ message: "Seller not found." });
+
+    const trimmedId = razorpayAccountId.trim();
+    seller.razorpayAccountId = trimmedId;
+    seller.razorpayReferenceId = seller.razorpayReferenceId || `seller_${seller._id}`;
+    seller.razorpayLinkedAccountCreatedAt = seller.razorpayLinkedAccountCreatedAt || new Date();
+    // Reset the onboarding error so the next retry is clean
+    seller.razorpayOnboardingError = "";
+    seller.linkedAccountOnboardingStatus = "linked_account_pending";
+    seller.razorpayAccountStatus = "pending";
+
+    recordComplianceEvent(seller, "razorpay_account_manually_linked", req.adminUsername || "admin", {
+      razorpayAccountId: trimmedId,
+    });
+
+    await seller.save();
+
+    const refreshed = await Seller.findById(seller._id).select(ADMIN_SELLER_OMIT);
+    return res.json({
+      message: `Razorpay account ${trimmedId} manually linked. Now retry provisioning or approve the store.`,
+      seller: toAdminSellerView(refreshed),
+    });
+  } catch (error) {
+    console.error("[patch-razorpay-account]", error);
+    return res.status(500).json({ message: "Unable to link Razorpay account.", detail: error.message });
+  }
+});
+
 module.exports = router;
+
