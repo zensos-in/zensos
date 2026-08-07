@@ -547,6 +547,40 @@ async function fetchAccount(accountId) {
 }
 
 /**
+ * Returns true if the Razorpay error indicates the email is already
+ * tied to an existing linked account.
+ */
+function isEmailAlreadyExistsError(error) {
+  return /merchant email already exists/i.test(String(error?.message || ""));
+}
+
+/**
+ * Extracts the existing account identifier that Razorpay embeds in the
+ * "Merchant email already exists for account - <id>" error message.
+ */
+function extractAccountIdFromError(errorMessage) {
+  const match = String(errorMessage || "").match(/for account\s*[-\u2013]\s*(\S+)/i);
+  return match ? match[1].replace(/[.,;]+$/, "") : null;
+}
+
+/**
+ * Fetch a linked account by its reference_id.
+ * Returns the first matching account or null.
+ */
+async function fetchAccountByReferenceId(referenceId) {
+  if (!referenceId) return null;
+  try {
+    const result = await razorpayApiRequest(
+      "GET",
+      `/v2/accounts?reference_id=${encodeURIComponent(referenceId)}`
+    );
+    return result?.items?.[0] || null;
+  } catch (_err) {
+    return null;
+  }
+}
+
+/**
  * Permanently delete a Razorpay linked account via the Partners Account API.
  * Endpoint: DELETE /v2/accounts/{accountId}
  * In mock mode this is a no-op so local dev is unaffected.
@@ -667,10 +701,59 @@ async function provisionVendorLinkedAccount(seller, options = {}) {
     let accountStatus = seller.razorpayAccountStatus;
 
     if (!accountId) {
-      const account = await createLinkedAccount(seller);
-      accountId = account.id;
-      accountStatus = account.status;
-      seller.razorpayAccountId = accountId;
+      try {
+        const account = await createLinkedAccount(seller);
+        accountId = account.id;
+        accountStatus = account.status;
+        seller.razorpayAccountId = accountId;
+      } catch (createError) {
+        if (!isEmailAlreadyExistsError(createError)) throw createError;
+
+        // ── Razorpay still holds the email from the previous linked account.
+        // ── Try to recover by reusing that account rather than failing.
+        console.warn(
+          `[provisionVendorLinkedAccount] Email already exists in Razorpay; attempting recovery. Error: ${createError.message}`
+        );
+
+        let recovered = false;
+
+        // Strategy 1: extract the account ID embedded in the error message.
+        const embeddedId = extractAccountIdFromError(createError.message);
+        if (embeddedId) {
+          try {
+            const account = await fetchAccount(embeddedId);
+            accountId = account.id || embeddedId;
+            accountStatus = account.status;
+            seller.razorpayAccountId = accountId;
+            recovered = true;
+            console.log(`[provisionVendorLinkedAccount] Recovered existing account ${accountId} from error message.`);
+          } catch (_fetchErr) {
+            // embedded id didn't resolve, fall through to strategy 2
+          }
+        }
+
+        // Strategy 2: search by reference_id (if set on the seller).
+        if (!recovered && seller.razorpayReferenceId) {
+          const account = await fetchAccountByReferenceId(seller.razorpayReferenceId);
+          if (account) {
+            accountId = account.id;
+            accountStatus = account.status;
+            seller.razorpayAccountId = accountId;
+            recovered = true;
+            console.log(`[provisionVendorLinkedAccount] Recovered existing account ${accountId} via reference_id.`);
+          }
+        }
+
+        if (!recovered) {
+          const err = new Error(
+            `Razorpay linked account creation failed: the seller's email is already associated with a Razorpay account (${embeddedId || "unknown"}). ` +
+            `Please contact Razorpay support or manually link the existing account.`
+          );
+          err.statusCode = 409;
+          err.razorpayOriginal = createError;
+          throw err;
+        }
+      }
     } else {
       try {
         const account = await fetchAccount(accountId);
