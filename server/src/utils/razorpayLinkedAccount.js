@@ -546,6 +546,21 @@ async function fetchAccount(accountId) {
   return razorpayApiRequest("GET", `/v2/accounts/${accountId}`);
 }
 
+/**
+ * Permanently delete a Razorpay linked account via the Partners Account API.
+ * Endpoint: DELETE /v2/accounts/{accountId}
+ * In mock mode this is a no-op so local dev is unaffected.
+ * Errors are NOT thrown — callers should treat this as best-effort.
+ */
+async function deleteLinkedAccount(accountId) {
+  if (!accountId) return;
+  if (isMockMode) {
+    console.log(`[deleteLinkedAccount] Mock mode — skipping delete for ${accountId}`);
+    return;
+  }
+  return razorpayApiRequest("DELETE", `/v2/accounts/${accountId}`);
+}
+
 function applyProvisionResultToSeller(seller, result, actor = "system") {
   seller.razorpayAccountId = result.accountId;
   seller.razorpayStakeholderId = result.stakeholderId || seller.razorpayStakeholderId;
@@ -746,6 +761,7 @@ module.exports = {
   LINKED_ACCOUNT_ONBOARDING,
   applyAccountWebhookToSeller,
   collectLinkedAccountBlockers,
+  deleteLinkedAccount,
   provisionVendorLinkedAccount,
   syncLinkedAccountOnboardingStatus,
 };

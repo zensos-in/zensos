@@ -8,6 +8,7 @@ const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/o
 const { sendOtpEmail } = require("../utils/mailer");
 const { collectKycIssues } = require("../utils/kycCompliance");
 const { deleteR2Objects } = require("../utils/r2Storage");
+const { deleteLinkedAccount } = require("../utils/razorpayLinkedAccount");
 
 const { getStoreAccessState } = require("../utils/trialService");
 
@@ -389,6 +390,25 @@ router.post("/confirm-delete", auth, async (req, res) => {
     seller.otpExpiry = null;
     seller.otpPurpose = null;
     seller.otpTargetId = null;
+
+    // ── Delete Razorpay linked account (best-effort) ──────────────────
+    if (seller.razorpayAccountId) {
+      try {
+        await deleteLinkedAccount(seller.razorpayAccountId);
+        console.log(`[confirm-store-delete] Razorpay account ${seller.razorpayAccountId} deleted for seller ${seller._id}`);
+      } catch (rzpError) {
+        // Best-effort: log but never block the store deletion
+        console.error(`[confirm-store-delete] Could not delete Razorpay account ${seller.razorpayAccountId}:`, rzpError.message);
+      }
+    }
+    seller.razorpayAccountId = "";
+    seller.razorpayReferenceId = "";
+    seller.razorpayStakeholderId = "";
+    seller.razorpayProductId = "";
+    seller.razorpayLinkedAccountCreatedAt = null;
+    seller.razorpayOnboardingError = "";
+    seller.razorpayAccountStatus = "uncreated";
+    seller.linkedAccountOnboardingStatus = "not_started";
 
     await seller.save();
     return res.json({ message: "Store deleted successfully. You can set up again." });
