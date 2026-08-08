@@ -5,7 +5,17 @@ import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../context/ToastContext";
-import type { OrderStatus } from "../types";
+import { usePublicStoreHeader } from "../context/PublicStoreHeaderContext";
+import type { OrderStatus, Seller } from "../types";
+
+const DEFAULT_APP_FAVICON = "/zensos.png";
+
+function normalizeImageUrl(url: string) {
+  const trimmed = String(url || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
 
 type PublicOrderStatus = {
   _id: string;
@@ -53,6 +63,54 @@ export function ThankYouPage() {
 
   const sellerSlug = searchParams.get("sellerSlug") || "";
   const requestedPaymentMethod = searchParams.get("paymentMethod") || "";
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const { setPublicStoreHeader } = usePublicStoreHeader();
+
+  const fetchSeller = useCallback(async () => {
+    if (!sellerSlug) return;
+    try {
+      const response = await api.get<{ seller: Seller }>(`/store/public/${sellerSlug}`);
+      setSeller(response.data.seller);
+    } catch (err) {
+      console.error("Failed to fetch seller info", err);
+    }
+  }, [sellerSlug]);
+
+  useEffect(() => {
+    void fetchSeller();
+  }, [fetchSeller]);
+
+  useEffect(() => {
+    if (!seller) {
+      setPublicStoreHeader(null);
+      return;
+    }
+
+    setPublicStoreHeader({
+      name: seller.businessName,
+      logo: seller.businessLogo ? normalizeImageUrl(seller.businessLogo) : "",
+    });
+
+    return () => setPublicStoreHeader(null);
+  }, [seller, setPublicStoreHeader]);
+
+  useEffect(() => {
+    if (!seller) return;
+
+    const previousTitle = document.title;
+    document.title = `${seller.businessName} - Thank You`;
+
+    const faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (!faviconElement) return;
+    const previousHref = faviconElement.getAttribute("href") || DEFAULT_APP_FAVICON;
+    const nextHref = seller.favicon ? normalizeImageUrl(seller.favicon) : DEFAULT_APP_FAVICON;
+    faviconElement.setAttribute("href", nextHref);
+
+    return () => {
+      document.title = previousTitle;
+      faviconElement.setAttribute("href", previousHref);
+    };
+  }, [seller]);
   const orderIds = useMemo(
     () =>
       (searchParams.get("orderIds") || "")
