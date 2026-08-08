@@ -652,9 +652,24 @@ router.put("/me", auth, async (req, res) => {
     if (typeof faviconDeleteUrl === "string") seller.faviconDeleteUrl = faviconDeleteUrl.trim();
     if (typeof whatsappNumber === "string") seller.whatsappNumber = whatsappNumber.trim();
     if (typeof callNumber === "string") seller.callNumber = callNumber.trim();
-    if (typeof idProofUrl === "string") seller.idProofUrl = idProofUrl.trim();
+    let kycDocChanged = false;
+    let panDocChanged = false;
+
+    if (typeof idProofUrl === "string") {
+      const trimmedVal = idProofUrl.trim();
+      if (trimmedVal !== seller.idProofUrl) {
+        seller.idProofUrl = trimmedVal;
+        kycDocChanged = true;
+      }
+    }
     if (typeof idProofDeleteUrl === "string") seller.idProofDeleteUrl = idProofDeleteUrl.trim();
-    if (typeof addressProofUrl === "string") seller.addressProofUrl = addressProofUrl.trim();
+    if (typeof addressProofUrl === "string") {
+      const trimmedVal = addressProofUrl.trim();
+      if (trimmedVal !== seller.addressProofUrl) {
+        seller.addressProofUrl = trimmedVal;
+        kycDocChanged = true;
+      }
+    }
     if (typeof addressProofDeleteUrl === "string") seller.addressProofDeleteUrl = addressProofDeleteUrl.trim();
     if (typeof privacyPolicy === "string") seller.privacyPolicy = privacyPolicy.trim();
     if (typeof returnRefundPolicy === "string") seller.returnRefundPolicy = returnRefundPolicy.trim();
@@ -713,8 +728,30 @@ router.put("/me", auth, async (req, res) => {
     }
     seller.panHolderName = nextPanHolderName;
     seller.kycDetailsEncrypted.panHolderName = encrypt(nextPanHolderName);
-    if (typeof panDocumentUrl === "string") seller.panDocumentUrl = panDocumentUrl.trim();
+    if (typeof panDocumentUrl === "string") {
+      const trimmedVal = panDocumentUrl.trim();
+      if (trimmedVal !== seller.panDocumentUrl) {
+        seller.panDocumentUrl = trimmedVal;
+        panDocChanged = true;
+      }
+    }
     if (typeof panDocumentDeleteUrl === "string") seller.panDocumentDeleteUrl = panDocumentDeleteUrl.trim();
+
+    if (panDocChanged) {
+      seller.panVerificationStatus = "pending";
+      seller.kycStatus = "pending";
+      seller.payoutStatus = "blocked";
+      if (seller.razorpayAccountStatus === "active") {
+        seller.razorpayAccountStatus = "suspended";
+      }
+      recordComplianceEvent(seller, "pan_document_changed_reverification_required", "seller");
+    }
+
+    if (kycDocChanged) {
+      seller.kycStatus = "pending";
+      seller.payoutStatus = "blocked";
+      recordComplianceEvent(seller, "kyc_document_changed_reverification_required", "seller");
+    }
     if (typeof businessGST === "string" && businessGST.trim()) {
       if (!businessGST.includes("*")) { // Only encrypt if it's a new raw value
         seller.kycDetailsEncrypted.gst = encrypt(businessGST);

@@ -24,7 +24,7 @@ function AppShell() {
   const { setTheme } = useTheme();
   const [publicStoreHeader, setPublicStoreHeader] = useState<PublicStoreHeader | null>(null);
   const isLanding = location.pathname === "/" || location.pathname === "/faq";
-  const isPublicStore = location.pathname.startsWith("/store/");
+  const isPublicStore = location.pathname.startsWith("/store/") || location.pathname === "/thank-you" || location.pathname === "/my-orders";
   const showThemeToggle = !isLanding && !["/contact-us", "/privacy-policy", "/terms", "/refund-policy", "/faq"].includes(location.pathname);
 
   // Force light theme on all public marketing & login/register pages

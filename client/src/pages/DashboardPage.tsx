@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
 import { api } from "../api/client";
@@ -171,6 +170,58 @@ function ImageUploadField({
   );
 }
 
+function SecureImagePreview({
+  url,
+  alt,
+  className
+}: {
+  url: string;
+  alt: string;
+  className?: string;
+}) {
+  const trimmed = String(url || "").trim();
+  const [viewUrl, setViewUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!trimmed) {
+      setViewUrl("");
+      return;
+    }
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      setViewUrl(trimmed);
+      return;
+    }
+    setLoading(true);
+    api.get<{ viewUrl: string }>(`/upload/kyc-view-url?key=${encodeURIComponent(trimmed)}`)
+      .then((res) => {
+        if (res.data?.viewUrl) {
+          setViewUrl(res.data.viewUrl);
+        }
+      })
+      .catch((err) => console.error("Failed to load secure preview:", err))
+      .finally(() => setLoading(false));
+  }, [trimmed]);
+
+  if (!trimmed) return null;
+
+  if (loading) {
+    return (
+      <div className="flex h-28 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-100/60 text-xs text-slate-400">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!viewUrl) return null;
+
+  return (
+    <a href={viewUrl} target="_blank" rel="noreferrer">
+      <img src={viewUrl} alt={alt} className={className} />
+    </a>
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function timeAgo(date: Date | null): string {
   if (!date) return "";
@@ -281,7 +332,6 @@ function getOrderProductNames(order: Order): string {
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 export function DashboardPage() {
-  const navigate = useNavigate();
   const { seller, logout, updateProfile, refreshProfile } = useAuth();
   const { t } = useI18n();
   const { showError, showSuccess } = useToast();
@@ -3417,7 +3467,7 @@ export function DashboardPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => navigate("/#pricing")}
+                  onClick={() => setPricingOpen(true)}
                   className={`mt-2 text-xs font-bold underline focus:outline-none block ${
                     seller.trial.status === "expired"
                       ? "text-rose-800 hover:text-rose-600 dark:text-rose-300 dark:hover:text-rose-200"
@@ -3721,31 +3771,19 @@ export function DashboardPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">PAN Document <span className="text-rose-500">*</span></p>
                   <p className="text-xs text-slate-400">Upload when requested for PAN review</p>
-                  {profilePANDocumentUrl && (
-                    <a href={profilePANDocumentUrl} target="_blank" rel="noreferrer">
-                      <img src={profilePANDocumentUrl} alt="PAN Document" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
-                    </a>
-                  )}
+                  <SecureImagePreview url={profilePANDocumentUrl} alt="PAN Document" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                   <ImageUploadField value={profilePANDocumentUrl} onChange={setProfilePANDocumentUrl} onDeleteUrl={setProfilePANDocumentDeleteUrl} folder="kyc" isPrivate />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">ID Proof <span className="text-rose-500">*</span></p>
                   <p className="text-xs text-slate-400">Aadhaar, PAN, Passport, Voter ID, Driving Licence</p>
-                  {profileIdProof && (
-                    <a href={profileIdProof} target="_blank" rel="noreferrer">
-                      <img src={profileIdProof} alt="ID Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
-                    </a>
-                  )}
+                  <SecureImagePreview url={profileIdProof} alt="ID Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                   <ImageUploadField value={profileIdProof} onChange={setProfileIdProof} onDeleteUrl={setProfileIdProofDeleteUrl} folder="kyc" isPrivate />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-slate-700">Address Proof <span className="text-rose-500">*</span></p>
                   <p className="text-xs text-slate-400">Utility bill, Bank statement, Rental agreement (not older than 3 months)</p>
-                  {profileAddressProof && (
-                    <a href={profileAddressProof} target="_blank" rel="noreferrer">
-                      <img src={profileAddressProof} alt="Address Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
-                    </a>
-                  )}
+                  <SecureImagePreview url={profileAddressProof} alt="Address Proof" className="h-28 w-full rounded-xl object-cover border border-slate-200 hover:opacity-90 transition" />
                   <ImageUploadField value={profileAddressProof} onChange={setProfileAddressProof} onDeleteUrl={setProfileAddressProofDeleteUrl} folder="kyc" isPrivate />
                 </div>
               </div>
