@@ -184,25 +184,19 @@ export function CustomerOrdersPage() {
       <div className="mx-auto max-w-3xl">
 
         {/* ── Header ───────────────────────────────────────────── */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          {seller?.businessLogo ? (
-            <img
-              src={normalizeImageUrl(seller.businessLogo)}
-              alt={seller.businessName}
-              className="mb-4 h-16 w-16 rounded-full border border-slate-200/85 bg-white object-contain p-1 shadow-md dark:border-slate-800 dark:bg-slate-900"
-            />
-          ) : (
-            <div className="relative mb-4 flex h-[4rem] w-[4rem] items-center justify-center rounded-full bg-[#ff751f] shadow-xl shadow-orange-500/30">
-              <AppIcon name="orders" className="text-[28px] text-white" />
-            </div>
-          )}
-          <h1 className="font-heading text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
-            Your Orders
-          </h1>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            All past orders you have placed at this store
-          </p>
-        </div>
+       <div className="mb-8 flex flex-col items-center text-center">
+  <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ff751f] shadow-xl shadow-orange-500/30">
+    <AppIcon name="orders" className="text-[28px] text-white" />
+  </div>
+
+  <h1 className="font-heading text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
+    Your Orders
+  </h1>
+
+  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+    All past orders you have placed at this store
+  </p>
+</div>
 
         {/* ── Session expired prompt ────────────────────────────── */}
         {sessionExpired && (
