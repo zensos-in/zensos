@@ -7,6 +7,6 @@ module.exports = async (req, res) => {
     return app(req, res);
   } catch (error) {
     console.error("Serverless API error:", error.message);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: `Database Connection Error: ${error.message}` });
   }
 };
