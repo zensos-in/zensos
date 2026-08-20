@@ -2,17 +2,31 @@ const nodemailer = require("nodemailer");
 
 let _transporter = null;
 
+function isSmtpConfigured() {
+  const user = String(process.env.SMTP_USER || "").trim();
+  const pass = String(process.env.SMTP_PASS || "").trim();
+  return Boolean(user && pass);
+}
+
 function getTransporter() {
   if (_transporter) return _transporter;
 
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE !== undefined
+    ? String(process.env.SMTP_SECURE) === "true"
+    : port === 465;
+
+  const user = String(process.env.SMTP_USER || "").trim();
+  const pass = String(process.env.SMTP_PASS || "").trim();
+
   _transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    port: port,
+    secure: secure,
+    auth: { user, pass },
+    connectionTimeout: 8000,
+    greetingTimeout: 5000,
+    socketTimeout: 8000,
   });
 
   return _transporter;
@@ -131,14 +145,14 @@ function getOrderItemRows(order) {
   const items = Array.isArray(order.items) && order.items.length > 0
     ? order.items
     : [{
-        productTitle: order.product?.title || "Ordered item",
-        productCategory: order.product?.category || "",
-        variantTitle: "",
-        selectedVariants: order.selectedVariants || {},
-        quantity: order.quantity,
-        unitPrice: order.amount / Math.max(1, order.quantity || 1),
-        lineTotal: order.amount,
-      }];
+      productTitle: order.product?.title || "Ordered item",
+      productCategory: order.product?.category || "",
+      variantTitle: "",
+      selectedVariants: order.selectedVariants || {},
+      quantity: order.quantity,
+      unitPrice: order.amount / Math.max(1, order.quantity || 1),
+      lineTotal: order.amount,
+    }];
 
   return items.map((item) => {
     const variants = item.selectedVariants instanceof Map
@@ -323,94 +337,146 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
     productTitle = "",
   } = typeof options === "string" ? { businessName: options } : options;
 
-  const transporter = getTransporter();
   const plainGreeting = businessName ? `Hi ${businessName},` : "Hello,";
   const greeting = businessName ? `Hi ${escapeHtml(businessName)},` : "Hello,";
   const content = getOtpEmailContent({ purpose, intent, businessName, productTitle });
+  const smtpUser = String(process.env.SMTP_USER || "").trim();
 
+  if (!isSmtpConfigured()) {
+    console.log(`\n==================================================`);
+    console.log(`[OTP EMAIL DEMO MODE] (No SMTP credentials configured)`);
+    console.log(`To: ${toEmail}`);
+    console.log(`Purpose: ${purpose} | Intent: ${intent}`);
+    console.log(`OTP Code: ${otp}`);
+    console.log(`==================================================\n`);
+    return;
+  }
 
-  await transporter.sendMail({
-    from: `"Zensos" <${process.env.SMTP_USER}>`,
-    to: toEmail,
-    subject: content.subject,
-    text: buildOtpEmailText({ otp, plainGreeting, content }),
-    html: buildOtpEmailHtml({ otp, greeting, content }),
-  });
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: `"Zensos" <${smtpUser}>`,
+      to: toEmail,
+      subject: content.subject,
+      text: buildOtpEmailText({ otp, plainGreeting, content }),
+      html: buildOtpEmailHtml({ otp, greeting, content }),
+    });
+    console.log(`[mailer] OTP email sent successfully to ${toEmail}`);
+  } catch (err) {
+    console.error(`[mailer] Failed to send OTP email via SMTP to ${toEmail}:`, err?.message || err);
+    console.log(`\n==================================================`);
+    console.log(`[OTP EMAIL FALLBACK] To: ${toEmail} | OTP: ${otp}`);
+    console.log(`==================================================\n`);
+
+    if (process.env.NODE_ENV === "production" && process.env.VERCEL) {
+      throw new Error(`Email delivery failed via SMTP (${err?.code || err?.message || "Unknown error"}). Please verify SMTP settings in Vercel.`);
+    }
+  }
 }
 
 async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
-  const transporter = getTransporter();
-  const sellerName = orders[0]?.seller?.businessName || "your order";
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Skipping order confirmation email to ${toEmail} (no SMTP configured).`);
+    return;
+  }
 
-  await transporter.sendMail({
-    from: `"Zensos" <${process.env.SMTP_USER}>`,
-    to: toEmail,
-    subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
-    text: buildOrderConfirmationEmailText({ parentOrder, orders }),
-    html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
-  });
+  try {
+    const transporter = getTransporter();
+    const sellerName = orders[0]?.seller?.businessName || "your order";
+    const smtpUser = String(process.env.SMTP_USER || "").trim();
+
+    await transporter.sendMail({
+      from: `"Zensos" <${smtpUser}>`,
+      to: toEmail,
+      subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
+      text: buildOrderConfirmationEmailText({ parentOrder, orders }),
+      html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
+    });
+  } catch (err) {
+    console.error(`[mailer] Failed to send order confirmation email to ${toEmail}:`, err?.message || err);
+  }
 }
 
 async function sendContactEmail({ name, email, phone, message }) {
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from:  `"Zensos" <${process.env.SMTP_USER}>`,
-    to: "naik@shankaraonline.com",
-    subject: `Enquiry from ${name} - ZENSOS`,
-    text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <h2 style="color: #0b183f; margin-top: 0; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">Enquiry on Website</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Message:</strong></p>
-        <blockquote style="border-left: 3px solid #ff751f; padding: 10px; margin-left: 0; background: #f8fafc; font-style: italic;">
-          ${message.replace(/\n/g, "<br>")}
-        </blockquote>
-      </div>
-    `
-  });
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Contact enquiry from ${name} (${email}): ${message}`);
+    return;
+  }
+
+  try {
+    const transporter = getTransporter();
+    const smtpUser = String(process.env.SMTP_USER || "").trim();
+
+    await transporter.sendMail({
+      from: `"Zensos" <${smtpUser}>`,
+      to: "naik@shankaraonline.com",
+      subject: `Enquiry from ${name} - ZENSOS`,
+      text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #0b183f; margin-top: 0; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">Enquiry on Website</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Message:</strong></p>
+          <blockquote style="border-left: 3px solid #ff751f; padding: 10px; margin-left: 0; background: #f8fafc; font-style: italic;">
+            ${message.replace(/\n/g, "<br>")}
+          </blockquote>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error(`[mailer] Failed to send contact email:`, err?.message || err);
+  }
 }
 
 async function sendSubscriptionReminderEmail({ email, businessName, planName, status, endDate, dashboardUrl }) {
-  const transporter = getTransporter();
-  const safeBusiness = escapeHtml(businessName);
-  
-  const isExpired = status === "EXPIRED";
-  const subject = isExpired 
-    ? `Your Zensos subscription has expired` 
-    : `Your Zensos subscription is expiring soon`;
-    
-  const headline = isExpired 
-    ? "Subscription Expired" 
-    : "Subscription Reminder";
-    
-  const message = isExpired
-    ? `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) expired on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>. Your store is currently inactive and customers cannot place new orders.`
-    : `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) is set to expire on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>.`;
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Skipping subscription reminder email to ${email} (no SMTP configured).`);
+    return;
+  }
 
-  const actionText = isExpired ? "Subscribe Now" : "Upgrade Subscription";
+  try {
+    const transporter = getTransporter();
+    const safeBusiness = escapeHtml(businessName);
+    const smtpUser = String(process.env.SMTP_USER || "").trim();
 
+    const isExpired = status === "EXPIRED";
+    const subject = isExpired
+      ? `Your Zensos subscription has expired`
+      : `Your Zensos subscription is expiring soon`;
 
-  await transporter.sendMail({
-    from:`"Zensos" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: subject,
-    text: `${headline}\n\nHi ${businessName},\n\n${message.replace(/<[^>]+>/g, '')}\n\nPlease log in to your dashboard to renew your subscription or choose a different plan:\n${dashboardUrl}`,
-    html: `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
-        <div style="margin-bottom:24px;">
-          <span style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Zensos</span>
+    const headline = isExpired
+      ? "Subscription Expired"
+      : "Subscription Reminder";
+
+    const message = isExpired
+      ? `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) expired on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>. Your store is currently inactive and customers cannot place new orders.`
+      : `Your Zensos seller subscription (<b>${escapeHtml(planName)}</b>) is set to expire on <b>${new Date(endDate).toLocaleDateString("en-IN")}</b>.`;
+
+    const actionText = isExpired ? "Subscribe Now" : "Upgrade Subscription";
+
+    await transporter.sendMail({
+      from: `"Zensos" <${smtpUser}>`,
+      to: email,
+      subject: subject,
+      text: `${headline}\n\nHi ${businessName},\n\n${message.replace(/<[^>]+>/g, '')}\n\nPlease log in to your dashboard to renew your subscription or choose a different plan:\n${dashboardUrl}`,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:auto;padding:32px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;">
+          <div style="margin-bottom:24px;">
+            <span style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Zensos</span>
+          </div>
+          <p style="color:#475569;margin:0 0 16px;font-size:15px;line-height:1.5;">Hi ${safeBusiness},</p>
+          <h1 style="color:#0f172a;margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.35;">${headline}</h1>
+          <p style="color:#475569;margin:0 0 24px;font-size:14px;line-height:1.6;">${message}</p>
+          <a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:14px;">${actionText}</a>
+          <p style="color:#64748b;margin:24px 0 0;font-size:12px;line-height:1.5;">If you have any questions, please contact our support team.</p>
         </div>
-        <p style="color:#475569;margin:0 0 16px;font-size:15px;line-height:1.5;">Hi ${safeBusiness},</p>
-        <h1 style="color:#0f172a;margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.35;">${headline}</h1>
-        <p style="color:#475569;margin:0 0 24px;font-size:14px;line-height:1.6;">${message}</p>
-        <a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:14px;">${actionText}</a>
-        <p style="color:#64748b;margin:24px 0 0;font-size:12px;line-height:1.5;">If you have any questions, please contact our support team.</p>
-      </div>
-    `
-  });
+      `,
+    });
+  } catch (err) {
+    console.error(`[mailer] Failed to send subscription reminder email to ${email}:`, err?.message || err);
+  }
 }
 
 module.exports = { sendOtpEmail, sendOrderConfirmationEmail, sendContactEmail, sendSubscriptionReminderEmail };
