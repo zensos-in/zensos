@@ -341,6 +341,7 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   const greeting = businessName ? `Hi ${escapeHtml(businessName)},` : "Hello,";
   const content = getOtpEmailContent({ purpose, intent, businessName, productTitle });
   const smtpUser = String(process.env.SMTP_USER || "").trim();
+  const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
 
   if (!isSmtpConfigured()) {
     console.log(`\n==================================================`);
@@ -355,11 +356,14 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   try {
     const transporter = getTransporter();
     await transporter.sendMail({
-      from: `"Zensos" <${smtpUser}>`,
+      from: sender,
       to: toEmail,
       subject: content.subject,
       text: buildOtpEmailText({ otp, plainGreeting, content }),
       html: buildOtpEmailHtml({ otp, greeting, content }),
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
     });
     console.log(`[mailer] OTP email sent successfully to ${toEmail}`);
   } catch (err) {
@@ -384,13 +388,17 @@ async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
     const transporter = getTransporter();
     const sellerName = orders[0]?.seller?.businessName || "your order";
     const smtpUser = String(process.env.SMTP_USER || "").trim();
+    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
 
     await transporter.sendMail({
-      from: `"Zensos" <${smtpUser}>`,
+      from: sender,
       to: toEmail,
       subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
       text: buildOrderConfirmationEmailText({ parentOrder, orders }),
       html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
     });
   } catch (err) {
     console.error(`[mailer] Failed to send order confirmation email to ${toEmail}:`, err?.message || err);
@@ -406,21 +414,23 @@ async function sendContactEmail({ name, email, phone, message }) {
   try {
     const transporter = getTransporter();
     const smtpUser = String(process.env.SMTP_USER || "").trim();
+    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
 
     await transporter.sendMail({
-      from: `"Zensos" <${smtpUser}>`,
+      from: sender,
+      replyTo: `"${escapeHtml(name)}" <${email}>`,
       to: "naik@shankaraonline.com",
-      subject: `Enquiry from ${name} - ZENSOS`,
+      subject: `Enquiry from ${sanitizeSubjectLine(name)} - ZENSOS`,
       text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
           <h2 style="color: #0b183f; margin-top: 0; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px;">Enquiry on Website</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Phone:</strong> ${phone}</p>
+          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
           <p><strong>Message:</strong></p>
           <blockquote style="border-left: 3px solid #ff751f; padding: 10px; margin-left: 0; background: #f8fafc; font-style: italic;">
-            ${message.replace(/\n/g, "<br>")}
+            ${escapeHtml(message).replace(/\n/g, "<br>")}
           </blockquote>
         </div>
       `,
@@ -440,6 +450,7 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
     const transporter = getTransporter();
     const safeBusiness = escapeHtml(businessName);
     const smtpUser = String(process.env.SMTP_USER || "").trim();
+    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
 
     const isExpired = status === "EXPIRED";
     const subject = isExpired
@@ -457,7 +468,7 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
     const actionText = isExpired ? "Subscribe Now" : "Upgrade Subscription";
 
     await transporter.sendMail({
-      from: `"Zensos" <${smtpUser}>`,
+      from: sender,
       to: email,
       subject: subject,
       text: `${headline}\n\nHi ${businessName},\n\n${message.replace(/<[^>]+>/g, '')}\n\nPlease log in to your dashboard to renew your subscription or choose a different plan:\n${dashboardUrl}`,
@@ -473,6 +484,9 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
           <p style="color:#64748b;margin:24px 0 0;font-size:12px;line-height:1.5;">If you have any questions, please contact our support team.</p>
         </div>
       `,
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
     });
   } catch (err) {
     console.error(`[mailer] Failed to send subscription reminder email to ${email}:`, err?.message || err);
