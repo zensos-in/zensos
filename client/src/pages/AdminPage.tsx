@@ -442,10 +442,12 @@ function DocumentPreview({
   label,
   hint,
   url,
+  token,
 }: {
   label: string;
   hint: string;
   url?: string;
+  token?: string;
 }) {
   const trimmed = String(url || "").trim();
   const [viewUrl, setViewUrl] = useState(trimmed);
@@ -461,7 +463,10 @@ function DocumentPreview({
       return;
     }
     setLoading(true);
-    api.get<{ viewUrl: string }>(`/upload/kyc-view-url?key=${encodeURIComponent(trimmed)}`)
+    api.get<{ viewUrl: string }>(
+      `/upload/kyc-view-url?key=${encodeURIComponent(trimmed)}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+    )
       .then((res) => {
         if (res.data?.viewUrl) {
           setViewUrl(res.data.viewUrl);
@@ -469,7 +474,7 @@ function DocumentPreview({
       })
       .catch((err) => console.error("Failed to load KYC document link:", err))
       .finally(() => setLoading(false));
-  }, [trimmed]);
+  }, [trimmed, token]);
 
   return (
     <div className="space-y-2 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/40">
@@ -1636,16 +1641,19 @@ export function AdminPage() {
                     label="PAN document"
                     hint="PAN card document when provided"
                     url={selectedSeller.panDocumentUrl}
+                    token={token}
                   />
                   <DocumentPreview
                     label="ID proof"
                     hint="Aadhaar, PAN, Passport, Voter ID, Driving Licence"
                     url={selectedSeller.idProofUrl}
+                    token={token}
                   />
                   <DocumentPreview
                     label="Address proof"
                     hint="Utility bill, bank statement, rental agreement"
                     url={selectedSeller.addressProofUrl}
+                    token={token}
                   />
                 </div>
               </SectionCard>

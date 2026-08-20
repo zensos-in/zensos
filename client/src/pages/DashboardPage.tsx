@@ -407,7 +407,7 @@ export function DashboardPage() {
   const [storeCall, setStoreCall] = useState<PhoneParts>(parsePhone(seller?.callNumber || ""));
   const [storeDeliveryMode, setStoreDeliveryMode] = useState<"always_free" | "flat_rate">(seller?.deliveryMode || "always_free");
   const [storeDeliveryCharge, setStoreDeliveryCharge] = useState<string>(String(seller?.defaultDeliveryCharge ?? 0));
-  const [storeFreeDeliveryThreshold, setStoreFreeDeliveryThreshold] = useState<string>(String(seller?.freeDeliveryThreshold ?? 500));
+  const [storeFreeDeliveryThreshold, setStoreFreeDeliveryThreshold] = useState<string>(String(seller?.freeDeliveryThreshold ?? 0));
   const [storePaymentMode, setStorePaymentMode] = useState<PaymentMode>(seller?.paymentMode || "prepaid_only");
   const [banners, setBanners] = useState<Banner[]>(seller?.banners || []);
   const [newBannerUrl, setNewBannerUrl] = useState("");
@@ -486,7 +486,7 @@ export function DashboardPage() {
     setStoreCall(parsePhone(seller.callNumber || ""));
     setStoreDeliveryMode(seller.deliveryMode || "always_free");
     setStoreDeliveryCharge(String(seller.defaultDeliveryCharge ?? 0));
-    setStoreFreeDeliveryThreshold(String(seller.freeDeliveryThreshold ?? 500));
+    setStoreFreeDeliveryThreshold(String(seller.freeDeliveryThreshold ?? 0));
     setStorePaymentMode(seller.paymentMode || "prepaid_only");
     setBanners(seller.banners || []);
     setDraggedBannerIndex(null);
@@ -2494,12 +2494,24 @@ export function DashboardPage() {
                         <div key={prod._id} className={`rounded-2xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${prod.isActive ? "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70" : "border-slate-100 bg-slate-100 opacity-60 dark:border-slate-800 dark:bg-slate-950/70"}`}>
                           {/* Left Side: Image + Name/Category stacked */}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            {getProductImages(prod)[0] ? (
-                              <img 
-                                src={getProductImages(prod)[0]} 
-                                alt="" 
-                                className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl object-cover shrink-0" 
-                              />
+                            {getProductImages(prod).length > 0 ? (
+                              <div className="relative shrink-0">
+                                <div className="flex gap-1.5 overflow-x-auto max-w-[130px] sm:max-w-[170px] snap-x snap-mandatory rounded-xl scrollbar-none py-0.5 touch-pan-x">
+                                  {getProductImages(prod).map((imgUrl, imgIdx) => (
+                                    <img
+                                      key={imgIdx}
+                                      src={imgUrl}
+                                      alt={`${prod.title} ${imgIdx + 1}`}
+                                      className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl object-cover shrink-0 snap-start border border-slate-200 shadow-xs dark:border-slate-700"
+                                    />
+                                  ))}
+                                </div>
+                                {getProductImages(prod).length > 1 && (
+                                  <span className="absolute -bottom-1 -right-1 rounded-full bg-slate-900/80 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-xs shadow-xs">
+                                    {getProductImages(prod).length} imgs
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <div className="h-14 w-14 lg:h-16 lg:w-16 rounded-xl bg-slate-100 dark:bg-slate-850 flex items-center justify-center shrink-0">
                                 <AppIcon name="products" className="text-slate-400 text-2xl" />
@@ -3013,7 +3025,7 @@ export function DashboardPage() {
       {/* ── Order detail modal ── */}
       {viewingOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setViewingOrder(null)}>
-          <div className="relative w-full max-w-lg rounded-3xl border border-white/70 bg-white shadow-2xl overflow-hidden dark:border-teal-900/40 dark:bg-gradient-to-b dark:from-slate-950 dark:to-slate-900" onClick={e => e.stopPropagation()}>
+          <div className="relative flex max-h-[90vh] flex-col w-full max-w-lg rounded-3xl border border-white/70 bg-white shadow-2xl overflow-hidden dark:border-teal-900/40 dark:bg-gradient-to-b dark:from-slate-950 dark:to-slate-900" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-6 py-4 dark:border-teal-900/30">
               <div>
                 <h3 className="font-heading text-lg font-bold text-slate-900">Order Details</h3>
@@ -3028,7 +3040,7 @@ export function DashboardPage() {
                 </button>
               </div>
             </div>
-            <div className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-4 sm:px-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 sm:px-6">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
                   <p className="text-xs font-bold uppercase text-slate-400 mb-1">Customer</p>

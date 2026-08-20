@@ -6,6 +6,12 @@ export const api = axios.create({
   baseURL,
 });
 
+// Synchronously initialize the token from localStorage to prevent race conditions on page refresh
+const initialToken = localStorage.getItem("zensos_token");
+if (initialToken) {
+  api.defaults.headers.common.Authorization = `Bearer ${initialToken}`;
+}
+
 export function setApiToken(token: string | null) {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -29,14 +35,19 @@ api.interceptors.response.use(
     const isAuthRoute = url.includes("/auth/");
 
     if (status === 401 && !isAuthRoute) {
-      // Clear stale credentials
-      localStorage.removeItem("zensos_token");
-      localStorage.removeItem("zensos_seller");
-      setApiToken(null);
+      if (window.location.pathname.startsWith("/admin")) {
+        localStorage.removeItem("zensos_admin_token");
+        window.location.href = "/admin";
+      } else {
+        // Clear stale credentials
+        localStorage.removeItem("zensos_token");
+        localStorage.removeItem("zensos_seller");
+        setApiToken(null);
 
-      // Redirect to login if not already there
-      if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
+        // Redirect to login if not already there
+        if (!window.location.pathname.startsWith("/login")) {
+          window.location.href = "/login";
+        }
       }
     }
 

@@ -328,30 +328,43 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   const greeting = businessName ? `Hi ${escapeHtml(businessName)},` : "Hello,";
   const content = getOtpEmailContent({ purpose, intent, businessName, productTitle });
 
+  const sender = process.env.SMTP_FROM || `"Zensos" <${process.env.SMTP_USER}>`;
+
   await transporter.sendMail({
-    from: `"Zensos" <${process.env.SMTP_USER}>`,
+    from: sender,
     to: toEmail,
     subject: content.subject,
     text: buildOtpEmailText({ otp, plainGreeting, content }),
     html: buildOtpEmailHtml({ otp, greeting, content }),
+    headers: {
+      "X-Auto-Response-Suppress": "OOF, AutoReply",
+      "X-Priority": "1",
+      "Priority": "high",
+      "Importance": "high",
+    },
   });
 }
 
 async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
   const transporter = getTransporter();
   const sellerName = orders[0]?.seller?.businessName || "your order";
+  const sender = process.env.SMTP_FROM || `"Zensos" <${process.env.SMTP_USER}>`;
 
   await transporter.sendMail({
-    from: `"Zensos" <${process.env.SMTP_USER}>`,
+    from: sender,
     to: toEmail,
     subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
     text: buildOrderConfirmationEmailText({ parentOrder, orders }),
     html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
+    headers: {
+      "X-Auto-Response-Suppress": "OOF, AutoReply",
+    },
   });
 }
 
 async function sendContactEmail({ name, email, phone, message }) {
   const transporter = getTransporter();
+  const sender = process.env.SMTP_FROM || `"Zensos" <${process.env.SMTP_USER}>`;
   await transporter.sendMail({
     from: `ZENSOS <${email}>`,
     to: "naik@shankaraonline.com",
@@ -391,8 +404,10 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
 
   const actionText = isExpired ? "Subscribe Now" : "Upgrade Subscription";
 
+  const sender = process.env.SMTP_FROM || `"Zensos" <${process.env.SMTP_USER}>`;
+
   await transporter.sendMail({
-    from: `"Zensos" <${process.env.SMTP_USER}>`,
+    from: sender,
     to: email,
     subject: subject,
     text: `${headline}\n\nHi ${businessName},\n\n${message.replace(/<[^>]+>/g, '')}\n\nPlease log in to your dashboard to renew your subscription or choose a different plan:\n${dashboardUrl}`,

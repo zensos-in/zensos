@@ -37,7 +37,7 @@ const PLAN_META: Record<string, { price: string; amountPaise: number; color: str
     amountPaise: 0,
     color: "#10b981",
     subtitle: "15-day free trial",
-    features: ["List up to 5 products", "1 store banner", "Payment gateway", "Basic analytics"],
+    features: ["List up to 10 products", "2 store banner", "Payment gateway", "Basic analytics"],
   },
   STARTER: {
     price: "₹999/mo",
