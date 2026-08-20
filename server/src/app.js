@@ -64,8 +64,20 @@ const authLimiter = rateLimit({
   message: { message: "Too many login/OTP attempts, please try again after 15 minutes." },
 });
 
-// Apply rate limiters
-app.use("/api", apiLimiter);
+const connectDB = require("./config/db");
+
+// Apply rate limiters and DB connection guard to /api routes
+app.use("/api", apiLimiter, async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("[DB Middleware Error]:", error.message);
+    return res.status(500).json({
+      message: `Database connection error: ${error.message || "Failed to connect to MongoDB. Please check MongoDB Atlas network access / MONGO_URI."}`
+    });
+  }
+});
 app.use("/api/auth", authLimiter);
 
 // Store raw body in req.rawBody to support cryptographically verified webhooks
