@@ -529,6 +529,9 @@ export function AdminPage() {
   const [commissionInput, setCommissionInput] = useState("1");
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeActionLoading, setFinanceActionLoading] = useState("");
+  const [envRecovering, setEnvRecovering] = useState(false);
+  const [envRecovered, setEnvRecovered] = useState<Record<string, string> | null>(null);
+  const [envRecoveryMsg, setEnvRecoveryMsg] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [emailSendingId, setEmailSendingId] = useState<string | null>(null);
@@ -647,6 +650,36 @@ export function AdminPage() {
       setError("Unable to load platform revenue.");
     } finally {
       setFinanceLoading(false);
+    }
+  }
+
+  async function captureEnv() {
+    if (!token) return;
+    setEnvRecovering(true);
+    setEnvRecoveryMsg("");
+    setEnvRecovered(null);
+    try {
+      const res = await api.post("/admin/recover-env", {}, { headers: authHeaders });
+      setEnvRecoveryMsg(`✅ Captured ${res.data.totalKeys} variables at ${new Date(res.data.capturedAt).toLocaleString()}. Click "View Saved Keys" to read them.`);
+    } catch (err: any) {
+      setEnvRecoveryMsg(`❌ Capture failed: ${err?.response?.data?.message || err?.message || "Unknown error"}`);
+    } finally {
+      setEnvRecovering(false);
+    }
+  }
+
+  async function fetchSavedEnv() {
+    if (!token) return;
+    setEnvRecovering(true);
+    setEnvRecoveryMsg("");
+    try {
+      const res = await api.get("/admin/recover-env/latest", { headers: authHeaders });
+      setEnvRecovered(res.data.env as Record<string, string>);
+      setEnvRecoveryMsg(`Showing ${res.data.totalKeys} variables captured at ${new Date(res.data.capturedAt).toLocaleString()}.`);
+    } catch (err: any) {
+      setEnvRecoveryMsg(`❌ ${err?.response?.data?.message || "No snapshot found. Click 'Capture Now' first."}`);
+    } finally {
+      setEnvRecovering(false);
     }
   }
 
@@ -1055,6 +1088,69 @@ export function AdminPage() {
             Refresh
           </Button>
         </div>
+
+        {/* ── ENV RECOVERY ───────────────────────────────────────────── */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400">🔑 Environment Variable Recovery</p>
+          <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
+            Capture the live server environment variables into the database for backup/recovery.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              onClick={() => void captureEnv()}
+              loading={envRecovering}
+              variant="secondary"
+              className="text-sm"
+            >
+              📸 Capture Now
+            </Button>
+            <Button
+              onClick={() => void fetchSavedEnv()}
+              loading={envRecovering}
+              variant="secondary"
+              className="text-sm"
+            >
+              👁️ View Saved Keys
+            </Button>
+            {envRecovered && (
+              <Button
+                onClick={() => setEnvRecovered(null)}
+                variant="secondary"
+                className="text-sm"
+              >
+                Hide
+              </Button>
+            )}
+          </div>
+
+          {envRecoveryMsg && (
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{envRecoveryMsg}</p>
+          )}
+
+          {envRecovered && (
+            <div className="mt-3 max-h-96 overflow-y-auto rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-slate-400">Key</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-slate-400">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(envRecovered)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([key, value]) => (
+                      <tr key={key} className="border-b border-slate-50 last:border-0 dark:border-slate-800/60">
+                        <td className="px-3 py-1.5 font-mono font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap">{key}</td>
+                        <td className="px-3 py-1.5 font-mono text-slate-600 dark:text-slate-300 break-all">{value || <span className="italic text-slate-400">(empty)</span>}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        {/* ────────────────────────────────────────────────────────────── */}
 
         <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr]">
           <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
