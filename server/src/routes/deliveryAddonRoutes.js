@@ -13,7 +13,7 @@ const DELIVERY_ADDON_PRICE = 200; // Flat ₹200 charge
 router.get("/status", auth, async (req, res) => {
   try {
     const seller = await Seller.findById(req.sellerId).select(
-      "currentPlan subscriptionStatus subscriptionEndDate deliveryAddonStatus deliveryAddonExpiresAt shiprocketPickupLocation courierPreference businessName businessAddress businessGST phone businessEmail"
+      "currentPlan subscriptionStatus subscriptionEndDate deliveryAddonStatus deliveryAddonExpiresAt preferredLogisticsProvider shiprocketEmail shiprocketAccountStatus nimbuspostEmail nimbuspostAccountStatus velocityEmail velocityAccountStatus shiprocketPickupLocation courierPreference businessName businessAddress businessGST phone businessEmail"
     );
 
     if (!seller) {
@@ -43,6 +43,13 @@ router.get("/status", auth, async (req, res) => {
         subscriptionEndDate: seller.subscriptionEndDate,
         deliveryAddonStatus: isAddonActive ? "ACTIVE" : seller.deliveryAddonStatus,
         deliveryAddonExpiresAt: seller.deliveryAddonExpiresAt,
+        preferredLogisticsProvider: seller.preferredLogisticsProvider || "SHIPROCKET",
+        shiprocketEmail: seller.shiprocketEmail || "",
+        shiprocketAccountStatus: seller.shiprocketAccountStatus || "UNCONFIGURED",
+        nimbuspostEmail: seller.nimbuspostEmail || "",
+        nimbuspostAccountStatus: seller.nimbuspostAccountStatus || "UNCONFIGURED",
+        velocityEmail: seller.velocityEmail || "",
+        velocityAccountStatus: seller.velocityAccountStatus || "UNCONFIGURED",
         shiprocketPickupLocation: seller.shiprocketPickupLocation,
         courierPreference: seller.courierPreference || "BEST_AVAILABLE",
       },

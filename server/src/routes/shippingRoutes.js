@@ -3,12 +3,18 @@ const Seller = require("../models/Seller");
 const Order = require("../models/Order");
 const Shipment = require("../models/Shipment");
 const DeliverySubscription = require("../models/DeliverySubscription");
+const WebhookLog = require("../models/WebhookLog");
 const auth = require("../middleware/auth");
 const checkSubscription = require("../middleware/checkSubscription");
 const {
   addPickupLocation,
   checkServiceability,
   createShiprocketOrder,
+  assignAwb,
+  generatePickup,
+  generateLabel,
+  generateManifest,
+  cancelShiprocketOrder,
   getTrackingByAwb,
 } = require("../utils/shiprocket");
 const { syncOrderStatusFromShipment } = require("../utils/shipmentService");
@@ -45,6 +51,51 @@ async function isShippingEligible(seller) {
 
   return Boolean(isMainSubActive && isAddonActive);
 }
+
+// ─── PUT /api/shipping/provider ──────────────────────────────────────────────
+// Allows seller to switch preferred logistics provider (SHIPROCKET, NIMBUSPOST, VELOCITY, SELF_MANUAL)
+router.put("/provider", auth, async (req, res) => {
+  try {
+    const { provider, email, password } = req.body || {};
+    const validProviders = ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "SELF_MANUAL"];
+
+    if (!validProviders.includes(provider)) {
+      return res.status(400).json({ message: "Invalid logistics provider selected" });
+    }
+
+    const seller = await Seller.findById(req.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+
+    seller.preferredLogisticsProvider = provider;
+
+    // Save provider specific credentials if provided
+    if (provider === "SHIPROCKET" && email && password) {
+      seller.shiprocketEmail = String(email).trim();
+      seller.shiprocketPassword = String(password);
+      seller.shiprocketAccountStatus = "CONNECTED";
+    } else if (provider === "NIMBUSPOST" && email && password) {
+      seller.nimbuspostEmail = String(email).trim();
+      seller.nimbuspostPassword = String(password);
+      seller.nimbuspostAccountStatus = "CONNECTED";
+    } else if (provider === "VELOCITY" && email && password) {
+      seller.velocityEmail = String(email).trim();
+      seller.velocityPassword = String(password);
+      seller.velocityAccountStatus = "CONNECTED";
+    }
+
+    await seller.save();
+
+    return res.json({
+      message: `Logistics provider updated to ${provider}. All freight charges are processed directly via your provider account.`,
+      preferredLogisticsProvider: seller.preferredLogisticsProvider,
+    });
+  } catch (error) {
+    console.error("[PUT /shipping/provider error]", error);
+    return res.status(500).json({ message: "Unable to update logistics provider" });
+  }
+});
 
 // ─── POST /api/shipping/onboarding/setup ─────────────────────────────────────
 router.post("/onboarding/setup", auth, async (req, res) => {
@@ -315,33 +366,234 @@ router.get("/track/:orderId", async (req, res) => {
   }
 });
 
+// ─── POST /api/shipping/shipments/:shipmentId/assign-awb ─────────────────────
+router.post("/shipments/:shipmentId/assign-awb", auth, async (req, res) => {
+  try {
+    const { courierId } = req.body;
+    const shipment = await Shipment.findById(req.params.shipmentId);
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    if (String(shipment.seller) !== String(req.sellerId)) {
+      return res.status(403).json({ message: "Not authorized to manage this shipment" });
+    }
+
+    if (!shipment.shiprocketShipmentId) {
+      return res.status(400).json({ message: "No Shiprocket shipment ID associated with this shipment" });
+    }
+
+    const result = await assignAwb({
+      shipmentId: shipment.shiprocketShipmentId,
+      courierId: courierId ? Number(courierId) : undefined,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ message: "Failed to assign AWB", error: result.error });
+    }
+
+    shipment.awbCode = result.awbCode || shipment.awbCode;
+    if (result.courierName) shipment.courierName = result.courierName;
+    if (result.courierCompanyId) shipment.courierCompanyId = result.courierCompanyId;
+    shipment.statusLabel = "AWB Assigned";
+    shipment.trackingUrl = result.awbCode ? `https://shiprocket.co/tracking/${result.awbCode}` : shipment.trackingUrl;
+    await shipment.save();
+
+    return res.json({ message: "AWB assigned successfully", shipment });
+  } catch (error) {
+    console.error("[POST /shipping/shipments/assign-awb error]", error);
+    return res.status(500).json({ message: "Unable to assign AWB" });
+  }
+});
+
+// ─── POST /api/shipping/shipments/:shipmentId/schedule-pickup ────────────────
+router.post("/shipments/:shipmentId/schedule-pickup", auth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.shipmentId);
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    if (String(shipment.seller) !== String(req.sellerId)) {
+      return res.status(403).json({ message: "Not authorized to manage this shipment" });
+    }
+
+    if (!shipment.shiprocketShipmentId) {
+      return res.status(400).json({ message: "No Shiprocket shipment ID associated" });
+    }
+
+    const result = await generatePickup({ shipmentId: shipment.shiprocketShipmentId });
+    if (!result.success) {
+      return res.status(400).json({ message: "Failed to schedule pickup", error: result.error });
+    }
+
+    shipment.status = "PICKUP_SCHEDULED";
+    shipment.statusLabel = "Pickup Scheduled";
+    await shipment.save();
+
+    return res.json({ message: "Pickup scheduled successfully", shipment });
+  } catch (error) {
+    console.error("[POST /shipping/shipments/schedule-pickup error]", error);
+    return res.status(500).json({ message: "Unable to schedule pickup" });
+  }
+});
+
+// ─── GET /api/shipping/shipments/:shipmentId/label ───────────────────────────
+router.get("/shipments/:shipmentId/label", auth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.shipmentId);
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    if (String(shipment.seller) !== String(req.sellerId)) {
+      return res.status(403).json({ message: "Not authorized to access this label" });
+    }
+
+    if (!shipment.shiprocketShipmentId) {
+      return res.status(400).json({ message: "No Shiprocket shipment ID associated" });
+    }
+
+    const result = await generateLabel({ shipmentId: shipment.shiprocketShipmentId });
+    if (!result.success) {
+      return res.status(400).json({ message: "Failed to generate label", error: result.error });
+    }
+
+    shipment.labelUrl = result.labelUrl || shipment.labelUrl;
+    await shipment.save();
+
+    return res.json({ labelUrl: result.labelUrl });
+  } catch (error) {
+    console.error("[GET /shipping/shipments/label error]", error);
+    return res.status(500).json({ message: "Unable to fetch label" });
+  }
+});
+
+// ─── GET /api/shipping/shipments/:shipmentId/manifest ────────────────────────
+router.get("/shipments/:shipmentId/manifest", auth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.shipmentId);
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    if (String(shipment.seller) !== String(req.sellerId)) {
+      return res.status(403).json({ message: "Not authorized to access this manifest" });
+    }
+
+    if (!shipment.shiprocketShipmentId) {
+      return res.status(400).json({ message: "No Shiprocket shipment ID associated" });
+    }
+
+    const result = await generateManifest({ shipmentId: shipment.shiprocketShipmentId });
+    if (!result.success) {
+      return res.status(400).json({ message: "Failed to generate manifest", error: result.error });
+    }
+
+    shipment.manifestUrl = result.manifestUrl || shipment.manifestUrl;
+    await shipment.save();
+
+    return res.json({ manifestUrl: result.manifestUrl });
+  } catch (error) {
+    console.error("[GET /shipping/shipments/manifest error]", error);
+    return res.status(500).json({ message: "Unable to fetch manifest" });
+  }
+});
+
+// ─── POST /api/shipping/shipments/:shipmentId/cancel ─────────────────────────
+router.post("/shipments/:shipmentId/cancel", auth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.shipmentId);
+
+    if (!shipment) {
+      return res.status(404).json({ message: "Shipment not found" });
+    }
+
+    if (String(shipment.seller) !== String(req.sellerId)) {
+      return res.status(403).json({ message: "Not authorized to cancel this shipment" });
+    }
+
+    if (shipment.shiprocketOrderId) {
+      await cancelShiprocketOrder({ orderIds: [shipment.shiprocketOrderId] });
+    }
+
+    shipment.status = "CANCELLED";
+    shipment.statusLabel = "Shipment Cancelled";
+    await shipment.save();
+
+    await syncOrderStatusFromShipment(shipment);
+
+    return res.json({ message: "Shipment cancelled successfully", shipment });
+  } catch (error) {
+    console.error("[POST /shipping/shipments/cancel error]", error);
+    return res.status(500).json({ message: "Unable to cancel shipment" });
+  }
+});
+
 // ─── POST /api/shipping/webhook ──────────────────────────────────────────────
 router.post("/webhook", async (req, res) => {
   try {
-    const { awb, current_status, scans } = req.body;
+    const secret = process.env.SHIPROCKET_WEBHOOK_SECRET;
+    if (secret) {
+      const authHeader = req.headers["x-api-key"] || req.headers["authorization"] || "";
+      const cleanToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (cleanToken && cleanToken !== secret) {
+        return res.status(401).json({ message: "Invalid webhook token" });
+      }
+    }
+
+    const body = req.body || {};
+    const awb = body.awb || body.awb_code || body.shipment_track?.awb_code;
+    const currentStatus = body.current_status || body.current_status_name || body.shipment_status;
+    const scans = body.scans || body.shipment_track_activities || body.scans_data || [];
+
+    const eventId = `sr_wh_${awb || "no_awb"}_${currentStatus || "status"}_${Date.now()}`;
+
+    // Log webhook payload to database
+    let webhookLog;
+    try {
+      webhookLog = await WebhookLog.create({
+        eventId,
+        eventType: `SHIPROCKET_${String(currentStatus || "EVENT").toUpperCase().replace(/\s+/g, "_")}`,
+        payload: body,
+      });
+    } catch (logErr) {
+      console.warn("[Shiprocket Webhook Log Warning]", logErr.message);
+    }
+
     if (!awb) {
       return res.status(200).json({ status: "ignored_no_awb" });
     }
 
     const shipment = await Shipment.findOne({ awbCode: awb });
     if (!shipment) {
+      if (webhookLog) {
+        webhookLog.error = "Shipment record not found for AWB";
+        await webhookLog.save();
+      }
       return res.status(200).json({ status: "shipment_not_found" });
     }
 
-    if (current_status) {
-      shipment.statusLabel = current_status;
-      const statusUpper = String(current_status).toUpperCase();
+    if (currentStatus) {
+      shipment.statusLabel = currentStatus;
+      const statusUpper = String(currentStatus).toUpperCase();
+
       if (statusUpper.includes("DELIVERED")) shipment.status = "DELIVERED";
       else if (statusUpper.includes("OUT FOR DELIVERY")) shipment.status = "OUT_FOR_DELIVERY";
       else if (statusUpper.includes("IN TRANSIT")) shipment.status = "IN_TRANSIT";
-      else if (statusUpper.includes("PICKED")) shipment.status = "PICKED_UP";
+      else if (statusUpper.includes("PICKED") || statusUpper.includes("PICKUP")) shipment.status = "PICKED_UP";
       else if (statusUpper.includes("RTO")) shipment.status = "RTO";
+      else if (statusUpper.includes("RETURN")) shipment.status = "RETURN";
       else if (statusUpper.includes("CANCEL")) shipment.status = "CANCELLED";
     }
 
-    if (Array.isArray(scans)) {
+    if (Array.isArray(scans) && scans.length > 0) {
       shipment.trackingEvents = scans.map((s) => ({
-        status: s["sr-status"] || "UPDATE",
+        status: s["sr-status"] || s.status || "UPDATE",
         activity: s.activity || s.location || "Status Update",
         location: s.location || "",
         timestamp: s.date ? new Date(s.date) : new Date(),
@@ -351,10 +603,16 @@ router.post("/webhook", async (req, res) => {
     await shipment.save();
     await syncOrderStatusFromShipment(shipment);
 
+    if (webhookLog) {
+      webhookLog.processed = true;
+      webhookLog.processedAt = new Date();
+      await webhookLog.save();
+    }
+
     return res.status(200).json({ status: "ok" });
   } catch (error) {
     console.error("[Shiprocket Webhook Error]", error);
-    return res.status(500).json({ message: "Webhook error" });
+    return res.status(500).json({ message: "Webhook processing error" });
   }
 });
 

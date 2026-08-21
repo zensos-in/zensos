@@ -62,6 +62,7 @@ async function autoSetupPickupLocation(sellerDocOrId) {
       city: addressParts.city || "Bengaluru",
       state: addressParts.state || "Karnataka",
       pincode: addressParts.pincode || "560001",
+      seller,
     });
 
     if (resLocation.success) {
@@ -121,7 +122,8 @@ async function createShipmentForSubOrder(subOrderOrId, parentOrderOrId, sellerDo
       },
     ];
 
-    const srResult = await createShiprocketOrder({
+    const { createShipmentOrder } = require("./logisticsManager");
+    const srResult = await createShipmentOrder({
       orderId: subOrder._id,
       orderDate: subOrder.createdAt || new Date(),
       pickupLocation,
@@ -135,18 +137,20 @@ async function createShipmentForSubOrder(subOrderOrId, parentOrderOrId, sellerDo
       orderItems: items,
       paymentMethod: subOrder.paymentMethod === "cod" ? "COD" : "Prepaid",
       subTotal: subOrder.amount,
+      seller,
     });
 
     if (!srResult.success) {
-      console.warn(`[ShipmentService] Could not create Shiprocket shipment for order ${subOrder._id}:`, srResult.error);
+      console.warn(`[ShipmentService] Could not create shipment for order ${subOrder._id}:`, srResult.error);
       return null;
     }
 
+    const providerName = seller.preferredLogisticsProvider || "SHIPROCKET";
     const shipment = await Shipment.create({
       order: subOrder._id,
       parentOrder: parentOrder._id,
       seller: seller._id,
-      provider: "SHIPROCKET",
+      provider: providerName,
       shiprocketOrderId: srResult.shiprocketOrderId,
       shiprocketShipmentId: srResult.shiprocketShipmentId,
       awbCode: srResult.awbCode || "",
@@ -159,7 +163,7 @@ async function createShipmentForSubOrder(subOrderOrId, parentOrderOrId, sellerDo
       trackingEvents: [
         {
           status: "CREATED",
-          activity: "Shipment Created via Shiprocket",
+          activity: `Shipment Created via ${providerName}`,
           location: sellerAddr.city || "Vendor Warehouse",
           timestamp: new Date(),
         },

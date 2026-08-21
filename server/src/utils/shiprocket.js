@@ -6,18 +6,63 @@ let cachedToken = null;
 let tokenExpiresAt = null;
 
 /**
- * Get active Shiprocket API token. Refresh if expired.
+ * Get active Shiprocket API token for a seller or master account. Refresh if expired.
  */
-async function getShiprocketToken() {
+async function getShiprocketToken(sellerDocOrId = null) {
+  let seller = null;
+  if (sellerDocOrId) {
+    if (typeof sellerDocOrId === "object" && sellerDocOrId._id) {
+      seller = sellerDocOrId;
+    } else {
+      try {
+        const Seller = require("../models/Seller");
+        seller = await Seller.findById(sellerDocOrId);
+      } catch (err) {
+        seller = null;
+      }
+    }
+  }
+
+  // 1. If seller has their own Shiprocket credentials configured
+  if (seller && seller.shiprocketEmail && seller.shiprocketPassword) {
+    if (
+      seller.shiprocketApiToken &&
+      seller.shiprocketTokenExpiresAt &&
+      Date.now() < new Date(seller.shiprocketTokenExpiresAt).getTime() - 60 * 60 * 1000
+    ) {
+      return seller.shiprocketApiToken;
+    }
+
+    try {
+      const response = await axios.post(`${SHIPROCKET_BASE_URL}/auth/login`, {
+        email: seller.shiprocketEmail,
+        password: seller.shiprocketPassword,
+      });
+
+      if (response.data && response.data.token) {
+        const token = response.data.token;
+        seller.shiprocketApiToken = token;
+        seller.shiprocketTokenExpiresAt = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000);
+        seller.shiprocketAccountStatus = "CONNECTED";
+        await seller.save();
+        return token;
+      }
+    } catch (error) {
+      console.error(`[Shiprocket Seller Auth Error for ${seller._id}]`, error?.response?.data || error.message);
+      seller.shiprocketAccountStatus = "FAILED";
+      await seller.save();
+      throw new Error(`Shiprocket auth failed for seller: ${error?.response?.data?.message || error.message}`);
+    }
+  }
+
+  // 2. Fallback to master credentials in process.env
   const email = process.env.SHIPROCKET_EMAIL;
   const password = process.env.SHIPROCKET_PASSWORD;
 
   if (!email || !password) {
-    // Return mock indicator if credentials are not set (e.g. in test / dev environment without live keys)
     return "MOCK_SHIPROCKET_TOKEN";
   }
 
-  // Token is valid for 10 days; refresh if within 1 hour of expiry
   if (cachedToken && tokenExpiresAt && Date.now() < tokenExpiresAt - 60 * 60 * 1000) {
     return cachedToken;
   }
@@ -30,14 +75,13 @@ async function getShiprocketToken() {
 
     if (response.data && response.data.token) {
       cachedToken = response.data.token;
-      // 10 days minus buffer
       tokenExpiresAt = Date.now() + 9 * 24 * 60 * 60 * 1000;
       return cachedToken;
     }
 
     throw new Error("Shiprocket auth response did not include token");
   } catch (error) {
-    console.error("[Shiprocket Auth Error]", error?.response?.data || error.message);
+    console.error("[Shiprocket Master Auth Error]", error?.response?.data || error.message);
     throw new Error("Failed to authenticate with Shiprocket API");
   }
 }
@@ -56,8 +100,9 @@ async function addPickupLocation({
   state,
   pincode,
   country = "India",
+  seller = null,
 }) {
-  const token = await getShiprocketToken();
+  const token = await getShiprocketToken(seller);
   if (token === "MOCK_SHIPROCKET_TOKEN") {
     return { success: true, isMock: true, locationName: locationName || `Pickup_${Date.now()}` };
   }
@@ -99,8 +144,8 @@ async function addPickupLocation({
 /**
  * Check courier serviceability for a delivery route
  */
-async function checkServiceability({ pickupPincode, deliveryPincode, weightKg = 0.5, cod = false }) {
-  const token = await getShiprocketToken();
+async function checkServiceability({ pickupPincode, deliveryPincode, weightKg = 0.5, cod = false, seller = null }) {
+  const token = await getShiprocketToken(seller);
   if (token === "MOCK_SHIPROCKET_TOKEN") {
     return {
       availableCouriers: [
@@ -158,8 +203,10 @@ async function createShiprocketOrder({
   paymentMethod = "Prepaid",
   subTotal,
   weightKg = 0.5,
+  autoAssignAwb = true,
+  seller = null,
 }) {
-  const token = await getShiprocketToken();
+  const token = await getShiprocketToken(seller);
   if (token === "MOCK_SHIPROCKET_TOKEN") {
     const mockShipmentId = Math.floor(1000000 + Math.random() * 9000000);
     const mockOrderId = Math.floor(10000000 + Math.random() * 90000000);
@@ -215,12 +262,12 @@ async function createShiprocketOrder({
     const shiprocketOrderId = resData.order_id;
     const shiprocketShipmentId = resData.shipment_id;
 
-    // Assign AWB automatically
+    // Assign AWB automatically if enabled
     let awbCode = "";
     let courierName = "";
     let courierCompanyId = null;
 
-    if (shiprocketShipmentId) {
+    if (autoAssignAwb && shiprocketShipmentId) {
       try {
         const awbRes = await axios.post(
           `${SHIPROCKET_BASE_URL}/courier/assign/awb`,
@@ -245,7 +292,7 @@ async function createShiprocketOrder({
       awbCode,
       courierName,
       courierCompanyId,
-      statusLabel: "Shipment Created",
+      statusLabel: awbCode ? "AWB Assigned" : "Order Created",
       trackingUrl: awbCode ? `https://shiprocket.co/tracking/${awbCode}` : "",
       raw: resData,
     };
@@ -254,6 +301,215 @@ async function createShiprocketOrder({
     return {
       success: false,
       error: error?.response?.data?.message || error.message || "Failed to create shipment in Shiprocket",
+    };
+  }
+}
+
+/**
+ * Assign AWB & Courier manually for a shipment
+ */
+async function assignAwb({ shipmentId, courierId, seller = null }) {
+  const token = await getShiprocketToken(seller);
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    const mockAwb = `AWB${Math.floor(100000000 + Math.random() * 900000000)}`;
+    return {
+      success: true,
+      isMock: true,
+      awbCode: mockAwb,
+      courierName: "Delhivery Express (Mock)",
+      courierCompanyId: courierId || 1,
+    };
+  }
+
+  try {
+    const payload = { shipment_id: shipmentId };
+    if (courierId) {
+      payload.courier_id = courierId;
+    }
+    const response = await axios.post(`${SHIPROCKET_BASE_URL}/courier/assign/awb`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = response.data?.response?.data || {};
+    return {
+      success: true,
+      awbCode: data.awb_code || "",
+      courierName: data.courier_name || "",
+      courierCompanyId: data.courier_company_id || null,
+      raw: response.data,
+    };
+  } catch (error) {
+    console.error("[Shiprocket Assign AWB Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      error: error?.response?.data?.message || error.message || "Failed to assign AWB",
+    };
+  }
+}
+
+/**
+ * Generate pickup request for shipment(s)
+ */
+async function generatePickup({ shipmentId, seller = null }) {
+  const token = await getShiprocketToken(seller);
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    return {
+      success: true,
+      isMock: true,
+      statusLabel: "Pickup Scheduled",
+    };
+  }
+
+  try {
+    const response = await axios.post(
+      `${SHIPROCKET_BASE_URL}/courier/generate/pickup`,
+      { shipment_id: [shipmentId] },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+      statusLabel: "Pickup Scheduled",
+    };
+  } catch (error) {
+    console.error("[Shiprocket Pickup Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      error: error?.response?.data?.message || error.message || "Failed to schedule pickup",
+    };
+  }
+}
+
+/**
+ * Generate PDF shipping label for shipment(s)
+ */
+async function generateLabel({ shipmentId, seller = null }) {
+  const token = await getShiprocketToken(seller);
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    return {
+      success: true,
+      isMock: true,
+      labelUrl: `https://shiprocket.co/mock_label_${shipmentId}.pdf`,
+    };
+  }
+
+  try {
+    const response = await axios.post(
+      `${SHIPROCKET_BASE_URL}/courier/generate/label`,
+      { shipment_id: [shipmentId] },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return {
+      success: true,
+      labelUrl: response.data?.label_url || "",
+      raw: response.data,
+    };
+  } catch (error) {
+    console.error("[Shiprocket Generate Label Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      error: error?.response?.data?.message || error.message || "Failed to generate label",
+    };
+  }
+}
+
+/**
+ * Generate Manifest PDF for shipment(s)
+ */
+async function generateManifest({ shipmentId, seller = null }) {
+  const token = await getShiprocketToken(seller);
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    return {
+      success: true,
+      isMock: true,
+      manifestUrl: `https://shiprocket.co/mock_manifest_${shipmentId}.pdf`,
+    };
+  }
+
+  try {
+    const response = await axios.post(
+      `${SHIPROCKET_BASE_URL}/manifests/generate`,
+      { shipment_id: [shipmentId] },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return {
+      success: true,
+      manifestUrl: response.data?.manifest_url || "",
+      raw: response.data,
+    };
+  } catch (error) {
+    console.error("[Shiprocket Generate Manifest Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      error: error?.response?.data?.message || error.message || "Failed to generate manifest",
+    };
+  }
+}
+
+/**
+ * Cancel an order in Shiprocket
+ */
+async function cancelShiprocketOrder({ orderIds, seller = null }) {
+  const token = await getShiprocketToken(seller);
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    return { success: true, isMock: true };
+  }
+
+  try {
+    const response = await axios.post(
+      `${SHIPROCKET_BASE_URL}/orders/cancel`,
+      { ids: Array.isArray(orderIds) ? orderIds : [orderIds] },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("[Shiprocket Cancel Order Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      error: error?.response?.data?.message || error.message || "Failed to cancel Shiprocket order",
+    };
+  }
+}
+
+/**
+ * Fetch Shiprocket master wallet balance
+ */
+async function getWalletBalance() {
+  const token = await getShiprocketToken();
+  if (token === "MOCK_SHIPROCKET_TOKEN") {
+    return {
+      success: true,
+      isMock: true,
+      balance: 2500.00,
+      currency: "INR",
+    };
+  }
+
+  try {
+    const response = await axios.get(`${SHIPROCKET_BASE_URL}/account/details/wallet-balance`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const balance = Number(response.data?.data?.balance ?? response.data?.balance ?? 0);
+    return {
+      success: true,
+      balance,
+      currency: "INR",
+      raw: response.data,
+    };
+  } catch (error) {
+    console.error("[Shiprocket Wallet Balance Error]", error?.response?.data || error.message);
+    return {
+      success: false,
+      balance: 0,
+      error: error?.response?.data?.message || error.message || "Failed to fetch wallet balance",
     };
   }
 }
@@ -310,5 +566,11 @@ module.exports = {
   addPickupLocation,
   checkServiceability,
   createShiprocketOrder,
+  assignAwb,
+  generatePickup,
+  generateLabel,
+  generateManifest,
+  cancelShiprocketOrder,
+  getWalletBalance,
   getTrackingByAwb,
 };
