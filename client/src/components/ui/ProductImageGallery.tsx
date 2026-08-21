@@ -26,6 +26,9 @@ export function ProductImageGallery({
   const safeImages = images.filter(Boolean);
   const imageCount = safeImages.length;
 
+  const isDraggingRef = useRef(false);
+  const touchStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const handleScroll = () => {
     const element = scrollRef.current;
     if (!element) return;
@@ -38,12 +41,33 @@ export function ProductImageGallery({
   };
 
   const openLightbox = (index: number) => {
+    if (isDraggingRef.current) return;
     setLightboxIndex(index);
     setLightboxOpen(true);
   };
 
   const closeLightbox = () => {
     setLightboxOpen(false);
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    isDraggingRef.current = false;
+    if (e.touches[0]) {
+      touchStartPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (e.touches[0]) {
+      const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x);
+      const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y);
+      if (dx > 8 || dy > 8) {
+        isDraggingRef.current = true;
+      }
+    }
   };
 
   useEffect(() => {
@@ -82,13 +106,33 @@ export function ProductImageGallery({
       <div
         className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800 ${className}`}
       >
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex h-full w-full snap-x snap-mandatory overflow-x-auto touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {imageCount > 0 ? (
-            safeImages.map((imageUrl, index) => (
+        {imageCount <= 1 ? (
+          imageCount === 1 ? (
+            <button
+              type="button"
+              onClick={() => openLightbox(0)}
+              className="h-full w-full cursor-zoom-in focus:outline-none"
+            >
+              <img
+                src={safeImages[0]}
+                alt={`${title} image 1`}
+                className="h-full w-full object-cover"
+                draggable={false}
+              />
+            </button>
+          ) : (
+            <div className="h-full w-full bg-slate-200 dark:bg-slate-900" />
+          )
+        ) : (
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {safeImages.map((imageUrl, index) => (
               <button
                 key={`${productId}-img-${index}`}
                 type="button"
@@ -102,11 +146,9 @@ export function ProductImageGallery({
                   draggable={false}
                 />
               </button>
-            ))
-          ) : (
-            <div className="h-full w-full bg-slate-200 dark:bg-slate-900" />
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
         {imageCount > 1 && (
           <div className="pointer-events-none absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
@@ -155,7 +197,7 @@ export function ProductImageGallery({
 
                 setLightboxIndex(index);
               }}
-              className="flex h-dvh w-dvw snap-x snap-mandatory overflow-x-auto overflow-y-hidden touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex h-dvh w-dvw snap-x snap-mandatory overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {safeImages.map((imageUrl, index) => (
                 <div
