@@ -35,7 +35,7 @@ import {
   productMatchesCategory,
 } from "../utils/productCategories";
 
-type Tab = "dashboard" | "store" | "products" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
+type Tab = "dashboard" | "store" | "products" | "inventory" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 function normalizePan(value: string) {
@@ -473,6 +473,42 @@ export function DashboardPage() {
 
   const [copyFeedback, setCopyFeedback] = useState("");
   const storeQrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // ── Inventory tab state
+  const [inventorySearch, setInventorySearch] = useState("");
+  const [inventoryFilter, setInventoryFilter] = useState<"all" | "in_stock" | "low_stock" | "out_of_stock">("all");
+  const [inventoryCategory, setInventoryCategory] = useState("");
+  const [inventoryStockDrafts, setInventoryStockDrafts] = useState<Record<string, number>>({});
+  const [inventoryUpdatingKey, setInventoryUpdatingKey] = useState<string | null>(null);
+
+  async function handleQuickStockUpdate(
+    productId: string,
+    variantId: string | undefined,
+    rowKey: string,
+    newStock: number,
+    isOutOfStock?: boolean
+  ) {
+    setInventoryUpdatingKey(rowKey);
+    try {
+      const stockVal = Math.max(0, newStock);
+      const res = await api.patch<{ product: Product }>(`/products/${productId}/stock`, {
+        variantId,
+        stock: stockVal,
+        isOutOfStock: isOutOfStock !== undefined ? isOutOfStock : stockVal <= 0,
+      });
+
+      if (res.data?.product) {
+        setProducts((prev) =>
+          prev.map((p) => (p._id === productId ? res.data.product : p))
+        );
+      }
+      setSuccess("Stock updated successfully.");
+    } catch {
+      setError("Unable to update stock quantity.");
+    } finally {
+      setInventoryUpdatingKey(null);
+    }
+  }
 
   // Sync seller into local form state
   useEffect(() => {
@@ -1395,7 +1431,22 @@ export function DashboardPage() {
   // ── CSV export
   async function handleExport() {
     try {
-      const response = await api.get("/orders/my/export", {
+      const params = new URLSearchParams();
+      if (tab === "reports" && reportDuration) {
+        if (reportDuration.preset) {
+          params.append("preset", reportDuration.preset);
+        }
+        if (reportDuration.startDate) {
+          params.append("startDate", reportDuration.startDate);
+        }
+        if (reportDuration.endDate) {
+          params.append("endDate", reportDuration.endDate);
+        }
+      }
+      const queryString = params.toString();
+      const exportUrl = queryString ? `/orders/my/export?${queryString}` : "/orders/my/export";
+
+      const response = await api.get(exportUrl, {
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -1412,10 +1463,15 @@ export function DashboardPage() {
     }
   }
 
+  const hasInventoryProducts = products.some((p) => p.trackInventory === true);
+
   const tabs: { key: Tab; label: string; icon: Parameters<typeof AppIcon>[0]["name"] }[] = [
     { key: "dashboard", label: t("nav.dashboard", "Dashboard"), icon: "dashboard" },
     { key: "store", label: t("nav.store", "Store Options"), icon: "store" },
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
+    ...(hasInventoryProducts
+      ? [{ key: "inventory" as Tab, label: "Inventory", icon: "inventory" as const }]
+      : []),
     { key: "orders", label: t("nav.orders", "Orders"), icon: "orders" },
     { key: "shipping", label: t("nav.shipping", "Shipping"), icon: "shipping" },
     { key: "reports", label: t("nav.reports", "Reports"), icon: "reports" },
@@ -1479,11 +1535,11 @@ export function DashboardPage() {
       <PricingDrawer open={pricingOpen} onClose={() => setPricingOpen(false)} />
 
       {/* Tab nav */}
-      <nav className="flex gap-2 overflow-x-auto pb-1 pr-1 snap-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
+      <nav className="flex flex-nowrap items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 pr-1 snap-x scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setError(""); setSuccess(""); }}
-            className={`inline-flex shrink-0 snap-start items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${tab === t.key ? "border border-orange-200 bg-orange-50 text-orange-700 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400" : "border border-slate-200 bg-white/90 text-slate-600 hover:border-orange-200 hover:bg-orange-50/50 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:border-orange-900/30 dark:hover:bg-orange-950/20"}`}>
-            <AppIcon name={t.icon} className="text-[20px]" />
+            className={`inline-flex shrink-0 snap-start items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition sm:px-3 sm:text-xs xl:px-3.5 xl:text-[13px] ${tab === t.key ? "border border-orange-200 bg-orange-50 text-orange-700 shadow-sm dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400" : "border border-slate-200 bg-white/90 text-slate-600 hover:border-orange-200 hover:bg-orange-50/50 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-400 dark:hover:border-orange-900/30 dark:hover:bg-orange-950/20"}`}>
+            <AppIcon name={t.icon} className="text-[17px]" />
             {t.label}
             {t.key === "orders" && unreadOrderCount > 0 && (
               <span className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none shadow-sm ring-1 ${tab === t.key ? "!bg-white !text-zinc-950 ring-white/70 dark:!bg-white dark:!text-zinc-950" : "bg-zinc-700 text-white ring-black/5 dark:bg-white dark:text-zinc-950 dark:ring-white/20"}`}>
@@ -2647,48 +2703,108 @@ export function DashboardPage() {
                                 ))}
                               </div>
                               
-                              {/* Variant selection prices & stock */}
-                              {prod.variants.some(v => v.options.length > 0) && (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {prod.variants.flatMap(variant =>
-                                    variant.options.map(option => {
-                                      const priceKey = getVariantPriceKey(variant.label, option);
-                                      const fallbackItem = prod.variantItems?.find(
-                                        (item) => item.variantId === `legacy:${priceKey}` || item.variantId === `legacy:${getVariantPriceKey("Variant", option)}`,
-                                      );
-                                      const variantPrice =
-                                        prod.variantPrices?.[priceKey]
-                                        ?? fallbackItem?.price;
-                                      const variantMrp =
-                                        prod.variantMrps?.[priceKey]
-                                        ?? fallbackItem?.mrp;
-                                      const isOut = prod.trackInventory && (fallbackItem?.isOutOfStock || (fallbackItem?.stock !== undefined && fallbackItem.stock <= 0));
-                                      const isLow = prod.trackInventory && fallbackItem?.stock !== undefined && fallbackItem.stock > 0 && fallbackItem.stock <= 3;
-                                      
+                              {/* Variant selection prices, stock & Active/Inactive visibility */}
+                              {((prod.variants && prod.variants.some(v => v.options.length > 0)) || (prod.variantItems && prod.variantItems.length > 0)) && (
+                                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                  {prod.variants && prod.variants.some(v => v.options.length > 0) ? (
+                                    prod.variants.flatMap(variant =>
+                                      variant.options.map(option => {
+                                        const priceKey = getVariantPriceKey(variant.label, option);
+                                        const fallbackItem = prod.variantItems?.find(
+                                          (item) => item.variantId === `legacy:${priceKey}` || item.variantId === `legacy:${getVariantPriceKey("Variant", option)}` || item.title === option || item.attributes?.[variant.label] === option,
+                                        );
+                                        const variantPrice =
+                                          prod.variantPrices?.[priceKey]
+                                          ?? fallbackItem?.price;
+                                        const variantMrp =
+                                          prod.variantMrps?.[priceKey]
+                                          ?? fallbackItem?.mrp;
+                                        const isInactive = fallbackItem?.isActive === false;
+                                        const isOut = !isInactive && prod.trackInventory && (fallbackItem?.isOutOfStock || (fallbackItem?.stock !== undefined && fallbackItem.stock <= 0));
+                                        const isLow = !isInactive && prod.trackInventory && fallbackItem?.stock !== undefined && fallbackItem.stock > 0 && fallbackItem.stock <= 3;
+
+                                        return (
+                                          <span
+                                            key={option}
+                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                                              isInactive
+                                                ? "border-slate-200 bg-slate-100/90 text-slate-400 opacity-75 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
+                                                : isOut
+                                                  ? "border-rose-200 bg-rose-50 text-rose-700 font-medium dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
+                                                  : isLow
+                                                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400"
+                                                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                                            }`}
+                                          >
+                                            <span className={isInactive ? "line-through" : "font-medium"}>{option}</span>
+                                            {variantPrice ? (
+                                              <>
+                                                {" · ₹"}
+                                                {variantPrice}
+                                                {variantMrp && variantMrp > variantPrice ? (
+                                                  <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
+                                                ) : null}
+                                              </>
+                                            ) : null}
+                                            {isInactive ? (
+                                              <span className="ml-0.5 inline-flex items-center rounded-full bg-slate-200 px-1.5 py-0.2 text-[9px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                                Inactive
+                                              </span>
+                                            ) : (
+                                              <span className="ml-0.5 inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                                Active
+                                              </span>
+                                            )}
+                                            {!isInactive && prod.trackInventory && fallbackItem?.stock !== undefined && (
+                                              <span className={`ml-1 text-[11px] ${isOut ? "text-rose-600 font-bold" : isLow ? "text-amber-700 font-semibold" : "text-teal-600"}`}>
+                                                {isOut ? "• Out of Stock" : `• ${fallbackItem.stock} left`}
+                                              </span>
+                                            )}
+                                          </span>
+                                        );
+                                      })
+                                    )
+                                  ) : (
+                                    prod.variantItems?.map((item, itemIdx) => {
+                                      const isInactive = item.isActive === false;
+                                      const isOut = !isInactive && prod.trackInventory && (item.isOutOfStock || (item.stock !== undefined && item.stock <= 0));
+                                      const isLow = !isInactive && prod.trackInventory && item.stock !== undefined && item.stock > 0 && item.stock <= 3;
+
                                       return (
                                         <span
-                                          key={option}
-                                          className={`rounded-full border px-2 py-0.5 text-xs ${
-                                            isOut
-                                              ? "border-rose-200 bg-rose-50 text-rose-700 font-medium"
-                                              : isLow
-                                                ? "border-amber-200 bg-amber-50 text-amber-700"
-                                                : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                                          key={item.variantId || itemIdx}
+                                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                                            isInactive
+                                              ? "border-slate-200 bg-slate-100/90 text-slate-400 opacity-75 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500"
+                                              : isOut
+                                                ? "border-rose-200 bg-rose-50 text-rose-700 font-medium dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
+                                                : isLow
+                                                  ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400"
+                                                  : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                                           }`}
                                         >
-                                          {option}
-                                          {variantPrice ? (
+                                          <span className={isInactive ? "line-through" : "font-medium"}>{item.title}</span>
+                                          {item.price ? (
                                             <>
                                               {" · ₹"}
-                                              {variantPrice}
-                                              {variantMrp && variantMrp > variantPrice ? (
-                                                <span className="text-slate-400 line-through"> ₹{variantMrp}</span>
+                                              {item.price}
+                                              {item.mrp && item.mrp > item.price ? (
+                                                <span className="text-slate-400 line-through"> ₹{item.mrp}</span>
                                               ) : null}
                                             </>
                                           ) : null}
-                                          {prod.trackInventory && fallbackItem?.stock !== undefined && (
+                                          {isInactive ? (
+                                            <span className="ml-0.5 inline-flex items-center rounded-full bg-slate-200 px-1.5 py-0.2 text-[9px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                                              Inactive
+                                            </span>
+                                          ) : (
+                                            <span className="ml-0.5 inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                              Active
+                                            </span>
+                                          )}
+                                          {!isInactive && prod.trackInventory && item.stock !== undefined && (
                                             <span className={`ml-1 text-[11px] ${isOut ? "text-rose-600 font-bold" : isLow ? "text-amber-700 font-semibold" : "text-teal-600"}`}>
-                                              {isOut ? "• Out of Stock" : `• ${fallbackItem.stock} left`}
+                                              {isOut ? "• Out of Stock" : `• ${item.stock} left`}
                                             </span>
                                           )}
                                         </span>
@@ -2839,6 +2955,468 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ═══════════════════════════════════════ TAB: INVENTORY ══ */}
+      {tab === "inventory" && (() => {
+        // Collect all inventory rows
+        const inventoryRows: {
+          rowKey: string;
+          productId: string;
+          variantId?: string;
+          title: string;
+          variantTitle: string;
+          category: string;
+          imageUrl: string;
+          price: number;
+          mrp: number;
+          stock: number;
+          isOutOfStock: boolean;
+          isActive: boolean;
+        }[] = [];
+
+        for (const prod of products) {
+          if (!prod.trackInventory) continue;
+
+          const hasVariantItems = Array.isArray(prod.variantItems) && prod.variantItems.length > 0;
+          const hasLegacyVariants = Array.isArray(prod.variants) && prod.variants.some((v) => (v.options || []).length > 0);
+
+          if (hasVariantItems) {
+            for (const vItem of prod.variantItems || []) {
+              const isOut = Boolean(vItem.isOutOfStock || (vItem.stock !== undefined && vItem.stock <= 0));
+              inventoryRows.push({
+                rowKey: `${prod._id}-${vItem.variantId || vItem.title}`,
+                productId: prod._id,
+                variantId: vItem.variantId || vItem.title,
+                title: prod.title,
+                variantTitle: vItem.title || "Variant",
+                category: prod.category || (prod.categories && prod.categories[0]) || "General",
+                imageUrl: getProductImages(prod)[0] || "",
+                price: vItem.price || prod.price,
+                mrp: vItem.mrp || prod.mrp,
+                stock: vItem.stock ?? 0,
+                isOutOfStock: isOut,
+                isActive: vItem.isActive !== false && prod.isActive,
+              });
+            }
+          } else if (hasLegacyVariants) {
+            for (const variant of prod.variants || []) {
+              for (const option of variant.options || []) {
+                const priceKey = getVariantPriceKey(variant.label, option);
+                const fallbackItem = prod.variantItems?.find(
+                  (item) =>
+                    item.variantId === `legacy:${priceKey}` ||
+                    item.variantId === `legacy:${getVariantPriceKey("Variant", option)}` ||
+                    item.title === option ||
+                    item.attributes?.[variant.label] === option
+                );
+                const vPrice = prod.variantPrices?.[priceKey] ?? fallbackItem?.price ?? prod.price;
+                const vMrp = prod.variantMrps?.[priceKey] ?? fallbackItem?.mrp ?? prod.mrp;
+                const vStock = fallbackItem?.stock ?? 0;
+                const isOut = Boolean(fallbackItem?.isOutOfStock || (fallbackItem?.stock !== undefined && fallbackItem.stock <= 0));
+
+                inventoryRows.push({
+                  rowKey: `${prod._id}-${priceKey}`,
+                  productId: prod._id,
+                  variantId: `legacy:${priceKey}`,
+                  title: prod.title,
+                  variantTitle: option,
+                  category: prod.category || (prod.categories && prod.categories[0]) || "General",
+                  imageUrl: getProductImages(prod)[0] || "",
+                  price: vPrice,
+                  mrp: vMrp,
+                  stock: vStock,
+                  isOutOfStock: isOut,
+                  isActive: fallbackItem?.isActive !== false && prod.isActive,
+                });
+              }
+            }
+          } else {
+            const isOut = Boolean(prod.isOutOfStock || (prod.stock !== undefined && prod.stock <= 0));
+            inventoryRows.push({
+              rowKey: prod._id,
+              productId: prod._id,
+              variantId: undefined,
+              title: prod.title,
+              variantTitle: "Standard Product",
+              category: prod.category || (prod.categories && prod.categories[0]) || "General",
+              imageUrl: getProductImages(prod)[0] || "",
+              price: prod.price,
+              mrp: prod.mrp,
+              stock: prod.stock ?? 0,
+              isOutOfStock: isOut,
+              isActive: prod.isActive,
+            });
+          }
+        }
+
+        // Metrics
+        const totalItems = inventoryRows.length;
+        const inStockItems = inventoryRows.filter((i) => !i.isOutOfStock && i.stock > 3).length;
+        const lowStockItems = inventoryRows.filter((i) => !i.isOutOfStock && i.stock > 0 && i.stock <= 3).length;
+        const outOfStockItems = inventoryRows.filter((i) => i.isOutOfStock || i.stock <= 0).length;
+
+        // Categories
+        const categoriesList = Array.from(new Set(inventoryRows.map((i) => i.category).filter(Boolean)));
+
+        // Filtering
+        const filteredRows = inventoryRows.filter((row) => {
+          const q = inventorySearch.trim().toLowerCase();
+          const matchSearch =
+            !q ||
+            row.title.toLowerCase().includes(q) ||
+            row.variantTitle.toLowerCase().includes(q) ||
+            row.category.toLowerCase().includes(q);
+
+          let matchStatus = true;
+          if (inventoryFilter === "in_stock") matchStatus = !row.isOutOfStock && row.stock > 3;
+          else if (inventoryFilter === "low_stock") matchStatus = !row.isOutOfStock && row.stock > 0 && row.stock <= 3;
+          else if (inventoryFilter === "out_of_stock") matchStatus = row.isOutOfStock || row.stock <= 0;
+
+          const matchCat = !inventoryCategory || row.category === inventoryCategory;
+
+          return matchSearch && matchStatus && matchCat;
+        });
+
+        return (
+          <div className="space-y-4">
+            {/* Top Stat Metric Cards */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div
+                onClick={() => setInventoryFilter("all")}
+                className={`cursor-pointer rounded-2xl border p-3.5 sm:p-4 transition ${
+                  inventoryFilter === "all"
+                    ? "border-orange-500 bg-orange-50/70 dark:border-orange-500/80 dark:bg-orange-950/30"
+                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tracked</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <AppIcon name="inventory" className="text-[14px]" />
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{totalItems}</p>
+                <p className="mt-0.5 text-xs text-slate-400">Tracked SKU units</p>
+              </div>
+
+              <div
+                onClick={() => setInventoryFilter("in_stock")}
+                className={`cursor-pointer rounded-2xl border p-3.5 sm:p-4 transition ${
+                  inventoryFilter === "in_stock"
+                    ? "border-teal-500 bg-teal-50/70 dark:border-teal-500/80 dark:bg-teal-950/30"
+                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-700 dark:text-teal-400">In Stock</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-400">
+                    <AppIcon name="check" className="text-[14px]" />
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl font-bold text-teal-700 dark:text-teal-400">{inStockItems}</p>
+                <p className="mt-0.5 text-xs text-teal-600/70 dark:text-teal-400/70">Adequate inventory</p>
+              </div>
+
+              <div
+                onClick={() => setInventoryFilter("low_stock")}
+                className={`cursor-pointer rounded-2xl border p-3.5 sm:p-4 transition ${
+                  inventoryFilter === "low_stock"
+                    ? "border-amber-500 bg-amber-50/70 dark:border-amber-500/80 dark:bg-amber-950/30"
+                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Low Stock</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                    ⚠️
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl font-bold text-amber-700 dark:text-amber-400">{lowStockItems}</p>
+                <p className="mt-0.5 text-xs text-amber-600/70 dark:text-amber-400/70">{"\u2264"} 3 units remaining</p>
+              </div>
+
+              <div
+                onClick={() => setInventoryFilter("out_of_stock")}
+                className={`cursor-pointer rounded-2xl border p-3.5 sm:p-4 transition ${
+                  inventoryFilter === "out_of_stock"
+                    ? "border-rose-500 bg-rose-50/70 dark:border-rose-500/80 dark:bg-rose-950/30"
+                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-700 dark:text-rose-400">Out of Stock</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400">
+                    ✕
+                  </span>
+                </div>
+                <p className="mt-2 text-2xl font-bold text-rose-700 dark:text-rose-400">{outOfStockItems}</p>
+                <p className="mt-0.5 text-xs text-rose-600/70 dark:text-rose-400/70">Needs replenishment</p>
+              </div>
+            </div>
+
+            {/* Inventory Management Card */}
+            <article className="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-card sm:p-6 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900">
+              {/* Header & Controls */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+                <div>
+                  <h2 className="font-heading text-lg font-bold text-slate-900 sm:text-xl dark:text-white">Inventory & Stock</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Manage real-time product stock quantities and availability.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadData()}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    <AppIcon name="refresh" className="text-[14px]" /> Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                {/* Search */}
+                <div className="flex flex-1 max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs text-slate-800 transition focus-within:border-orange-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-100/60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus-within:ring-orange-950/40">
+                  <AppIcon name="search" className="text-slate-400 shrink-0 text-[15px]" />
+                  <input
+                    type="text"
+                    value={inventorySearch}
+                    onChange={(e) => setInventorySearch(e.target.value)}
+                    placeholder="Search product, variant, category..."
+                    className="w-full bg-transparent text-xs font-medium text-slate-800 placeholder-slate-400 outline-none dark:text-slate-100"
+                  />
+                  {inventorySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setInventorySearch("")}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
+                    >
+                      <AppIcon name="close" className="text-[12px]" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Category Dropdown */}
+                {categoriesList.length > 0 && (
+                  <select
+                    value={inventoryCategory}
+                    onChange={(e) => setInventoryCategory(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none hover:border-slate-300 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  >
+                    <option value="">All Categories</option>
+                    {categoriesList.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Table Container */}
+              <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3">Product / Item</th>
+                      <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Current Stock</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Quick Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-950/60">
+                    {filteredRows.length > 0 ? (
+                      filteredRows.map((row) => {
+                        const isUpdating = inventoryUpdatingKey === row.rowKey;
+                        const currentDraft = inventoryStockDrafts[row.rowKey] ?? row.stock;
+                        const isOut = row.isOutOfStock || row.stock <= 0;
+                        const isLow = !isOut && row.stock > 0 && row.stock <= 3;
+
+                        return (
+                          <tr
+                            key={row.rowKey}
+                            className="transition hover:bg-slate-50/80 dark:hover:bg-slate-900/40"
+                          >
+                            {/* Product & Variant */}
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                {row.imageUrl ? (
+                                  <img
+                                    src={row.imageUrl}
+                                    alt={row.title}
+                                    className="h-10 w-10 rounded-xl object-cover border border-slate-200 shrink-0 dark:border-slate-700"
+                                  />
+                                ) : (
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-400 shrink-0 dark:bg-slate-800">
+                                    <AppIcon name="products" className="text-lg" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-xs sm:max-w-md">
+                                    {row.title}
+                                  </p>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                                    {row.variantTitle !== "Standard Product" && (
+                                      <span className="inline-block rounded-md bg-orange-50 px-1.5 py-0.5 text-[10px] font-bold text-orange-700 border border-orange-200/60 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-900/40">
+                                        {row.variantTitle}
+                                      </span>
+                                    )}
+                                    <span className="inline-block rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-850 dark:text-slate-400">
+                                      {row.category}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Price */}
+                            <td className="px-4 py-3.5 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                              <span>₹{row.price}</span>
+                              {row.mrp > row.price && (
+                                <span className="ml-1 text-[11px] text-slate-400 line-through">
+                                  ₹{row.mrp}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Stock Quantity Stepper + Update Button */}
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-0.5 shadow-2xs dark:border-slate-700 dark:bg-slate-900">
+                                  <button
+                                    type="button"
+                                    disabled={isUpdating || currentDraft <= 0}
+                                    onClick={() => {
+                                      const next = Math.max(0, currentDraft - 1);
+                                      setInventoryStockDrafts((p) => ({ ...p, [row.rowKey]: next }));
+                                    }}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-white font-bold text-slate-600 shadow-2xs hover:bg-slate-100 hover:text-slate-900 active:scale-95 disabled:opacity-30 transition dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={currentDraft}
+                                    onChange={(e) => {
+                                      const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                      setInventoryStockDrafts((p) => ({ ...p, [row.rowKey]: val }));
+                                    }}
+                                    className="h-7 w-12 bg-transparent text-center font-bold text-slate-900 text-xs outline-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none dark:text-white"
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={isUpdating}
+                                    onClick={() => {
+                                      const next = currentDraft + 1;
+                                      setInventoryStockDrafts((p) => ({ ...p, [row.rowKey]: next }));
+                                    }}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-white font-bold text-slate-600 shadow-2xs hover:bg-slate-100 hover:text-slate-900 active:scale-95 disabled:opacity-30 transition dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                {/* Update Button */}
+                                <button
+                                  type="button"
+                                  disabled={isUpdating}
+                                  onClick={() => {
+                                    void handleQuickStockUpdate(row.productId, row.variantId, row.rowKey, currentDraft);
+                                  }}
+                                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold shadow-xs transition-all duration-150 active:scale-95 ${
+                                    currentDraft !== row.stock
+                                      ? "bg-gradient-to-r from-[#ff751f] to-amber-500 text-white shadow-orange-500/25 hover:from-[#ff8c3a] hover:to-amber-600 ring-2 ring-orange-300/60"
+                                      : "border border-slate-200 bg-slate-900 text-white hover:bg-slate-800 dark:border-slate-700 dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
+                                  }`}
+                                  title="Save updated stock quantity"
+                                >
+                                  {isUpdating ? (
+                                    <>
+                                      <AppIcon name="pending" className="text-[13px] animate-spin" />
+                                      Updating...
+                                    </>
+                                  ) : currentDraft !== row.stock ? (
+                                    <>
+                                      <AppIcon name="check" className="text-[13px]" />
+                                      Save Stock
+                                    </>
+                                  ) : (
+                                    <>
+                                      <AppIcon name="save" className="text-[13px]" />
+                                      Update
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+
+                            {/* Status Badge */}
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              {isOut ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                                  Out of Stock
+                                </span>
+                              ) : isLow ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                  Low Stock ({row.stock})
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:border-teal-900/40 dark:bg-teal-950/30 dark:text-teal-400">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                                  In Stock ({row.stock})
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Quick Action Toggle */}
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                disabled={isUpdating}
+                                onClick={() => {
+                                  if (isOut) {
+                                    // Mark in stock with default 10
+                                    const next = row.stock > 0 ? row.stock : 10;
+                                    setInventoryStockDrafts((p) => ({ ...p, [row.rowKey]: next }));
+                                    void handleQuickStockUpdate(row.productId, row.variantId, row.rowKey, next, false);
+                                  } else {
+                                    // Mark out of stock
+                                    setInventoryStockDrafts((p) => ({ ...p, [row.rowKey]: 0 }));
+                                    void handleQuickStockUpdate(row.productId, row.variantId, row.rowKey, 0, true);
+                                  }
+                                }}
+                                className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                                  isOut
+                                    ? "border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-900/40 dark:bg-teal-950/30 dark:text-teal-400"
+                                    : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-400"
+                                }`}
+                              >
+                                {isOut ? "Set In Stock" : "Set Out of Stock"}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-400">
+                          {totalItems === 0
+                            ? "No products with inventory tracking enabled yet."
+                            : "No inventory items match your search or filter."}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        );
+      })()}
 
       {/* ═══════════════════════════════════════ TAB: ORDERS ══ */}
       {showDeleteProductConfirm && productPendingDelete && (

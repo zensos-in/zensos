@@ -651,6 +651,50 @@ router.put("/:productId", auth, checkSubscription, async (req, res) => {
   }
 });
 
+// ─── PATCH /products/:productId/stock — Fast Stock / Inventory Update (auth) ───
+router.patch("/:productId/stock", auth, checkSubscription, async (req, res) => {
+  try {
+    const { variantId, stock, isOutOfStock } = req.body || {};
+    const product = await Product.findOne({
+      _id: req.params.productId,
+      seller: req.sellerId,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const nextStock = Math.max(0, Number(stock) || 0);
+
+    if (variantId && Array.isArray(product.variantItems) && product.variantItems.length > 0) {
+      const vIdx = product.variantItems.findIndex(
+        (v) => v.variantId === variantId || v.title === variantId || `legacy:${v.title}` === variantId
+      );
+      if (vIdx !== -1) {
+        product.variantItems[vIdx].stock = nextStock;
+        product.variantItems[vIdx].isOutOfStock = isOutOfStock !== undefined ? isOutOfStock === true : nextStock <= 0;
+        product.markModified("variantItems");
+      }
+    } else {
+      product.stock = nextStock;
+      product.isOutOfStock = isOutOfStock !== undefined ? isOutOfStock === true : nextStock <= 0;
+    }
+
+    await product.save();
+
+    await syncProductInventory(product.seller, product._id, {
+      trackInventory: product.trackInventory,
+      variantItems: product.variantItems,
+      stock: product.stock,
+    });
+
+    return res.json({ message: "Stock updated successfully", product });
+  } catch (error) {
+    console.error("[PATCH /products/:productId/stock error]", error);
+    return res.status(500).json({ message: "Unable to update inventory stock" });
+  }
+});
+
 // ─── DELETE /products/:productId — Delete product (auth) ─────────────────
 router.delete("/:productId", auth, checkSubscription, async (req, res) => {
   return res.status(400).json({

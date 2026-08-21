@@ -1033,7 +1033,31 @@ router.post("/public/token-from-order", async (req, res) => {
 
 router.get("/my/export", auth, async (req, res) => {
   try {
-    const orders = await Order.find({ seller: req.sellerId })
+    let dateFilter = {};
+    if (req.query.all === "true" || req.query.preset === "all") {
+      // All time
+    } else if (req.query.startDate && req.query.endDate) {
+      const start = new Date(String(req.query.startDate));
+      const end = new Date(String(req.query.endDate));
+      end.setHours(23, 59, 59, 999);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        dateFilter = { createdAt: { $gte: start, $lte: end } };
+      }
+    } else if (req.query.days || req.query.preset) {
+      let days = Number(req.query.days);
+      if (!days && req.query.preset) {
+        if (req.query.preset === "today") days = 1;
+        else if (req.query.preset === "last_7_days" || req.query.preset === "week") days = 7;
+        else if (req.query.preset === "last_30_days" || req.query.preset === "month") days = 30;
+        else if (req.query.preset === "last_90_days") days = 90;
+      }
+      if (days && days > 0) {
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        dateFilter = { createdAt: { $gte: since } };
+      }
+    }
+
+    const orders = await Order.find({ seller: req.sellerId, ...dateFilter })
       .populate("product", "title price")
       .populate("items.product", "title price")
       .sort({ createdAt: -1 });
@@ -1064,7 +1088,7 @@ router.get("/my/export", auth, async (req, res) => {
           .join(" | ");
 
         return [
-          esc(o._id),
+          esc(o.customOrderId || o._id),
           esc(date),
           esc(o.customerName),
           esc(o.customerPhone),
