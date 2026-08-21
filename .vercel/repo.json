@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_ZejzIs25Vy5rtyopBDeOatOerp4V",
+      "name": "zensos-yphn",
+      "directory": "server",
+      "orgId": "team_of9EZ4UMiDlwfQNlgOtZVCXR"
+    }
+  ]
+}
