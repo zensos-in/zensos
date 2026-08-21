@@ -10,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const { getStoreAccessState } = require("../utils/trialService");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
+const { tryAutoCreateShipmentsForParentOrder } = require("../utils/shipmentService");
 const {
   calculatePlatformFeePaise,
   getPlatformCommissionPercentage,
@@ -259,6 +260,11 @@ router.post("/", async (req, res) => {
         message: "Customer name and customer phone are required",
       });
     }
+    if (!addressFields.deliveryAddress || addressFields.deliveryAddress.trim().length < 5) {
+      return res.status(400).json({
+        message: "A valid delivery address is required",
+      });
+    }
     if (normalizedEmail && !EMAIL_PATTERN.test(normalizedEmail)) {
       return res.status(400).json({ message: "Enter a valid customer email address" });
     }
@@ -493,6 +499,7 @@ router.post("/", async (req, res) => {
       parentOrder.subOrders = createdSubOrders.map((o) => o._id);
       await parentOrder.save();
 
+      await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
       await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
       return res.status(201).json({
@@ -628,6 +635,7 @@ router.post("/verify-payment", async (req, res) => {
     // does not block the others or the payment-verified response to the client.
     await Promise.all(transferPromises);
 
+    await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
     return res.json({

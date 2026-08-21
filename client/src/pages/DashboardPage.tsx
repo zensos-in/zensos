@@ -14,6 +14,7 @@ import { SubscriptionExpiredModal } from "../components/SubscriptionExpiredModal
 import { SubscriptionReminderBanner } from "../components/SubscriptionReminderBanner";
 import { DashboardSubscriptionWidget } from "../components/DashboardSubscriptionWidget";
 import { PricingDrawer } from "../components/PricingDrawer";
+import { ShippingTab } from "../components/ShippingTab";
 import { BUSINESS_CATEGORY_OPTIONS } from "../constants/businessCategories";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
 import {
@@ -33,7 +34,7 @@ import {
   productMatchesCategory,
 } from "../utils/productCategories";
 
-type Tab = "dashboard" | "store" | "products" | "orders" | "reports" | "earnings" | "profile" | "policies";
+type Tab = "dashboard" | "store" | "products" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 function normalizePan(value: string) {
@@ -1388,6 +1389,7 @@ export function DashboardPage() {
     { key: "store", label: t("nav.store", "Store Options"), icon: "store" },
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
     { key: "orders", label: t("nav.orders", "Orders"), icon: "orders" },
+    { key: "shipping", label: t("nav.shipping", "Shipping"), icon: "shipping" },
     { key: "reports", label: t("nav.reports", "Reports"), icon: "reports" },
     { key: "earnings", label: t("nav.earnings", "Earnings"), icon: "earnings" },
     { key: "profile", label: t("nav.profile", "Profile"), icon: "profile" },
@@ -3116,6 +3118,9 @@ export function DashboardPage() {
         </div>
       )}
 
+
+      {/* Shipping / Delivery Partner */}
+      {tab === "shipping" && <ShippingTab />}
 
       {/* Reports */}
       {tab === "reports" && (

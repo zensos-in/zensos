@@ -136,6 +136,56 @@ export interface Seller {
     businessType?: string;
     businessCategory?: string;
   };
+  deliveryAddonStatus?: "NOT_ACTIVE" | "PAYMENT_PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
+  deliveryAddonExpiresAt?: string | null;
+  shiprocketPickupLocation?: string;
+  courierPreference?: string;
+}
+
+export type CourierPreference = "BEST_AVAILABLE" | "LOWEST_COST" | "FASTEST" | "BLUEDART" | "DTDC" | "DELHIVERY" | "EKART" | "XPRESSBEES";
+
+export interface DeliverySubscription {
+  _id: string;
+  seller: string;
+  addonType: string;
+  price: number;
+  currency: string;
+  status: "NOT_ACTIVE" | "PAYMENT_PENDING" | "PAYMENT_FAILED" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "SUSPENDED";
+  orderId: string;
+  paymentId: string;
+  activatedAt?: string;
+  expiresAt?: string;
+  onboardingStatus?: "NOT_STARTED" | "PENDING" | "READY" | "FAILED" | "ACTION_REQUIRED";
+  preferredCourier?: string;
+  pickupLocationName?: string;
+}
+
+export interface TrackingEvent {
+  status: string;
+  activity: string;
+  location: string;
+  timestamp: string;
+}
+
+export interface Shipment {
+  _id: string;
+  order: Order | string;
+  parentOrder: string;
+  seller: string;
+  provider: string;
+  shiprocketOrderId?: number;
+  shiprocketShipmentId?: number;
+  awbCode?: string;
+  courierCompanyId?: number;
+  courierName?: string;
+  pickupLocation?: string;
+  status: "CREATED" | "PICKUP_SCHEDULED" | "PICKED_UP" | "IN_TRANSIT" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "RTO" | "RETURN";
+  statusLabel?: string;
+  trackingUrl?: string;
+  freightCharge?: number;
+  estimatedDeliveryDate?: string;
+  trackingEvents: TrackingEvent[];
+  createdAt: string;
 }
 
 export interface Product {

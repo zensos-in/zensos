@@ -7,6 +7,7 @@ const ParentOrder = require("../models/ParentOrder");
 const TransactionLedger = require("../models/TransactionLedger");
 const WebhookLog = require("../models/WebhookLog");
 const AuditLog = require("../models/AuditLog");
+const DeliverySubscription = require("../models/DeliverySubscription");
 const auth = require("../middleware/auth");
 const { collectKycIssues, isPayoutEligible, recordComplianceEvent } = require("../utils/kycCompliance");
 const { applyAccountWebhookToSeller } = require("../utils/razorpayLinkedAccount");
@@ -118,7 +119,31 @@ async function handlePaymentCaptured(payment) {
 
   const parentOrder = await ParentOrder.findOne({ razorpayOrderId }).populate("subOrders");
   if (!parentOrder) {
-    console.warn(`[payment.captured] No ParentOrder found for ID: ${razorpayOrderId}`);
+    // Check if this payment belongs to a ₹200 Delivery Add-on purchase
+    const addonDoc = await DeliverySubscription.findOne({ orderId: razorpayOrderId });
+    if (addonDoc) {
+      console.log(`[payment.captured] Found Delivery Add-on order: ${razorpayOrderId}`);
+      const seller = await Seller.findById(addonDoc.seller);
+      if (seller) {
+        const now = new Date();
+        const expiresAt = seller.subscriptionEndDate || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        addonDoc.status = "ACTIVE";
+        addonDoc.paymentId = razorpayPaymentId;
+        addonDoc.activatedAt = now;
+        addonDoc.expiresAt = expiresAt;
+        addonDoc.mainSubscriptionEndDate = seller.subscriptionEndDate;
+        await addonDoc.save();
+
+        seller.deliveryAddonStatus = "ACTIVE";
+        seller.deliveryAddonExpiresAt = expiresAt;
+        await seller.save();
+
+        console.log(`[payment.captured] Activated Delivery Add-on for seller: ${seller._id}`);
+      }
+      return;
+    }
+
+    console.warn(`[payment.captured] No ParentOrder or DeliverySubscription found for ID: ${razorpayOrderId}`);
     return;
   }
 

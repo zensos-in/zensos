@@ -422,6 +422,27 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Delivery Add-on & Shipping fields
+    deliveryAddonStatus: {
+      type: String,
+      enum: ["NOT_ACTIVE", "PAYMENT_PENDING", "ACTIVE", "EXPIRED", "CANCELLED"],
+      default: "NOT_ACTIVE",
+      index: true,
+    },
+    deliveryAddonExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    shiprocketPickupLocation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    courierPreference: {
+      type: String,
+      trim: true,
+      default: "BEST_AVAILABLE",
+    },
   },
   {
     timestamps: true,

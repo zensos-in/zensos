@@ -144,11 +144,34 @@ router.post("/verify", auth, async (req, res) => {
     await subscription.save();
 
     // Update Seller Record
-    seller.currentPlan = subscription.planType;
-    seller.subscriptionStatus = "ACTIVE";
-    seller.subscriptionEndDate = endDate;
-    seller.storeEnabled = true;
-    seller.subscriptionExpiredPopupShown = false;
+    // ---------------------------------------------------------------------
+    // Delivery‑Partner Add‑on carry‑over handling (new)
+    // ---------------------------------------------------------------------
+    // 1️⃣ If the add‑on is currently active, compute any unused days and store them.
+    if (seller.deliveryAddonStatus === "ACTIVE" && seller.deliveryAddonExpiresAt) {
+      const now = new Date();
+      const remainingMs = seller.deliveryAddonExpiresAt - now;
+      if (remainingMs > 0) {
+        const remainingDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+        seller.deliveryAddonCarryoverDays = remainingDays;
+      }
+    }
+
+    // 2️⃣ Apply any previously stored carry‑over days to the new subscription period.
+    if (seller.deliveryAddonCarryoverDays && seller.deliveryAddonCarryoverDays > 0) {
+      const addedMs = seller.deliveryAddonCarryoverDays * 24 * 60 * 60 * 1000;
+      seller.deliveryAddonExpiresAt = new Date(endDate.getTime() + addedMs);
+      // Reset the counter after applying it.
+      seller.deliveryAddonCarryoverDays = 0;
+
+      // Sync DeliverySubscription document
+      const DeliverySubscription = require("../models/DeliverySubscription");
+      await DeliverySubscription.updateOne(
+        { seller: seller._id, status: "ACTIVE" },
+        { $set: { expiresAt: seller.deliveryAddonExpiresAt, mainSubscriptionEndDate: endDate } }
+      );
+    }
+
     await seller.save();
 
     return res.json({ message: "Subscription activated successfully", subscription, seller });

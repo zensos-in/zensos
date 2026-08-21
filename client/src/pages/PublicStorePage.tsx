@@ -713,27 +713,44 @@ export function PublicStorePage() {
   }, [seller, setPublicStoreHeader]);
 
   useEffect(() => {
+    if (!seller) return;
+
+    // 1. Dynamic Meta Title
     const previousTitle = document.title;
-    document.title = seller?.businessName ? `${seller.businessName}` : "Zensos";
+    document.title = seller.businessName ? seller.businessName : "Zensos";
+
+    // 2. Dynamic Meta Description
+    let metaDesc = document.querySelector<HTMLMetaElement>("meta[name='description']");
+    const previousDesc = metaDesc?.getAttribute("content") || "";
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.name = "description";
+      document.head.appendChild(metaDesc);
+    }
+    const descriptionText = seller.businessName 
+      ? `Welcome to ${seller.businessName}${seller.businessCategory ? ` - ${seller.businessCategory}` : ""}.`
+      : "Store powered by Zensos";
+    metaDesc.setAttribute("content", descriptionText);
+
+    // 3. Dynamic Favicon (fallback to businessLogo if favicon is not set, otherwise Zensos)
+    let faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    const previousFavicon = faviconElement?.getAttribute("href") || DEFAULT_APP_FAVICON;
+    if (!faviconElement) {
+      faviconElement = document.createElement("link");
+      faviconElement.rel = "icon";
+      document.head.appendChild(faviconElement);
+    }
+    const nextFavicon = seller.favicon 
+      ? normalizeImageUrl(seller.favicon) 
+      : (seller.businessLogo ? normalizeImageUrl(seller.businessLogo) : DEFAULT_APP_FAVICON);
+    faviconElement.setAttribute("href", nextFavicon);
 
     return () => {
       document.title = previousTitle;
+      if (metaDesc) metaDesc.setAttribute("content", previousDesc);
+      if (faviconElement) faviconElement.setAttribute("href", previousFavicon);
     };
-  }, [seller?.businessName]);
-
-  useEffect(() => {
-    const faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-    if (!faviconElement) return;
-
-    const previousHref = faviconElement.getAttribute("href") || DEFAULT_APP_FAVICON;
-    const nextHref = seller?.favicon ? normalizeImageUrl(seller.favicon) : DEFAULT_APP_FAVICON;
-
-    faviconElement.setAttribute("href", nextHref);
-
-    return () => {
-      faviconElement.setAttribute("href", previousHref);
-    };
-  }, [seller?.favicon]);
+  }, [seller]);
 
   useEffect(() => {
     if (error) showError(error);
