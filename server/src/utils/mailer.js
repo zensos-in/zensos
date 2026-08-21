@@ -174,7 +174,7 @@ function getOrderItemRows(order) {
   });
 }
 
-function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
+function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }) {
   const firstOrder = orders[0] || {};
   const seller = firstOrder.seller || {};
   const safeSellerName = escapeHtml(seller.businessName || "Seller");
@@ -187,6 +187,10 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
   const total = subtotal + deliveryTotal;
   const paymentMethod = firstOrder.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
   const displayOrderId = firstOrder.customOrderId || String(parentOrder._id).slice(-8).toUpperCase();
+
+  const validShipments = Array.isArray(shipments)
+    ? shipments.filter((s) => s && s.awbCode)
+    : [];
 
   const itemRows = orders.flatMap(getOrderItemRows).map((item) => `
     <tr>
@@ -209,6 +213,15 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
     seller.businessAddress ? `Address: ${escapeHtml(seller.businessAddress)}` : "",
   ].filter(Boolean);
 
+  const deliverySections = validShipments.map((s) => `
+    <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#f0fdf4;margin-bottom:12px;">
+      <p style="margin:0 0 8px;color:#166534;font-size:13px;font-weight:700;">Delivery details</p>
+      <p style="margin:0 0 4px;color:#15803d;font-size:13px;"><strong>Delivery Partner:</strong> ${escapeHtml(s.courierName || "Standard Shipping")}</p>
+      <p style="margin:0 0 8px;color:#15803d;font-size:13px;"><strong>Tracking Number:</strong> ${escapeHtml(s.awbCode)}</p>
+      ${s.trackingUrl ? `<a href="${escapeHtml(s.trackingUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 12px;background:#16a34a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">Track Your Order &rarr;</a>` : ""}
+    </div>
+  `).join("");
+
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:640px;margin:auto;padding:28px;border:1px solid #e5e7eb;border-radius:18px;background:#ffffff;">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
@@ -225,6 +238,8 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
         <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;">Order #${escapeHtml(displayOrderId)}</p>
         <p style="margin:0;color:#6b7280;font-size:13px;">${escapeHtml(orderDate)} · ${escapeHtml(paymentMethod)}</p>
       </div>
+
+      ${deliverySections}
 
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
         <thead>
@@ -259,7 +274,7 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
   `;
 }
 
-function buildOrderConfirmationEmailText({ parentOrder, orders }) {
+function buildOrderConfirmationEmailText({ parentOrder, orders, shipments = [] }) {
   const firstOrder = orders[0] || {};
   const seller = firstOrder.seller || {};
   const subtotal = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
@@ -271,6 +286,18 @@ function buildOrderConfirmationEmailText({ parentOrder, orders }) {
     `- ${item.title}${item.variantText ? ` (${item.variantText})` : ""} x${item.quantity}: ${formatMoney(item.lineTotal)}`
   );
 
+  const validShipments = Array.isArray(shipments)
+    ? shipments.filter((s) => s && s.awbCode)
+    : [];
+
+  const shipmentLines = validShipments.flatMap((s) => [
+    "Delivery Details:",
+    `Delivery Partner: ${s.courierName || "Standard Shipping"}`,
+    `Tracking Number: ${s.awbCode}`,
+    s.trackingUrl ? `Track Your Order: ${s.trackingUrl}` : "",
+    "",
+  ]).filter(Boolean);
+
   return [
     `Hi ${parentOrder.customerName || "there"},`,
     "",
@@ -278,6 +305,7 @@ function buildOrderConfirmationEmailText({ parentOrder, orders }) {
     `Order ID: ${displayOrderId}`,
     `Payment method: ${paymentMethod}`,
     "",
+    ...shipmentLines,
     "Items:",
     ...lines,
     "",
@@ -378,7 +406,7 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   }
 }
 
-async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
+async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders, shipments = [] }) {
   if (!isSmtpConfigured()) {
     console.log(`[mailer DEMO MODE] Skipping order confirmation email to ${toEmail} (no SMTP configured).`);
     return;
@@ -394,8 +422,8 @@ async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
       from: sender,
       to: toEmail,
       subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
-      text: buildOrderConfirmationEmailText({ parentOrder, orders }),
-      html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
+      text: buildOrderConfirmationEmailText({ parentOrder, orders, shipments }),
+      html: buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments }),
       headers: {
         "X-Auto-Response-Suppress": "OOF, AutoReply",
       },
@@ -493,4 +521,63 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
   }
 }
 
-module.exports = { sendOtpEmail, sendOrderConfirmationEmail, sendContactEmail, sendSubscriptionReminderEmail };
+async function sendOutOfStockAlert({ email, businessName, productTitle, variantTitle, dashboardUrl }) {
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Out of stock alert for "${productTitle}" (${variantTitle || "Default"}) would be sent to ${email}`);
+    return;
+  }
+
+  try {
+    const transporter = getTransporter();
+    const safeBusiness = escapeHtml(businessName || "Seller");
+    const safeProduct = escapeHtml(productTitle || "Product");
+    const safeVariant = variantTitle ? escapeHtml(variantTitle) : "";
+    const smtpUser = String(process.env.SMTP_USER || "").trim();
+    const sender = process.env.SMTP_FROM || `"Zensos Alert" <${smtpUser}>`;
+    const targetUrl = dashboardUrl || `${process.env.CLIENT_URL || "https://zensos.in"}/login`;
+
+    const itemDescription = safeVariant ? `${safeProduct} (${safeVariant})` : safeProduct;
+    const subject = `⚠️ Out of Stock Alert: ${sanitizeSubjectLine(itemDescription)}`;
+
+    await transporter.sendMail({
+      from: sender,
+      to: email,
+      subject: subject,
+      text: `Out of Stock Alert!\n\nHi ${businessName || "Seller"},\n\nYour item "${itemDescription}" is now completely out of stock due to recent orders.\n\nCustomers will see this item as "Out of Stock" in your store until you restock.\n\nLog in to your dashboard to update inventory:\n${targetUrl}`,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;max-width:540px;margin:auto;padding:32px 24px;border:1px solid #fee2e2;border-radius:16px;background:#ffffff;">
+          <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-0.5px;">Zensos</span>
+            <span style="background:#fee2e2;color:#ef4444;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:8px;">INVENTORY ALERT</span>
+          </div>
+          <p style="color:#475569;margin:0 0 14px;font-size:15px;line-height:1.5;">Hi ${safeBusiness},</p>
+          <h1 style="color:#0f172a;margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.35;">⚠️ Item Sold Out: ${itemDescription}</h1>
+          <p style="color:#475569;margin:0 0 20px;font-size:14px;line-height:1.6;">
+            Your product <strong style="color:#0f172a;">${safeProduct}</strong> ${safeVariant ? `(Variant: <strong style="color:#0f172a;">${safeVariant}</strong>)` : ''} has reached <strong>0 stock</strong> due to recent customer order(s).
+          </p>
+          <div style="background:#fef2f2;border:1px solid #fecaca;padding:14px 16px;border-radius:10px;margin-bottom:24px;">
+            <p style="margin:0;color:#991b1b;font-size:13px;line-height:1.5;">
+              <strong>Store Status:</strong> This item is now marked as <strong>Out of Stock</strong> on your public storefront to prevent overselling.
+            </p>
+          </div>
+          <a href="${targetUrl}" style="display:inline-block;padding:12px 24px;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:14px;">Restock in Seller Dashboard →</a>
+          <p style="color:#94a3b8;margin:28px 0 0;font-size:12px;line-height:1.5;">You received this automated notification because inventory management is enabled for this product.</p>
+        </div>
+      `,
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
+    });
+  } catch (err) {
+    console.error(`[mailer] Failed to send out-of-stock alert to ${email}:`, err?.message || err);
+  }
+}
+
+module.exports = {
+  sendOtpEmail,
+  sendOrderConfirmationEmail,
+  sendContactEmail,
+  sendSubscriptionReminderEmail,
+  sendOutOfStockAlert,
+};
+

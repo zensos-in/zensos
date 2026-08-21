@@ -128,6 +128,7 @@ async function processSubOrderTransfer(subOrder, razorpayPaymentId) {
   // Lazy-require to avoid any circular-dependency risk at module load time
   const razorpay = require("./razorpay");
   const Seller = require("../models/Seller");
+  const Order = require("../models/Order");
   const { collectKycIssues, isPayoutEligible, recordComplianceEvent } = require("./kycCompliance");
 
   if (hasProcessedTransfer(subOrder)) {
@@ -136,11 +137,26 @@ async function processSubOrderTransfer(subOrder, razorpayPaymentId) {
     return;
   }
 
+  // Atomic lock: prevent parallel webhook and verify-payment execution
+  const lockedSubOrder = await Order.findOneAndUpdate(
+    { _id: subOrder._id, transferStatus: { $nin: ["processed", "processing"] } },
+    { $set: { transferStatus: "processing" } },
+    { new: true }
+  );
+
+  if (!lockedSubOrder) {
+    if (subOrder.transferStatus === "processed") {
+      await recordPlatformCommissionLedger({ subOrder, status: "settled" });
+    }
+    console.log(`[transfer] Skipping sub-order ${subOrder._id}: concurrent transfer already handled.`);
+    return;
+  }
+
   const seller = await Seller.findById(subOrder.seller);
   if (!seller) {
-    subOrder.transferStatus = "failed";
-    subOrder.settlementStatus = "failed";
-    await subOrder.save();
+    lockedSubOrder.transferStatus = "failed";
+    lockedSubOrder.settlementStatus = "failed";
+    await lockedSubOrder.save();
     console.error(`[transfer] Seller not found for sub-order: ${subOrder._id}`);
     return;
   }
@@ -158,61 +174,59 @@ async function processSubOrderTransfer(subOrder, razorpayPaymentId) {
     }
   }
 
+  const targetOrder = lockedSubOrder;
+
   if (!seller.razorpayAccountId || seller.razorpayAccountStatus !== "active") {
-    subOrder.transferStatus = "failed";
-    subOrder.settlementStatus = "failed";
-    await subOrder.save();
+    targetOrder.transferStatus = "failed";
+    targetOrder.settlementStatus = "failed";
+    await targetOrder.save();
     console.warn(`[transfer] Skipped: seller ${seller.businessName} has no active Razorpay linked account.`);
     return;
   }
 
   if (!isPayoutEligible(seller)) {
-    subOrder.transferStatus = "failed";
-    subOrder.settlementStatus = "failed";
+    targetOrder.transferStatus = "failed";
+    targetOrder.settlementStatus = "failed";
     seller.payoutStatus = "blocked";
     recordComplianceEvent(seller, "route_transfer_blocked_incomplete_kyc", "system", {
-      orderId: subOrder._id.toString(),
+      orderId: targetOrder._id.toString(),
       missingFields: collectKycIssues(seller, {
         requireVerifiedPan: true,
         requireVerifiedKyc: true,
         requireBank: true,
       }),
     });
-    await Promise.all([subOrder.save(), seller.save()]);
+    await Promise.all([targetOrder.save(), seller.save()]);
     console.warn(`[transfer] Blocked: seller ${seller.businessName} is not payout eligible.`);
     return;
   }
 
   try {
-    subOrder.transferStatus = "pending";
-    subOrder.settlementStatus = "pending";
-    await subOrder.save();
-
     const result = await executeVendorTransfer(razorpay, {
       paymentId: razorpayPaymentId,
       seller,
-      subOrder,
+      subOrder: targetOrder,
     });
 
     if (result.skipped) {
       return;
     }
 
-    subOrder.transferId = result.transferId;
-    subOrder.transferStatus = "processed";
-    subOrder.settlementStatus = "processed";
-    subOrder.settlementReferenceIds = Array.from(
-      new Set([...(subOrder.settlementReferenceIds || []), result.transferId].filter(Boolean))
+    targetOrder.transferId = result.transferId;
+    targetOrder.transferStatus = "processed";
+    targetOrder.settlementStatus = "processed";
+    targetOrder.settlementReferenceIds = Array.from(
+      new Set([...(targetOrder.settlementReferenceIds || []), result.transferId].filter(Boolean))
     );
-    await subOrder.save();
+    await targetOrder.save();
 
     await recordVendorTransferLedger({
-      subOrder,
+      subOrder: targetOrder,
       seller,
       transferId: result.transferId,
       transferAmountPaise: result.transferAmountPaise,
     });
-    await recordPlatformCommissionLedger({ subOrder, status: "settled" });
+    await recordPlatformCommissionLedger({ subOrder: targetOrder, status: "settled" });
 
     console.log(
       `[transfer] Settled to ${seller.businessName} (${seller.razorpayAccountId}): ${result.transferAmountPaise} paise via pay_${razorpayPaymentId}`

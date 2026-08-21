@@ -52,6 +52,7 @@ type AppIconName =
   | "mail"
   | "package"
   | "truck"
+  | "shipping"
   | "payments";
 
 type IconProps = {
@@ -416,6 +417,14 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
     </IconBase>
   ),
   truck: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12" />
+      <path d="M14 9h4l4 4v5h-8V9Z" />
+      <circle cx="6.5" cy="18" r="1.5" />
+      <circle cx="17.5" cy="18" r="1.5" />
+    </IconBase>
+  ),
+  shipping: ({ className }) => (
     <IconBase className={className}>
       <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12" />
       <path d="M14 9h4l4 4v5h-8V9Z" />

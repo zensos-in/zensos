@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Seller = require("../models/Seller");
+const Shipment = require("../models/Shipment");
 const CustomerOtp = require("../models/CustomerOtp");
 const { generateOtp, hashOtp, verifyOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
@@ -10,11 +11,17 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const { getStoreAccessState } = require("../utils/trialService");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
+const { tryAutoCreateShipmentsForParentOrder } = require("../utils/shipmentService");
 const {
   calculatePlatformFeePaise,
   getPlatformCommissionPercentage,
 } = require("../utils/platformSettings");
 const { processSubOrderTransfer } = require("../utils/settlement");
+const {
+  validateCartInventory,
+  deductInventoryForOrder,
+  restockInventoryForOrder,
+} = require("../utils/inventoryService");
 
 const router = express.Router();
 const validStatuses = ["pending", "paid", "delivered", "cancelled"];
@@ -129,14 +136,15 @@ function findVariantBySelection(product, selectedVariants = {}, variantId = "") 
   );
 }
 
-function buildOrderResponse(order) {
+function buildOrderResponse(order, shipment = null) {
   const normalizedItems = Array.isArray(order.items) ? order.items : [];
   const firstItem = normalizedItems[0] || null;
+  const orderObj = typeof order.toObject === "function" ? order.toObject() : { ...order };
 
   return {
-    ...order.toObject(),
+    ...orderObj,
     product:
-      order.product ||
+      orderObj.product ||
       (firstItem
         ? {
             _id: firstItem.product?._id || firstItem.product,
@@ -146,10 +154,20 @@ function buildOrderResponse(order) {
           }
         : null),
     selectedVariants:
-      order.selectedVariants ||
+      orderObj.selectedVariants ||
       (firstItem?.selectedVariants instanceof Map
         ? Object.fromEntries(firstItem.selectedVariants.entries())
         : firstItem?.selectedVariants || {}),
+    shipment: shipment
+      ? {
+          _id: shipment._id,
+          status: shipment.status,
+          statusLabel: shipment.statusLabel,
+          awbCode: shipment.awbCode,
+          courierName: shipment.courierName,
+          trackingUrl: shipment.trackingUrl,
+        }
+      : null,
   };
 }
 
@@ -259,6 +277,11 @@ router.post("/", async (req, res) => {
         message: "Customer name and customer phone are required",
       });
     }
+    if (!addressFields.deliveryAddress || addressFields.deliveryAddress.trim().length < 5) {
+      return res.status(400).json({
+        message: "A valid delivery address is required",
+      });
+    }
     if (normalizedEmail && !EMAIL_PATTERN.test(normalizedEmail)) {
       return res.status(400).json({ message: "Enter a valid customer email address" });
     }
@@ -357,6 +380,21 @@ router.post("/", async (req, res) => {
         quantity: safeQuantity,
         lineTotal,
       });
+    }
+
+    // 1.1 Validate live inventory for all requested items
+    const stockValidation = await validateCartInventory(
+      normalizedOrderItems.map((item) => ({
+        product: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        productTitle: item.productTitle,
+        variantTitle: item.variantTitle,
+      }))
+    );
+
+    if (!stockValidation.valid) {
+      return res.status(400).json({ message: stockValidation.error });
     }
 
     // 2. Create ParentOrder shell to derive ID
@@ -493,6 +531,12 @@ router.post("/", async (req, res) => {
       parentOrder.subOrders = createdSubOrders.map((o) => o._id);
       await parentOrder.save();
 
+      // Deduct inventory atomically for COD order
+      for (const subOrder of createdSubOrders) {
+        await deductInventoryForOrder(subOrder);
+      }
+
+      await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
       await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
       return res.status(201).json({
@@ -628,6 +672,12 @@ router.post("/verify-payment", async (req, res) => {
     // does not block the others or the payment-verified response to the client.
     await Promise.all(transferPromises);
 
+    // Deduct inventory atomically for confirmed paid orders
+    for (const subOrder of parentOrder.subOrders) {
+      await deductInventoryForOrder(subOrder);
+    }
+
+    await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
     return res.json({
@@ -648,7 +698,18 @@ router.get("/my", auth, async (req, res) => {
       .populate("items.product", "title price imageUrl mrp category")
       .sort({ createdAt: -1 });
 
-    return res.json({ orders: orders.map(buildOrderResponse) });
+    const orderIds = orders.map((o) => o._id);
+    const shipments = await Shipment.find({ order: { $in: orderIds } }).lean();
+    const shipmentMap = new Map();
+    for (const sh of shipments) {
+      shipmentMap.set(String(sh.order), sh);
+    }
+
+    return res.json({
+      orders: orders.map((order) =>
+        buildOrderResponse(order, shipmentMap.get(String(order._id)))
+      ),
+    });
   } catch (error) {
     return res.status(500).json({ message: "Unable to fetch orders" });
   }
@@ -1048,8 +1109,13 @@ router.patch("/:orderId/status", auth, async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    const previousStatus = order.paymentStatus;
     order.paymentStatus = status;
     await order.save();
+
+    if (previousStatus !== "cancelled" && status === "cancelled") {
+      await restockInventoryForOrder(order);
+    }
 
     return res.json({ order: buildOrderResponse(order) });
   } catch (error) {

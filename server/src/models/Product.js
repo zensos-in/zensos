@@ -40,6 +40,11 @@ const variantItemSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    stock: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     _id: false,
@@ -155,6 +160,16 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
       index: true,
+    },
+    trackInventory: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    stock: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

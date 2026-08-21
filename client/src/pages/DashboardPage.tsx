@@ -14,6 +14,8 @@ import { SubscriptionExpiredModal } from "../components/SubscriptionExpiredModal
 import { SubscriptionReminderBanner } from "../components/SubscriptionReminderBanner";
 import { DashboardSubscriptionWidget } from "../components/DashboardSubscriptionWidget";
 import { PricingDrawer } from "../components/PricingDrawer";
+import { ShippingTab } from "../components/ShippingTab";
+import { ShipmentTrackingModal } from "../components/ShipmentTrackingModal";
 import { BUSINESS_CATEGORY_OPTIONS } from "../constants/businessCategories";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
 import {
@@ -33,7 +35,7 @@ import {
   productMatchesCategory,
 } from "../utils/productCategories";
 
-type Tab = "dashboard" | "store" | "products" | "orders" | "reports" | "earnings" | "profile" | "policies";
+type Tab = "dashboard" | "store" | "products" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 function normalizePan(value: string) {
@@ -49,6 +51,7 @@ type ProductFormVariant = {
   uom: string;     // unit of measure e.g. "g", "ml", "Pack"
   amount: string;  // selling price
   mrp: string;
+  stock: string;   // stock quantity
   isActive: boolean;
 };
 
@@ -56,11 +59,13 @@ type ProductForm = {
   title: string; description: string; price: string; mrp: string; packSize: string; uom: string;
   imageUrls: string[]; imageDeleteUrls: string[]; notes: string; categories: string[]; categoryInput: string;
   variants: ProductFormVariant[]; isRecommended: boolean;
+  trackInventory: boolean; stock: string;
 };
 const PRODUCT_TITLE_MAX_LENGTH = 60;
 const emptyProductForm: ProductForm = {
   title: "", description: "", price: "", mrp: "", packSize: "", uom: "",
   imageUrls: [""], imageDeleteUrls: [""], notes: "", categories: [], categoryInput: "", variants: [], isRecommended: false,
+  trackInventory: false, stock: "",
 };
 
 const statusClasses: Record<OrderStatus, string> = {
@@ -84,6 +89,19 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "delivered", "cancelled"];
 
 const SOCIAL_PLATFORMS = ["Instagram", "Facebook", "Twitter/X", "YouTube", "LinkedIn", "Website", "Google Location", "Other"];
+
+function getPlanLimits(planType?: string): { maxProducts: number; maxBanners: number } {
+  switch (planType) {
+    case "BUSINESS":
+      return { maxProducts: 30, maxBanners: 5 };
+    case "GROWTH":
+      return { maxProducts: 20, maxBanners: 3 };
+    case "STARTER":
+    case "TRIAL":
+    default:
+      return { maxProducts: 10, maxBanners: 2 };
+  }
+}
 
 function reorderItems<T>(items: T[], fromIndex: number, toIndex: number) {
   if (
@@ -336,6 +354,9 @@ export function DashboardPage() {
   const { t } = useI18n();
   const { showError, showSuccess } = useToast();
 
+  const planLimits = useMemo(() => getPlanLimits(seller?.currentPlan), [seller?.currentPlan]);
+  const { maxProducts, maxBanners } = planLimits;
+
   const [tab, setTab] = useState<Tab>("dashboard");
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -448,6 +469,7 @@ export function DashboardPage() {
   const [orderCategoryFilter, setOrderCategoryFilter] = useState("");
   const [showOrderFilter, setShowOrderFilter] = useState(false);
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   const [copyFeedback, setCopyFeedback] = useState("");
   const storeQrCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1097,6 +1119,7 @@ export function DashboardPage() {
           uom: match ? match[2] : "",
           amount: rawPrice !== undefined && rawPrice !== null ? String(rawPrice) : "",
           mrp: rawMrp !== undefined && rawMrp !== null && Number(rawMrp) > 0 ? String(rawMrp) : "",
+          stock: matchedVariantItem?.stock !== undefined && matchedVariantItem?.stock !== null ? String(matchedVariantItem.stock) : "",
           isActive: matchedVariantItem?.isActive ?? true,
         });
       });
@@ -1115,6 +1138,8 @@ export function DashboardPage() {
       categoryInput: "",
       variants: variantRows,
       isRecommended: prod.isRecommended === true,
+      trackInventory: prod.trackInventory === true,
+      stock: prod.stock !== undefined && prod.stock !== null ? String(prod.stock) : "",
     });
     // Scroll to form
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1149,6 +1174,7 @@ export function DashboardPage() {
           option: (v.label.trim() + (v.uom.trim() ? v.uom.trim() : "")),
           amount: Number(v.amount),
           mrp: Number(v.mrp) || 0,
+          stock: v.stock !== "" ? Math.max(0, Number(v.stock)) : 0,
           isActive: v.isActive !== false,
         }));
 
@@ -1171,6 +1197,7 @@ export function DashboardPage() {
         attributes: { [variant.label]: variant.option },
         price: variant.amount,
         mrp: variant.mrp,
+        stock: variant.stock,
         isActive: variant.isActive,
       }));
 
@@ -1233,6 +1260,8 @@ export function DashboardPage() {
         variantPrices,
         variantMrps,
         isRecommended: productForm.isRecommended,
+        trackInventory: productForm.trackInventory,
+        stock: productForm.stock !== "" ? Math.max(0, Number(productForm.stock)) : 0,
       };
 
       // 🔍 DEBUG — open browser console (F12) to see this
@@ -1251,8 +1280,8 @@ export function DashboardPage() {
         setSuccess("Product updated.");
         setEditingProduct(null);
       } else {
-        if (products.length >= 10) {
-          setError("You can list up to 10 products. Delete a product before adding another.");
+        if (products.length >= maxProducts) {
+          setError(`You can list up to ${maxProducts} products on your current plan. Delete a product or upgrade your plan to add more.`);
           setIsSubmittingProduct(false);
           return;
         }
@@ -1388,6 +1417,7 @@ export function DashboardPage() {
     { key: "store", label: t("nav.store", "Store Options"), icon: "store" },
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
     { key: "orders", label: t("nav.orders", "Orders"), icon: "orders" },
+    { key: "shipping", label: t("nav.shipping", "Shipping"), icon: "shipping" },
     { key: "reports", label: t("nav.reports", "Reports"), icon: "reports" },
     { key: "earnings", label: t("nav.earnings", "Earnings"), icon: "earnings" },
     { key: "profile", label: t("nav.profile", "Profile"), icon: "profile" },
@@ -1667,12 +1697,12 @@ export function DashboardPage() {
             <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Store Banners</p>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold border ${banners.length >= 5
+                <span className={`rounded-full px-3 py-1 text-xs font-bold border ${banners.length >= maxBanners
                   ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400"
                   : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                  }`}>{banners.length}/5</span>
+                  }`}>{banners.length}/{maxBanners}</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Upload up to 5 banner images. Drag banners up or down to set the order they appear in your public store carousel.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Upload up to {maxBanners} banner images. Drag banners up or down to set the order they appear in your public store carousel.</p>
               <div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-800/60">
                 <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 w-full">📐 Recommended Banner Size</p>
                 <span className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-400">
@@ -1719,7 +1749,7 @@ export function DashboardPage() {
                   </div>
                 ))}
               </div>
-              {banners.length < 5 ? (
+              {banners.length < maxBanners ? (
                 <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Banner Image</span>
@@ -1728,7 +1758,7 @@ export function DashboardPage() {
                   <input className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="Banner title (optional)" value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} />
                   <button
                     onClick={() => {
-                      if (newBannerUrl.trim() && banners.length < 5) {
+                      if (newBannerUrl.trim() && banners.length < maxBanners) {
                         setBanners(prev => [...prev, { imageUrl: newBannerUrl.trim(), title: newBannerTitle.trim(), deleteUrl: newBannerDeleteUrl.trim() }]);
                         setNewBannerUrl(""); setNewBannerTitle(""); setNewBannerDeleteUrl("");
                       }
@@ -1737,8 +1767,8 @@ export function DashboardPage() {
                   >+ Add Banner</button>
                 </div>
               ) : (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-semibold text-center">
-                  🚫 Maximum 5 banners reached. Remove one to add another.
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 font-semibold text-center dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
+                  🚫 Maximum {maxBanners} banners reached. Remove one or upgrade your plan to add more.
                 </div>
               )}
             </div>
@@ -1921,8 +1951,8 @@ export function DashboardPage() {
             )}
             {!editingProduct && (
               <p className="mt-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-700">
-                {products.length}/10 products listed
-                {products.length >= 10 ? " — product limit reached." : ` — ${10 - products.length} remaining.`}
+                {products.length}/{maxProducts} products listed
+                {products.length >= maxProducts ? " — product limit reached." : ` — ${maxProducts - products.length} remaining.`}
               </p>
             )}
             <form className="mt-4 space-y-4" onSubmit={handleSubmitProduct}>
@@ -2273,11 +2303,58 @@ export function DashboardPage() {
                 </label>
               </div>
 
+              {/* ── Section: Inventory / Stock Tracking */}
+              <div className="rounded-2xl border border-teal-200/80 bg-teal-50/50 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                      <AppIcon name="products" className="text-[18px] text-teal-600" />
+                      Manage Stock / Inventory
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Optionally track stock per variant or product. Sold out items show as &ldquo;Out of Stock&rdquo; automatically.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProductForm(p => ({ ...p, trackInventory: !p.trackInventory }))}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      productForm.trackInventory ? 'bg-teal-600' : 'bg-slate-300'
+                    }`}
+                    role="switch"
+                    aria-checked={productForm.trackInventory}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        productForm.trackInventory ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {productForm.trackInventory && productForm.variants.length === 0 && (
+                  <div className="pt-1">
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold text-slate-700">Available Stock (Units)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        className="w-full rounded-xl border border-teal-200 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500"
+                        placeholder="e.g. 25"
+                        value={productForm.stock}
+                        onChange={e => setProductForm(p => ({ ...p, stock: e.target.value }))}
+                      />
+                      <p className="text-[11px] text-slate-500">When stock drops to 0, ordering is prevented and you receive an alert email.</p>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               {/* ── Section 4: Variants */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">Product Variants &amp; Pricing</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Add different sizes or variations of this product along with their prices.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Add different sizes or variations of this product along with their prices{productForm.trackInventory ? " and individual stock" : ""}.</p>
                 </div>
                 <div className="space-y-3">
                   {productForm.variants.map((v, i) => (
@@ -2304,8 +2381,8 @@ export function DashboardPage() {
                             />
                           </label>
                         </div>
-                        {/* Row 2: Selling Price + MRP */}
-                        <div className="grid grid-cols-2 gap-2.5">
+                        {/* Row 2: Selling Price + MRP + Stock */}
+                        <div className={`grid ${productForm.trackInventory ? "grid-cols-3" : "grid-cols-2"} gap-2.5`}>
                           <label className="block min-w-0 space-y-1">
                             <span className="text-xs font-semibold text-slate-500">Selling (₹)</span>
                             <input
@@ -2328,6 +2405,19 @@ export function DashboardPage() {
                               onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], mrp: e.target.value }; return { ...p, variants: vv }; })}
                             />
                           </label>
+                          {productForm.trackInventory && (
+                            <label className="block min-w-0 space-y-1">
+                              <span className="text-xs font-semibold text-teal-700">Stock (Units)</span>
+                              <input
+                                type="number"
+                                min={0}
+                                className="w-full min-w-0 rounded-lg border border-teal-300 bg-white px-3 py-2 text-sm outline-none focus:border-teal-500"
+                                placeholder="10"
+                                value={v.stock}
+                                onChange={e => setProductForm(p => { const vv = [...p.variants]; vv[i] = { ...vv[i], stock: e.target.value }; return { ...p, variants: vv }; })}
+                              />
+                            </label>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center justify-end gap-2">
@@ -2360,7 +2450,7 @@ export function DashboardPage() {
                   ))}
                   <button
                     type="button"
-                    onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", isActive: true }] }))}
+                    onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", stock: "", isActive: true }] }))}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
                   >+ Add Variant</button>
                 </div>
@@ -2376,7 +2466,7 @@ export function DashboardPage() {
                     <AppIcon name="close" className="text-[22px]" /> Cancel Edit
                   </button>
                 )}
-                <button type="submit" disabled={isSubmittingProduct || (!editingProduct && products.length >= 10)}
+                <button type="submit" disabled={isSubmittingProduct || (!editingProduct && products.length >= maxProducts)}
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-[#ff751f] hover:bg-[#ff8c3a] px-6 py-3 text-sm font-semibold text-white shadow-md transition disabled:bg-slate-300 sm:flex-1">
                   {isSubmittingProduct
                     ? (editingProduct ? "Saving…" : "Saving...")
@@ -2525,32 +2615,46 @@ export function DashboardPage() {
                               </p>
                               
                               {/* Category (Down) */}
-                              {getProductCategories(prod).length > 0 ? (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {prod.isRecommended && (
+                              {/* Categories, Badges & Stock Status */}
+                              <div className="mt-1 flex flex-wrap gap-1 items-center">
+                                {prod.isRecommended && (
+                                  <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
+                                    Recommended
+                                  </span>
+                                )}
+                                {prod.trackInventory && !prod.variants.some(v => v.options.length > 0) && (
+                                  prod.isOutOfStock || (prod.stock !== undefined && prod.stock <= 0) ? (
+                                    <span className="inline-block rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400">
+                                      ⚠️ Out of Stock
+                                    </span>
+                                  ) : prod.stock !== undefined && prod.stock <= 3 ? (
                                     <span className="inline-block rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400">
-                                      Recommended
+                                      Low Stock: {prod.stock}
                                     </span>
-                                  )}
-                                  {getProductCategories(prod).map((tag) => (
-                                    <span
-                                      key={`${prod._id}-${tag}`}
-                                      className="inline-block rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
-                                    >
-                                      {tag}
+                                  ) : (
+                                    <span className="inline-block rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-700 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-400">
+                                      Stock: {prod.stock ?? 0}
                                     </span>
-                                  ))}
-                                </div>
-                              ) : null}
+                                  )
+                                )}
+                                {getProductCategories(prod).map((tag) => (
+                                  <span
+                                    key={`${prod._id}-${tag}`}
+                                    className="inline-block rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
                               
-                              {/* Variant selection prices */}
+                              {/* Variant selection prices & stock */}
                               {prod.variants.some(v => v.options.length > 0) && (
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   {prod.variants.flatMap(variant =>
                                     variant.options.map(option => {
                                       const priceKey = getVariantPriceKey(variant.label, option);
                                       const fallbackItem = prod.variantItems?.find(
-                                        (item) => item.variantId === `legacy:${priceKey}`,
+                                        (item) => item.variantId === `legacy:${priceKey}` || item.variantId === `legacy:${getVariantPriceKey("Variant", option)}`,
                                       );
                                       const variantPrice =
                                         prod.variantPrices?.[priceKey]
@@ -2558,8 +2662,20 @@ export function DashboardPage() {
                                       const variantMrp =
                                         prod.variantMrps?.[priceKey]
                                         ?? fallbackItem?.mrp;
+                                      const isOut = prod.trackInventory && (fallbackItem?.isOutOfStock || (fallbackItem?.stock !== undefined && fallbackItem.stock <= 0));
+                                      const isLow = prod.trackInventory && fallbackItem?.stock !== undefined && fallbackItem.stock > 0 && fallbackItem.stock <= 3;
+                                      
                                       return (
-                                        <span key={option} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                        <span
+                                          key={option}
+                                          className={`rounded-full border px-2 py-0.5 text-xs ${
+                                            isOut
+                                              ? "border-rose-200 bg-rose-50 text-rose-700 font-medium"
+                                              : isLow
+                                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                                : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                                          }`}
+                                        >
                                           {option}
                                           {variantPrice ? (
                                             <>
@@ -2570,6 +2686,11 @@ export function DashboardPage() {
                                               ) : null}
                                             </>
                                           ) : null}
+                                          {prod.trackInventory && fallbackItem?.stock !== undefined && (
+                                            <span className={`ml-1 text-[11px] ${isOut ? "text-rose-600 font-bold" : isLow ? "text-amber-700 font-semibold" : "text-teal-600"}`}>
+                                              {isOut ? "• Out of Stock" : `• ${fallbackItem.stock} left`}
+                                            </span>
+                                          )}
                                         </span>
                                       );
                                     })
@@ -2941,6 +3062,24 @@ export function DashboardPage() {
                         <p className={`mt-2 text-sm ${isUnread ? "text-zinc-800 dark:text-zinc-100" : "text-slate-700 dark:text-slate-200"}`}>{getOrderProductNames(order)}</p>
                         {/* Order Value */}
                         <p className={`mt-1 text-sm font-semibold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-900 dark:text-slate-100"}`}>Order Value: ₹{order.amount + (order.deliveryCharge || 0)}</p>
+                        {/* Auto Shipping Badge if enabled */}
+                        {order.shipment && (
+                          <div className="mt-2 flex items-center justify-between rounded-xl bg-orange-50/70 border border-orange-200/80 px-2.5 py-1.5 dark:bg-orange-950/30 dark:border-orange-900/50">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-xs">🚚</span>
+                              <span className="text-xs font-semibold text-orange-800 dark:text-orange-300 truncate">
+                                {order.shipment.statusLabel || order.shipment.status} {order.shipment.courierName ? `· ${order.shipment.courierName}` : ""}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setTrackingOrderId(order._id)}
+                              className="ml-2 shrink-0 text-[11px] font-bold text-orange-600 hover:text-orange-700 underline dark:text-orange-400"
+                            >
+                              Track
+                            </button>
+                          </div>
+                        )}
                         {/* Actions */}
                         <div className="mt-3 flex gap-2">
                           <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-orange-400 bg-orange-50/70 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
@@ -2994,10 +3133,26 @@ export function DashboardPage() {
                             <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">₹{order.amount + (order.deliveryCharge || 0)}</td>
                             {/* Order Status */}
                             <td className="py-3 pr-4">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
-                                <span className={`h-2 w-2 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
-                                {STATUS_LABEL[order.paymentStatus]}
-                              </span>
+                              <div className="space-y-1">
+                                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
+                                  <span className={`h-2 w-2 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
+                                  {STATUS_LABEL[order.paymentStatus]}
+                                </span>
+                                {order.shipment && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="inline-flex items-center gap-1 rounded bg-orange-50 border border-orange-200/80 px-1.5 py-0.5 text-[10px] font-medium text-orange-800 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300">
+                                      🚚 {order.shipment.statusLabel || order.shipment.status}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setTrackingOrderId(order._id)}
+                                      className="text-[10px] font-bold text-orange-600 hover:text-orange-700 underline dark:text-orange-400"
+                                    >
+                                      Track
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             {/* Update */}
                             <td className="py-3 pr-4">
@@ -3084,6 +3239,43 @@ export function DashboardPage() {
                   <p className="text-sm font-semibold text-slate-700 capitalize">{viewingOrder.paymentMethod || "—"}</p>
                 </div>
               </div>
+              {viewingOrder.shipment && (
+                <div className="rounded-xl bg-orange-50/70 border border-orange-200/80 p-3.5 dark:bg-orange-950/30 dark:border-orange-900/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">🚚</span>
+                      <p className="text-xs font-bold uppercase tracking-wider text-orange-800 dark:text-orange-300">
+                        Shipping (Shiprocket)
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTrackingOrderId(viewingOrder._id)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 underline dark:text-orange-400"
+                    >
+                      <AppIcon name="visibility" className="text-[14px]" /> Track Live
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-slate-500">Status:</span>{" "}
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingOrder.shipment.statusLabel || viewingOrder.shipment.status}</span>
+                    </div>
+                    {viewingOrder.shipment.courierName && (
+                      <div>
+                        <span className="text-slate-500">Courier:</span>{" "}
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{viewingOrder.shipment.courierName}</span>
+                      </div>
+                    )}
+                    {viewingOrder.shipment.awbCode && (
+                      <div className="col-span-2">
+                        <span className="text-slate-500">AWB Code:</span>{" "}
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{viewingOrder.shipment.awbCode}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {viewingOrder.paymentScreenshotUrl && (
                 <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900/80">
                   <p className="text-xs font-bold uppercase text-slate-400 mb-1">Payment Proof</p>
@@ -3116,6 +3308,9 @@ export function DashboardPage() {
         </div>
       )}
 
+
+      {/* Shipping / Delivery Partner */}
+      {tab === "shipping" && <ShippingTab />}
 
       {/* Reports */}
       {tab === "reports" && (
@@ -4132,6 +4327,13 @@ export function DashboardPage() {
             </button>
           </form>
         </article>
+      )}
+
+      {trackingOrderId && (
+        <ShipmentTrackingModal
+          orderId={trackingOrderId}
+          onClose={() => setTrackingOrderId(null)}
+        />
       )}
     </main>
   );

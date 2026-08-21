@@ -10,8 +10,13 @@ import { useToast } from "../context/ToastContext";
 import type { Seller, LinkedAccountOnboardingStatus } from "../types";
 
 type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
-type SortBy = "latest" | "oldest" | "business";
-type AdminTab = "sellers" | "revenue";
+type ApprovalStatusFilter = "all" | ApprovalStatus;
+type SortBy = "latest" | "oldest" | "business" | "expiring_soon";
+type AdminTab = "sellers" | "subscriptions" | "revenue";
+
+type PlanFilter = "all" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS" | "NONE";
+type SubscriptionStatusFilter = "all" | "ACTIVE" | "EXPIRED" | "PENDING" | "NONE";
+type AddonFilter = "all" | "active" | "inactive";
 
 const ADMIN_TOKEN_KEY = "zensos_admin_token";
 
@@ -20,6 +25,103 @@ function statusBadge(status: ApprovalStatus) {
   if (status === "rejected") return "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
   if (status === "suspended") return "bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700";
   return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+}
+
+function planBadgeClass(plan?: string) {
+  const p = (plan || "").toUpperCase();
+  if (p === "BUSINESS") return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800";
+  if (p === "GROWTH") return "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800";
+  if (p === "STARTER") return "bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800";
+  if (p === "TRIAL") return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+  return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+}
+
+function subscriptionStatusBadgeClass(status?: string) {
+  const s = (status || "").toUpperCase();
+  if (s === "ACTIVE") return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+  if (s === "EXPIRED" || s === "CANCELLED") return "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
+  if (s === "PENDING" || s === "PAYMENT_PENDING") return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+  return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+}
+
+function addonStatusBadgeClass(status?: string) {
+  const s = (status || "").toUpperCase();
+  if (s === "ACTIVE") return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+  if (s === "PAYMENT_PENDING") return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+  if (s === "EXPIRED" || s === "CANCELLED") return "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
+  return "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+}
+
+function getSellerSubscriptionMeta(seller: Seller) {
+  const now = new Date();
+  const plan = (seller.currentPlan || "NONE").toUpperCase();
+  const rawStatus = (seller.subscriptionStatus || "NONE").toUpperCase();
+
+  // Expiry date resolution
+  let endDate: Date | null = null;
+  if (seller.subscriptionEndDate) {
+    endDate = new Date(seller.subscriptionEndDate);
+  } else if (seller.trialEndDate) {
+    endDate = new Date(seller.trialEndDate);
+  }
+
+  let remainingDays: number | null = null;
+  let isExpired = false;
+  let isExpiringSoon = false;
+  let progressPercent = 0;
+
+  if (endDate && !isNaN(endDate.getTime())) {
+    const diffTime = endDate.getTime() - now.getTime();
+    remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    isExpired = remainingDays <= 0;
+    isExpiringSoon = remainingDays > 0 && remainingDays <= 5;
+    const totalDays = plan === "TRIAL" ? 15 : 30;
+    progressPercent = Math.min(100, Math.max(0, 100 - (Math.max(0, remainingDays) / totalDays) * 100));
+  }
+
+  // Effective status calculation
+  let effectiveStatus = rawStatus;
+  if (rawStatus === "NONE" && plan === "TRIAL") {
+    effectiveStatus = isExpired ? "EXPIRED" : "ACTIVE";
+  } else if (isExpired && rawStatus === "ACTIVE") {
+    effectiveStatus = "EXPIRED";
+  }
+
+  // Addon info
+  const addonStatus = (seller.deliveryAddonStatus || "NOT_ACTIVE").toUpperCase();
+  let addonEndDate: Date | null = null;
+  let addonRemainingDays: number | null = null;
+  let isAddonExpired = false;
+  let isAddonActive = addonStatus === "ACTIVE";
+
+  if (seller.deliveryAddonExpiresAt) {
+    addonEndDate = new Date(seller.deliveryAddonExpiresAt);
+    if (!isNaN(addonEndDate.getTime())) {
+      const addonDiff = addonEndDate.getTime() - now.getTime();
+      addonRemainingDays = Math.ceil(addonDiff / (1000 * 60 * 60 * 24));
+      isAddonExpired = addonRemainingDays <= 0;
+      if (isAddonExpired && addonStatus === "ACTIVE") {
+        isAddonActive = false;
+      }
+    }
+  }
+
+  return {
+    plan,
+    status: effectiveStatus,
+    endDate,
+    remainingDays,
+    isExpired,
+    isExpiringSoon,
+    progressPercent,
+    addonStatus,
+    addonEndDate,
+    addonRemainingDays,
+    isAddonActive,
+    isAddonExpired,
+    pickupLocation: seller.shiprocketPickupLocation || "",
+    courierPreference: seller.courierPreference || "BEST_AVAILABLE",
+  };
 }
 
 function displayValue(value?: string | null) {
@@ -512,13 +614,18 @@ export function AdminPage() {
   const [token, setToken] = useState<string>(() => localStorage.getItem(ADMIN_TOKEN_KEY) || "");
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<ApprovalStatus>("pending");
+  const [status, setStatus] = useState<ApprovalStatusFilter>("all");
   const [adminTab, setAdminTab] = useState<AdminTab>("sellers");
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [allSellersForSubs, setAllSellersForSubs] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAllSellers, setLoadingAllSellers] = useState(false);
   const [submittingLogin, setSubmittingLogin] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("latest");
+  const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
+  const [subStatusFilter, setSubStatusFilter] = useState<SubscriptionStatusFilter>("all");
+  const [addonFilter, setAddonFilter] = useState<AddonFilter>("all");
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [loadingSellerDetail, setLoadingSellerDetail] = useState(false);
   const [sellerActionLoading, setSellerActionLoading] = useState<SellerActionKey | null>(null);
@@ -546,13 +653,14 @@ export function AdminPage() {
     [token]
   );
 
-  async function loadSellers(nextStatus: ApprovalStatus = status) {
+  // Always fetch ALL sellers — filter client-side so stat cards always have accurate counts
+  async function loadSellers() {
     if (!token) return;
     setLoading(true);
     setError("");
     try {
       const response = await api.get<{ sellers: Seller[] }>("/admin/sellers", {
-        params: { status: nextStatus },
+        params: { status: "all" },
         headers: authHeaders,
       });
       setSellers(response.data.sellers);
@@ -563,10 +671,33 @@ export function AdminPage() {
     }
   }
 
+  async function loadAllSellersForSubscriptions() {
+    if (!token) return;
+    setLoadingAllSellers(true);
+    try {
+      const response = await api.get<{ sellers: Seller[] }>("/admin/sellers", {
+        params: { status: "all" },
+        headers: authHeaders,
+      });
+      setAllSellersForSubs(response.data.sellers);
+    } catch {
+      console.warn("Unable to fetch all sellers for subscriptions view.");
+    } finally {
+      setLoadingAllSellers(false);
+    }
+  }
+
   useEffect(() => {
-    void loadSellers(status);
+    void loadSellers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, status]);
+  }, [token]);
+
+  useEffect(() => {
+    if (token && adminTab === "subscriptions") {
+      void loadAllSellersForSubscriptions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, adminTab]);
 
   useEffect(() => {
     if (!token) return;
@@ -725,7 +856,7 @@ export function AdminPage() {
         { headers: authHeaders }
       );
       setSuccess(response.data.message || "Linked account provisioning retried.");
-      await loadSellers(status);
+      await loadSellers();
       if (selectedSeller?._id === sellerId && response.data.seller) {
         setSelectedSeller(response.data.seller);
       }
@@ -762,7 +893,7 @@ export function AdminPage() {
       );
       setSuccess(response.data.message || "Razorpay account linked.");
       setManualRzpAccountId("");
-      await loadSellers(status);
+      await loadSellers();
       if (selectedSeller?._id === sellerId && response.data.seller) {
         setSelectedSeller(response.data.seller);
       }
@@ -793,7 +924,7 @@ export function AdminPage() {
         { headers: authHeaders }
       );
       setSuccess(`Seller marked as ${nextStatus}.`);
-      await loadSellers(status);
+      await loadSellers();
       if (selectedSeller?._id === sellerId && response.data.seller) {
         setSelectedSeller(response.data.seller);
       }
@@ -852,7 +983,7 @@ export function AdminPage() {
         { headers: authHeaders }
       );
       setSuccess("Seller KYC status updated.");
-      await loadSellers(status);
+      await loadSellers();
       if (selectedSeller?._id === sellerId && response.data.seller) {
         setSelectedSeller(response.data.seller);
       }
@@ -878,12 +1009,18 @@ export function AdminPage() {
   const filteredSellers = useMemo(() => {
     const q = search.trim().toLowerCase();
     const result = sellers.filter((seller) => {
-      if (!q) return true;
-      return (
-        seller.businessName?.toLowerCase().includes(q) ||
-        seller.phone?.toLowerCase().includes(q) ||
-        seller.businessEmail?.toLowerCase().includes(q)
-      );
+      // Filter by approval status dropdown
+      if (status !== "all" && seller.approvalStatus !== status) return false;
+      // Filter by search query
+      if (q) {
+        return (
+          seller.businessName?.toLowerCase().includes(q) ||
+          seller.phone?.toLowerCase().includes(q) ||
+          seller.businessEmail?.toLowerCase().includes(q) ||
+          seller.slug?.toLowerCase().includes(q)
+        );
+      }
+      return true;
     });
 
     return [...result].sort((a, b) => {
@@ -894,7 +1031,82 @@ export function AdminPage() {
       const bTime = new Date(b.createdAt || 0).getTime();
       return sortBy === "oldest" ? aTime - bTime : bTime - aTime;
     });
-  }, [search, sellers, sortBy]);
+  }, [search, sellers, sortBy, status]);
+
+  // Subscriptions & Add-ons list
+  const subscriptionSellersSource = allSellersForSubs.length > 0 ? allSellersForSubs : sellers;
+
+  const subscriptionMetrics = useMemo(() => {
+    let activeSubs = 0;
+    let activeTrials = 0;
+    let activeAddons = 0;
+    let expiringSoonCount = 0;
+
+    subscriptionSellersSource.forEach((seller) => {
+      const meta = getSellerSubscriptionMeta(seller);
+      if (meta.status === "ACTIVE") activeSubs++;
+      if (meta.plan === "TRIAL" && meta.status === "ACTIVE") activeTrials++;
+      if (meta.isAddonActive) activeAddons++;
+      if (meta.isExpiringSoon) expiringSoonCount++;
+    });
+
+    return {
+      total: subscriptionSellersSource.length,
+      activeSubs,
+      activeTrials,
+      activeAddons,
+      expiringSoonCount,
+    };
+  }, [subscriptionSellersSource]);
+
+  const filteredSubscriptionSellers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return subscriptionSellersSource
+      .filter((seller) => {
+        const meta = getSellerSubscriptionMeta(seller);
+
+        // Search text
+        if (q) {
+          const matchSearch =
+            seller.businessName?.toLowerCase().includes(q) ||
+            seller.phone?.toLowerCase().includes(q) ||
+            seller.businessEmail?.toLowerCase().includes(q) ||
+            seller.slug?.toLowerCase().includes(q);
+          if (!matchSearch) return false;
+        }
+
+        // Plan filter
+        if (planFilter !== "all" && meta.plan !== planFilter) {
+          return false;
+        }
+
+        // Subscription status filter
+        if (subStatusFilter !== "all" && meta.status !== subStatusFilter) {
+          return false;
+        }
+
+        // Addon filter
+        if (addonFilter === "active" && !meta.isAddonActive) return false;
+        if (addonFilter === "inactive" && meta.isAddonActive) return false;
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "business") {
+          return (a.businessName || "").localeCompare(b.businessName || "");
+        }
+        if (sortBy === "expiring_soon") {
+          const metaA = getSellerSubscriptionMeta(a);
+          const metaB = getSellerSubscriptionMeta(b);
+          const timeA = metaA.endDate ? metaA.endDate.getTime() : Infinity;
+          const timeB = metaB.endDate ? metaB.endDate.getTime() : Infinity;
+          return timeA - timeB;
+        }
+        const aTime = new Date(a.createdAt || 0).getTime();
+        const bTime = new Date(b.createdAt || 0).getTime();
+        return sortBy === "oldest" ? aTime - bTime : bTime - aTime;
+      });
+  }, [subscriptionSellersSource, search, planFilter, subStatusFilter, addonFilter, sortBy]);
 
   function getAdminPreviewUrl(seller: Seller) {
     if (!seller.slug) return "";
@@ -916,12 +1128,12 @@ export function AdminPage() {
             Review and approve seller onboarding with a cleaner operational workspace.
           </h1>
           <p className="max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-            Sign in to manage pending sellers, inspect KYC details, and publish approval decisions from one structured dashboard.
+            Sign in to manage pending sellers, inspect KYC details, monitor seller subscriptions, and publish approval decisions from one structured dashboard.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { label: "Seller reviews", value: "Fast", icon: "orders" },
-              { label: "Decision flow", value: "Clear", icon: "check" },
+              { label: "Subscriptions", value: "Realtime", icon: "earnings" },
               { label: "KYC access", value: "Ready", icon: "policies" },
             ].map((item) => (
               <div key={item.label} className="surface-card rounded-[24px] p-4">
@@ -941,7 +1153,7 @@ export function AdminPage() {
               Admin Access
             </div>
             <h1 className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">Admin {t("auth.login", "Login")}</h1>
-            <p className="text-sm leading-6 text-slate-500 dark:text-slate-300">Review seller requests and approve registrations.</p>
+            <p className="text-sm leading-6 text-slate-500 dark:text-slate-300">Review seller requests, subscriptions, and platform settings.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <InputField
@@ -974,18 +1186,28 @@ export function AdminPage() {
 
   return (
     <main className="mx-auto w-full max-w-7xl space-y-4 px-3 py-5 sm:px-4 sm:py-8">
-      <header className="surface-card-strong flex flex-col items-stretch justify-between gap-4 rounded-[28px] bg-gradient-to-r from-white via-slate-50 to-sky-50/70 p-5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 sm:flex-row sm:items-center">
+      <header className="surface-card-strong flex flex-col items-stretch justify-between gap-4 rounded-[28px] bg-gradient-to-r from-white via-slate-50 to-teal-50/50 p-5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 sm:flex-row sm:items-center">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/85 px-3 py-1 text-xs font-bold uppercase text-sky-700 dark:border-sky-900/40 dark:bg-slate-950/80 dark:text-sky-300">
             <AppIcon name="policies" className="text-[18px]" />
-            {adminTab === "sellers" ? "Moderation Queue" : "Revenue Console"}
+            {adminTab === "sellers"
+              ? "Moderation Queue"
+              : adminTab === "subscriptions"
+              ? "Subscription Manager"
+              : "Revenue Console"}
           </div>
           <h1 className="mt-3 font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {adminTab === "sellers" ? t("admin.title", "Seller Approvals") : "Platform Revenue"}
+            {adminTab === "sellers"
+              ? t("admin.title", "Seller Approvals")
+              : adminTab === "subscriptions"
+              ? "Seller Subscriptions & Add-ons"
+              : "Platform Revenue"}
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
             {adminTab === "sellers"
               ? "Search, review and approve seller onboarding requests quickly."
+              : adminTab === "subscriptions"
+              ? "Track active seller plans, expiration dates, remaining validities, and delivery partner add-ons."
               : "Manage commission, platform revenue, settlement retries, and audit logs."}
           </p>
         </div>
@@ -998,12 +1220,16 @@ export function AdminPage() {
       <div className="surface-card flex flex-col gap-2 rounded-2xl p-2 sm:flex-row">
         {[
           { key: "sellers", label: "Seller Approvals", icon: "orders" },
+          { key: "subscriptions", label: "Subscriptions & Add-ons", icon: "earnings" },
           { key: "revenue", label: "Platform Revenue", icon: "reports" },
         ].map((item) => (
           <button
             key={item.key}
             type="button"
-            onClick={() => setAdminTab(item.key as AdminTab)}
+            onClick={() => {
+              setAdminTab(item.key as AdminTab);
+              setSearch("");
+            }}
             className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${
               adminTab === item.key
                 ? "bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950"
@@ -1016,328 +1242,650 @@ export function AdminPage() {
         ))}
       </div>
 
+      {/* ─── TAB 1: SELLER APPROVALS ─── */}
       {adminTab === "sellers" ? (
         <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Visible Sellers", value: filteredSellers.length, note: "Current filtered results", icon: "dashboard" },
-          { label: "Pending", value: sellers.filter((seller) => seller.approvalStatus === "pending").length, note: "Awaiting review", icon: "pending" },
-          { label: "Approved", value: sellers.filter((seller) => seller.approvalStatus === "approved").length, note: "Live seller accounts", icon: "active" },
-          { label: "Rejected", value: sellers.filter((seller) => seller.approvalStatus === "rejected").length, note: "Needs follow-up", icon: "inactive" },
-        ].map((item) => (
-          <Card key={item.label} className="rounded-[26px] p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">{item.label}</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[28px]" />
-              </span>
-            </div>
-            <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{item.value}</p>
-          </Card>
-        ))}
-      </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Visible Sellers", value: filteredSellers.length, note: "Current filtered results", icon: "dashboard" },
+              { label: "Pending", value: sellers.filter((s) => s.approvalStatus === "pending").length, note: "Awaiting review", icon: "pending" },
+              { label: "Approved", value: sellers.filter((s) => s.approvalStatus === "approved").length, note: "Live seller accounts", icon: "active" },
+              { label: "Rejected", value: sellers.filter((s) => s.approvalStatus === "rejected").length, note: "Needs follow-up", icon: "inactive" },
+            ].map((item) => (
+              <Card key={item.label} className="rounded-[26px] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">{item.label}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
+                  </div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[28px]" />
+                  </span>
+                </div>
+                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{item.value}</p>
+              </Card>
+            ))}
+          </div>
 
+          <Card className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-3">
+              <InputField
+                label="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Business name, phone, email, slug"
+                hint="Filter sellers instantly"
+              />
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Status</span>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as ApprovalStatusFilter)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sort by</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortBy)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="latest">Latest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="business">Business name A-Z</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+              <span>Showing {filteredSellers.length} of {sellers.length} sellers</span>
+              <Button variant="secondary" onClick={() => void loadSellers()} className="w-full sm:w-auto">
+                <AppIcon name="refresh" className="text-[13px]" />
+                Refresh list
+              </Button>
+            </div>
+          </Card>
+
+          {/* Desktop table */}
+          <Card className="hidden p-0 md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/80">
+                  <tr className="text-xs uppercase text-slate-500">
+                    <th className="px-4 py-3">Business</th>
+                    <th className="px-4 py-3">Contact</th>
+                    <th className="px-4 py-3">Registered</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [...Array.from({ length: 5 })].map((_, i) => (
+                      <tr key={i} className="border-t border-slate-200 dark:border-slate-700">
+                        <td className="px-4 py-4" colSpan={5}>
+                          <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredSellers.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={5}>
+                        No sellers found for this filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSellers.map((seller) => (
+                      <tr key={seller._id} className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
+                          {seller.businessAddress ? (
+                            <p className="text-xs text-slate-500 dark:text-slate-300 line-clamp-1">{seller.businessAddress}</p>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-slate-700 dark:text-slate-200">{seller.phone}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-300">{seller.businessEmail || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-xs">
+                          {new Date(seller.createdAt || "").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || "pending") as ApprovalStatus)}`}>
+                            {seller.approvalStatus || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1.5">
+                            <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => void openSellerDetail(seller)}>
+                              View
+                            </Button>
+                            <Button variant="success" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "approved", "approve")}>
+                              Approve
+                            </Button>
+                            <Button variant="danger" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>
+                              Reject
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              [...Array.from({ length: 4 })].map((_, i) => (
+                <Card key={i}>
+                  <div className="h-14 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                </Card>
+              ))
+            ) : filteredSellers.length === 0 ? (
+              <Card><p className="text-sm text-slate-500">No sellers found for this filter.</p></Card>
+            ) : (
+              filteredSellers.map((seller) => (
+                <Card key={seller._id} className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-300">{seller.phone}</p>
+                    </div>
+                    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || "pending") as ApprovalStatus)}`}>
+                      {seller.approvalStatus || "—"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <Button variant="secondary" className="px-2.5 py-1 text-xs flex-1" onClick={() => void openSellerDetail(seller)}>View</Button>
+                    <Button variant="success" className="px-2.5 py-1 text-xs flex-1" onClick={() => void updateApproval(seller._id, "approved", "approve")}>Approve</Button>
+                    <Button variant="danger" className="px-2.5 py-1 text-xs flex-1" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>Reject</Button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </>
       ) : null}
 
-      {adminTab === "revenue" ? (
-      <Card className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Platform Revenue</p>
-            <h2 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100">Commission and settlement tracking</h2>
+      {/* ─── TAB 2: SUBSCRIPTIONS & ADD-ONS ─── */}
+      {adminTab === "subscriptions" ? (
+        <div className="space-y-4">
+          {/* Summary Metric Cards */}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: "Active Subscriptions",
+                value: subscriptionMetrics.activeSubs,
+                note: `${subscriptionMetrics.total} total registered sellers`,
+                icon: "earnings",
+              },
+              {
+                label: "Trial Accounts",
+                value: subscriptionMetrics.activeTrials,
+                note: "15-day free onboarding",
+                icon: "dashboard",
+              },
+              {
+                label: "Active Add-ons",
+                value: subscriptionMetrics.activeAddons,
+                note: "Delivery Partner (Shiprocket)",
+                icon: "truck",
+              },
+              {
+                label: "Expiring Soon",
+                value: subscriptionMetrics.expiringSoonCount,
+                note: "Within 5 days or expired",
+                icon: "pending",
+              },
+            ].map((item) => (
+              <Card key={item.label} className="rounded-[26px] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{item.label}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
+                  </div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    <AppIcon name={item.icon as Parameters<typeof AppIcon>[0]["name"]} className="text-[26px]" />
+                  </span>
+                </div>
+                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{item.value}</p>
+              </Card>
+            ))}
           </div>
-          <Button variant="secondary" onClick={() => void loadPlatformFinance()} loading={financeLoading} className="w-full sm:w-auto">
-            <AppIcon name="refresh" className="text-[13px]" />
-            Refresh
-          </Button>
-        </div>
 
-        <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr]">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Current commission percentage</span>
-              <div className="flex gap-2">
-                <input
-                  value={commissionInput}
-                  onChange={(e) => setCommissionInput(e.target.value)}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
+          {/* Filters Bar */}
+          <Card className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <InputField
+                label="Search Sellers"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Business name, phone, email"
+                hint="Live filter across all sellers"
+              />
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Plan Tier</span>
+                <select
+                  value={planFilter}
+                  onChange={(e) => setPlanFilter(e.target.value as PlanFilter)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-                <Button onClick={() => void updateCommission()} loading={financeActionLoading === "commission"}>
-                  Save
-                </Button>
-              </div>
-            </label>
-            <p className="mt-4 text-3xl font-bold text-slate-900 dark:text-white">₹{Number(platformFinance?.totalPlatformRevenue || 0).toLocaleString("en-IN")}</p>
-            <p className="mt-1 text-xs text-slate-500">Total platform revenue from stored commission ledgers</p>
-          </div>
+                >
+                  <option value="all">All Plans</option>
+                  <option value="TRIAL">Trial</option>
+                  <option value="STARTER">Starter</option>
+                  <option value="GROWTH">Growth</option>
+                  <option value="BUSINESS">Business</option>
+                  <option value="NONE">None</option>
+                </select>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Subscription Status</span>
+                <select
+                  value={subStatusFilter}
+                  onChange={(e) => setSubStatusFilter(e.target.value as SubscriptionStatusFilter)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="NONE">None</option>
+                </select>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Add-on Filter</span>
+                <select
+                  value={addonFilter}
+                  onChange={(e) => setAddonFilter(e.target.value as AddonFilter)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">All Sellers</option>
+                  <option value="active">Active Delivery Add-on</option>
+                  <option value="inactive">No Active Add-on</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+              <span>Showing {filteredSubscriptionSellers.length} of {subscriptionSellersSource.length} sellers</span>
+              <Button variant="secondary" onClick={() => void loadAllSellersForSubscriptions()} loading={loadingAllSellers} className="w-full sm:w-auto">
+                <AppIcon name="refresh" className="text-[13px]" />
+                Refresh Subscriptions
+              </Button>
+            </div>
+          </Card>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(platformFinance?.settlementTracking || []).slice(0, 6).map((row: any) => (
-              <div key={row.status} className="rounded-2xl border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{String(row.status || "unsettled").replace(/_/g, " ")}</p>
-                <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{row.count}</p>
-                <p className="mt-1 text-xs text-slate-500">Vendor ₹{Number(row.vendorAmount || 0).toLocaleString("en-IN")}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-2">
-          <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 dark:bg-slate-900">
-                <tr>
-                  <th className="px-3 py-2">Vendor</th>
-                  <th className="px-3 py-2 text-right">Revenue</th>
-                  <th className="px-3 py-2 text-right">Orders</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(platformFinance?.revenueByVendor || []).slice(0, 8).map((row: any) => (
-                  <tr key={row.sellerId} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">{row.businessName}</td>
-                    <td className="px-3 py-2 text-right">₹{Number(row.revenue || 0).toLocaleString("en-IN")}</td>
-                    <td className="px-3 py-2 text-right">{row.orders}</td>
+          {/* Desktop Subscriptions Table */}
+          <Card className="hidden p-0 md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/80">
+                  <tr className="text-xs uppercase text-slate-500">
+                    <th className="px-4 py-3.5">Seller & Store</th>
+                    <th className="px-4 py-3.5">Subscription Plan</th>
+                    <th className="px-4 py-3.5">Plan Validity</th>
+                    <th className="px-4 py-3.5">Add-on Features</th>
+                    <th className="px-4 py-3.5">Add-on Validity</th>
+                    <th className="px-4 py-3.5 text-right">Actions</th>
                   </tr>
-                ))}
-                {(platformFinance?.revenueByVendor || []).length === 0 ? (
-                  <tr><td colSpan={3} className="px-3 py-8 text-center text-slate-500">No platform revenue yet.</td></tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {loadingAllSellers ? (
+                    [...Array.from({ length: 6 })].map((_, i) => (
+                      <tr key={i}>
+                        <td className="px-4 py-4" colSpan={6}>
+                          <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredSubscriptionSellers.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-12 text-center text-sm text-slate-500" colSpan={6}>
+                        No sellers match the selected subscription and add-on filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSubscriptionSellers.map((seller) => {
+                      const meta = getSellerSubscriptionMeta(seller);
+                      return (
+                        <tr key={seller._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40 transition-colors">
+                          {/* Business Info */}
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              {seller.businessLogo ? (
+                                <img src={seller.businessLogo} alt="" className="h-8 w-8 rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white" />
+                              ) : (
+                                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300 font-bold text-xs">
+                                  {(seller.businessName || "S")[0].toUpperCase()}
+                                </span>
+                              )}
+                              <div>
+                                <p className="font-bold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{seller.phone} &middot; {seller.businessEmail || "No email"}</p>
+                              </div>
+                            </div>
+                          </td>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 dark:bg-slate-900">
-                <tr>
-                  <th className="px-3 py-2">Order</th>
-                  <th className="px-3 py-2">Vendor</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {settlementLogs.slice(0, 8).map((order: any) => (
-                  <tr key={order._id} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className="px-3 py-2 font-mono text-slate-600">{String(order._id).slice(-8)}</td>
-                    <td className="px-3 py-2">{order.seller?.businessName || "Unknown"}</td>
-                    <td className="px-3 py-2 capitalize">{String(order.settlementStatus || order.transferStatus || "unsettled").replace(/_/g, " ")}</td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void retrySettlement(order._id)}
-                        disabled={order.settlementStatus === "processed" || financeActionLoading === order._id}
-                        className="rounded-lg border border-slate-200 px-2 py-1 font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
+                          {/* Subscription Plan & Status */}
+                          <td className="px-4 py-3.5">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${planBadgeClass(meta.plan)}`}>
+                                {meta.plan}
+                              </span>
+                              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${subscriptionStatusBadgeClass(meta.status)}`}>
+                                {meta.status}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Plan Validity */}
+                          <td className="px-4 py-3.5">
+                            {meta.endDate ? (
+                              <div className="space-y-1.5 min-w-[140px]">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                    {meta.endDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                                    meta.isExpired
+                                      ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
+                                      : meta.isExpiringSoon
+                                      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                                      : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  }`}>
+                                    {meta.isExpired ? "Expired" : `${meta.remainingDays}d left`}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                      meta.progressPercent > 80 ? "bg-rose-500" : meta.progressPercent > 50 ? "bg-amber-500" : "bg-emerald-500"
+                                    }`}
+                                    style={{ width: `${meta.progressPercent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">Not activated</span>
+                            )}
+                          </td>
+
+                          {/* Add-on Features */}
+                          <td className="px-4 py-3.5">
+                            {meta.addonStatus !== "NOT_ACTIVE" ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="inline-flex items-center gap-1 rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-300">
+                                    <AppIcon name="truck" className="text-[12px]" />
+                                    Delivery Partner
+                                  </span>
+                                  <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase ${addonStatusBadgeClass(meta.addonStatus)}`}>
+                                    {meta.addonStatus}
+                                  </span>
+                                </div>
+                                {meta.pickupLocation ? (
+                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                                    📍 {meta.pickupLocation}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">None</span>
+                            )}
+                          </td>
+
+                          {/* Add-on Validity */}
+                          <td className="px-4 py-3.5">
+                            {meta.addonEndDate ? (
+                              <div>
+                                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                  {meta.addonEndDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                </p>
+                                <p className={`text-[10px] font-medium mt-0.5 ${
+                                  meta.isAddonExpired
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}>
+                                  {meta.isAddonExpired ? "Expired" : `${meta.addonRemainingDays} days remaining`}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
+                          </td>
+
+                          {/* Quick Actions */}
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="secondary"
+                                className="px-2.5 py-1 text-xs"
+                                onClick={() => void sendSubscriptionEmail(seller._id)}
+                                disabled={emailSendingId === seller._id}
+                              >
+                                <AppIcon name="mail" className="text-[12px]" />
+                                {emailSendingId === seller._id ? "Sending…" : "Reminder Email"}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Mobile Subscriptions Cards */}
+          <div className="space-y-3 md:hidden">
+            {loadingAllSellers ? (
+              [...Array.from({ length: 4 })].map((_, i) => (
+                <Card key={i}>
+                  <div className="h-16 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                </Card>
+              ))
+            ) : filteredSubscriptionSellers.length === 0 ? (
+              <Card><p className="text-sm text-slate-500">No sellers match filters.</p></Card>
+            ) : (
+              filteredSubscriptionSellers.map((seller) => {
+                const meta = getSellerSubscriptionMeta(seller);
+                return (
+                  <Card key={seller._id} className="space-y-3 rounded-2xl p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{seller.phone}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-bold capitalize ${planBadgeClass(meta.plan)}`}>
+                          {meta.plan}
+                        </span>
+                        <span className={`rounded-full border px-1.5 py-0.2 text-[10px] font-semibold uppercase ${subscriptionStatusBadgeClass(meta.status)}`}>
+                          {meta.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Validity Info */}
+                    <div className="rounded-xl bg-slate-50 p-2.5 dark:bg-slate-900/60 text-xs space-y-1.5 border border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Plan Expiry</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {meta.endDate
+                            ? meta.endDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                            : "N/A"}
+                        </span>
+                      </div>
+                      {meta.remainingDays !== null ? (
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-slate-400">Remaining</span>
+                          <span className={meta.isExpired ? "text-rose-600 font-bold" : "text-emerald-600 font-bold"}>
+                            {meta.isExpired ? "Expired" : `${meta.remainingDays} days left`}
+                          </span>
+                        </div>
+                      ) : null}
+                      {meta.addonStatus !== "NOT_ACTIVE" ? (
+                        <div className="pt-1.5 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center text-[11px]">
+                          <span className="text-teal-700 dark:text-teal-300 font-semibold">Delivery Partner Add-on</span>
+                          <span className={`px-1.5 py-0.2 rounded font-bold uppercase text-[9px] ${addonStatusBadgeClass(meta.addonStatus)}`}>
+                            {meta.addonStatus}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Actions */}
+                    <div>
+                      <Button
+                        variant="secondary"
+                        className="w-full px-2.5 py-1.5 text-xs"
+                        onClick={() => void sendSubscriptionEmail(seller._id)}
+                        disabled={emailSendingId === seller._id}
                       >
-                        Retry
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {settlementLogs.length === 0 ? (
-                  <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-500">No settlements yet.</td></tr>
-                ) : null}
-              </tbody>
-            </table>
+                        <AppIcon name="mail" className="text-[12px]" />
+                        {emailSendingId === seller._id ? "Sending…" : "Send Subscription Reminder Email"}
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </div>
-
-        <div className="rounded-2xl border border-slate-100 p-3 dark:border-slate-800">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent audit logs</p>
-          <div className="mt-2 grid gap-2 md:grid-cols-2">
-            {auditLogs.slice(0, 4).map((log: any) => (
-              <div key={log._id} className="rounded-xl bg-slate-50 px-3 py-2 text-xs dark:bg-slate-900">
-                <p className="font-semibold text-slate-800 dark:text-slate-100">{String(log.action || "").replace(/_/g, " ")}</p>
-                <p className="mt-0.5 text-slate-500">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
-              </div>
-            ))}
-            {auditLogs.length === 0 ? <p className="text-sm text-slate-500">No audit logs yet.</p> : null}
-          </div>
-        </div>
-      </Card>
       ) : null}
 
-      {adminTab === "sellers" ? (
-        <>
-      <Card className="space-y-3">
-        <div className="grid gap-3 md:grid-cols-3">
-          <InputField
-            label="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Business name, phone, email"
-            hint="Filter sellers instantly"
-          />
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Status</span>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ApprovalStatus)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </label>
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Sort by</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            >
-              <option value="latest">Latest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="business">Business name A-Z</option>
-            </select>
-          </label>
-        </div>
-        <div className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
-          <span>Total shown: {filteredSellers.length}</span>
-          <Button variant="secondary" onClick={() => void loadSellers(status)} className="w-full sm:w-auto">
-            Refresh list
-          </Button>
-        </div>
-      </Card>
+      {/* ─── TAB 3: PLATFORM REVENUE ─── */}
+      {adminTab === "revenue" ? (
+        <Card className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Platform Revenue</p>
+              <h2 className="mt-1 font-heading text-xl font-bold text-slate-900 dark:text-slate-100">Commission and settlement tracking</h2>
+            </div>
+            <Button variant="secondary" onClick={() => void loadPlatformFinance()} loading={financeLoading} className="w-full sm:w-auto">
+              <AppIcon name="refresh" className="text-[13px]" />
+              Refresh
+            </Button>
+          </div>
 
-      {/* Desktop table */}
-      <Card className="hidden p-0 md:block">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800/80">
-              <tr className="text-xs uppercase text-slate-500">
-                <th className="px-4 py-3">Business</th>
-                <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Registered</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [...Array.from({ length: 6 })].map((_, i) => (
-                  <tr key={i} className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="px-4 py-4" colSpan={6}>
-                      <div className="h-3 w-full animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-                    </td>
+          <div className="grid gap-3 lg:grid-cols-[1fr_1.2fr]">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Current commission percentage</span>
+                <div className="flex gap-2">
+                  <input
+                    value={commissionInput}
+                    onChange={(e) => setCommissionInput(e.target.value)}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  />
+                  <Button onClick={() => void updateCommission()} loading={financeActionLoading === "commission"}>
+                    Save
+                  </Button>
+                </div>
+              </label>
+              <p className="mt-4 text-3xl font-bold text-slate-900 dark:text-white">₹{Number(platformFinance?.totalPlatformRevenue || 0).toLocaleString("en-IN")}</p>
+              <p className="mt-1 text-xs text-slate-500">Total platform revenue from stored commission ledgers</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(platformFinance?.settlementTracking || []).slice(0, 6).map((row: any) => (
+                <div key={row.status} className="rounded-2xl border border-slate-100 bg-white p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{String(row.status || "unsettled").replace(/_/g, " ")}</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{row.count}</p>
+                  <p className="mt-1 text-xs text-slate-500">Vendor ₹{Number(row.vendorAmount || 0).toLocaleString("en-IN")}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 dark:bg-slate-900">
+                  <tr>
+                    <th className="px-3 py-2">Vendor</th>
+                    <th className="px-3 py-2 text-right">Revenue</th>
+                    <th className="px-3 py-2 text-right">Orders</th>
                   </tr>
-                ))
-              ) : filteredSellers.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-10 text-center text-sm text-slate-500" colSpan={6}>
-                    No sellers found for this filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredSellers.map((seller) => (
-                  <tr key={seller._id} className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
-                      {seller.businessAddress ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-300">{seller.businessAddress}</p>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-700 dark:text-slate-200">{seller.phone}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-300">{seller.businessEmail || "—"}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-700 dark:text-slate-200 capitalize">{seller.currentPlan || "None"}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-300 capitalize">{seller.subscriptionStatus || "—"}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {new Date(seller.createdAt || "").toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || status) as ApprovalStatus)}`}>
-                        {seller.approvalStatus || status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => void openSellerDetail(seller)}>
-                          View
-                        </Button>
-                        <Button variant="success" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "approved", "approve")}>
-                          Approve
-                        </Button>
-                        <Button variant="danger" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>
-                          Reject
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          className="px-2.5 py-1 text-xs"
-                          onClick={() => void sendSubscriptionEmail(seller._id)}
-                          disabled={emailSendingId === seller._id}
+                </thead>
+                <tbody>
+                  {(platformFinance?.revenueByVendor || []).slice(0, 8).map((row: any) => (
+                    <tr key={row.sellerId} className="border-t border-slate-100 dark:border-slate-800">
+                      <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">{row.businessName}</td>
+                      <td className="px-3 py-2 text-right">₹{Number(row.revenue || 0).toLocaleString("en-IN")}</td>
+                      <td className="px-3 py-2 text-right">{row.orders}</td>
+                    </tr>
+                  ))}
+                  {(platformFinance?.revenueByVendor || []).length === 0 ? (
+                    <tr><td colSpan={3} className="px-3 py-8 text-center text-slate-500">No platform revenue yet.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 dark:bg-slate-900">
+                  <tr>
+                    <th className="px-3 py-2">Order</th>
+                    <th className="px-3 py-2">Vendor</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {settlementLogs.slice(0, 8).map((order: any) => (
+                    <tr key={order._id} className="border-t border-slate-100 dark:border-slate-800">
+                      <td className="px-3 py-2 font-mono text-slate-600">{String(order._id).slice(-8)}</td>
+                      <td className="px-3 py-2">{order.seller?.businessName || "Unknown"}</td>
+                      <td className="px-3 py-2 capitalize">{String(order.settlementStatus || order.transferStatus || "unsettled").replace(/_/g, " ")}</td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => void retrySettlement(order._id)}
+                          disabled={order.settlementStatus === "processed" || financeActionLoading === order._id}
+                          className="rounded-lg border border-slate-200 px-2 py-1 font-semibold text-slate-700 disabled:opacity-40 dark:border-slate-700 dark:text-slate-200"
                         >
-                          {emailSendingId === seller._id ? "Sending…" : "Send Email"}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                          Retry
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {settlementLogs.length === 0 ? (
+                    <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-500">No settlements yet.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      {/* Mobile cards */}
-      <div className="space-y-3 md:hidden">
-        {loading ? (
-          [...Array.from({ length: 4 })].map((_, i) => (
-            <Card key={i}>
-              <div className="h-14 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
-            </Card>
-          ))
-        ) : filteredSellers.length === 0 ? (
-          <Card><p className="text-sm text-slate-500">No sellers found for this filter.</p></Card>
-        ) : (
-          filteredSellers.map((seller) => (
-            <Card key={seller._id} className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{seller.businessName}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-300">{seller.phone}</p>
+          <div className="rounded-2xl border border-slate-100 p-3 dark:border-slate-800">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent audit logs</p>
+            <div className="mt-2 grid gap-2 md:grid-cols-2">
+              {auditLogs.slice(0, 4).map((log: any) => (
+                <div key={log._id} className="rounded-xl bg-slate-50 px-3 py-2 text-xs dark:bg-slate-900">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100">{String(log.action || "").replace(/_/g, " ")}</p>
+                  <p className="mt-0.5 text-slate-500">{new Date(log.createdAt).toLocaleString("en-IN")}</p>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusBadge((seller.approvalStatus || status) as ApprovalStatus)}`}>
-                    {seller.approvalStatus || status}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase text-slate-500 tracking-wider">
-                    {seller.currentPlan || "None"} &middot; {seller.subscriptionStatus || "—"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => void openSellerDetail(seller)}>View</Button>
-                <Button variant="success" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "approved", "approve")}>Approve</Button>
-                <Button variant="danger" className="px-2.5 py-1 text-xs" onClick={() => void updateApproval(seller._id, "rejected", "reject")}>Reject</Button>
-                <Button
-                  variant="secondary"
-                  className="px-2.5 py-1 text-xs"
-                  onClick={() => void sendSubscriptionEmail(seller._id)}
-                  disabled={emailSendingId === seller._id}
-                >
-                  {emailSendingId === seller._id ? "Sending…" : "Send Email"}
-                </Button>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+              ))}
+              {auditLogs.length === 0 ? <p className="text-sm text-slate-500">No audit logs yet.</p> : null}
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       {/* Seller detail modal */}
       {selectedSeller ? (
@@ -1417,6 +1965,85 @@ export function AdminPage() {
                   Loading full seller profile…
                 </div>
               ) : null}
+              {/* Subscriptions & Add-ons Overview */}
+              {(() => {
+                const meta = getSellerSubscriptionMeta(selectedSeller);
+                return (
+                  <SectionCard
+                    eyebrow="Plan & Features"
+                    title="Subscription & Add-ons"
+                    icon={
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50 text-orange-600 text-sm dark:bg-orange-950/60">
+                        ⚡
+                      </span>
+                    }
+                  >
+                    <div className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                          <p className="text-[11px] font-semibold uppercase text-slate-400">Current Plan</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold capitalize ${planBadgeClass(meta.plan)}`}>
+                              {meta.plan}
+                            </span>
+                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${subscriptionStatusBadgeClass(meta.status)}`}>
+                              {meta.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                          <p className="text-[11px] font-semibold uppercase text-slate-400">Plan Expiration</p>
+                          <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">
+                            {meta.endDate
+                              ? meta.endDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                              : "Not active"}
+                          </p>
+                          {meta.remainingDays !== null ? (
+                            <p className={`text-xs font-semibold mt-0.5 ${meta.isExpired ? "text-rose-600" : "text-emerald-600"}`}>
+                              {meta.isExpired ? "Expired" : `${meta.remainingDays} days left`}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                          <p className="text-[11px] font-semibold uppercase text-slate-400">Delivery Add-on</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${addonStatusBadgeClass(meta.addonStatus)}`}>
+                              {meta.addonStatus}
+                            </span>
+                            {meta.isAddonActive && meta.addonRemainingDays !== null ? (
+                              <span className="text-xs font-semibold text-emerald-600">
+                                {meta.addonRemainingDays}d left
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      {meta.pickupLocation || meta.courierPreference ? (
+                        <div className="grid gap-3 sm:grid-cols-2 pt-1">
+                          <DetailCell label="Shiprocket Pickup Location" value={meta.pickupLocation} />
+                          <DetailCell label="Courier Preference" value={meta.courierPreference} />
+                        </div>
+                      ) : null}
+
+                      <div className="flex justify-end pt-1">
+                        <Button
+                          variant="secondary"
+                          onClick={() => void sendSubscriptionEmail(selectedSeller._id)}
+                          disabled={emailSendingId === selectedSeller._id}
+                          className="text-xs"
+                        >
+                          <AppIcon name="mail" className="text-[13px]" />
+                          {emailSendingId === selectedSeller._id ? "Sending…" : "Send Subscription Reminder Email"}
+                        </Button>
+                      </div>
+                    </div>
+                  </SectionCard>
+                );
+              })()}
+
               <SectionCard
                 eyebrow="Registered details"
                 title="Business profile"
@@ -1705,8 +2332,6 @@ export function AdminPage() {
             </div>
           </div>
         </div>
-      ) : null}
-        </>
       ) : null}
     </main>
   );

@@ -125,6 +125,8 @@ function buildLegacyVariantItems(product: Product): VariantItem[] {
         price: product.variantPrices?.[priceKey] ?? product.price,
         mrp: product.variantMrps?.[priceKey] ?? product.mrp,
         isActive: true,
+        stock: product.stock,
+        isOutOfStock: product.isOutOfStock,
       });
     }
   }
@@ -192,7 +194,12 @@ function getNormalizedVariantGroups(product: Product) {
 }
 
 function getFirstAvailableVariant(product: Product) {
-  return getNormalizedVariantItems(product)[0] || null;
+  const items = getNormalizedVariantItems(product);
+  if (product.trackInventory) {
+    const inStock = items.find((item) => !item.isOutOfStock && (item.stock === undefined || item.stock > 0));
+    if (inStock) return inStock;
+  }
+  return items[0] || null;
 }
 
 function splitPackAndUom(value: string) {
@@ -713,27 +720,44 @@ export function PublicStorePage() {
   }, [seller, setPublicStoreHeader]);
 
   useEffect(() => {
+    if (!seller) return;
+
+    // 1. Dynamic Meta Title
     const previousTitle = document.title;
-    document.title = seller?.businessName ? `${seller.businessName}` : "Zensos";
+    document.title = seller.businessName ? seller.businessName : "Zensos";
+
+    // 2. Dynamic Meta Description
+    let metaDesc = document.querySelector<HTMLMetaElement>("meta[name='description']");
+    const previousDesc = metaDesc?.getAttribute("content") || "";
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.name = "description";
+      document.head.appendChild(metaDesc);
+    }
+    const descriptionText = seller.businessName 
+      ? `Welcome to ${seller.businessName}${seller.businessCategory ? ` - ${seller.businessCategory}` : ""}.`
+      : "Store powered by Zensos";
+    metaDesc.setAttribute("content", descriptionText);
+
+    // 3. Dynamic Favicon (fallback to businessLogo if favicon is not set, otherwise Zensos)
+    let faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    const previousFavicon = faviconElement?.getAttribute("href") || DEFAULT_APP_FAVICON;
+    if (!faviconElement) {
+      faviconElement = document.createElement("link");
+      faviconElement.rel = "icon";
+      document.head.appendChild(faviconElement);
+    }
+    const nextFavicon = seller.favicon 
+      ? normalizeImageUrl(seller.favicon) 
+      : (seller.businessLogo ? normalizeImageUrl(seller.businessLogo) : DEFAULT_APP_FAVICON);
+    faviconElement.setAttribute("href", nextFavicon);
 
     return () => {
       document.title = previousTitle;
+      if (metaDesc) metaDesc.setAttribute("content", previousDesc);
+      if (faviconElement) faviconElement.setAttribute("href", previousFavicon);
     };
-  }, [seller?.businessName]);
-
-  useEffect(() => {
-    const faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-    if (!faviconElement) return;
-
-    const previousHref = faviconElement.getAttribute("href") || DEFAULT_APP_FAVICON;
-    const nextHref = seller?.favicon ? normalizeImageUrl(seller.favicon) : DEFAULT_APP_FAVICON;
-
-    faviconElement.setAttribute("href", nextHref);
-
-    return () => {
-      faviconElement.setAttribute("href", previousHref);
-    };
-  }, [seller?.favicon]);
+  }, [seller]);
 
   useEffect(() => {
     if (error) showError(error);
@@ -782,6 +806,20 @@ export function PublicStorePage() {
         return prev;
       }
 
+      if (product.trackInventory) {
+        const availableStock = product.stock !== undefined ? product.stock : 0;
+        if (availableStock <= 0) {
+          setCartFeedback("Out of stock");
+          window.setTimeout(() => setCartFeedback(""), 1800);
+          return prev;
+        }
+        if (currentItem.quantity >= availableStock) {
+          setCartFeedback(`Only ${availableStock} unit(s) available`);
+          window.setTimeout(() => setCartFeedback(""), 1800);
+          return prev;
+        }
+      }
+
       setVariantErrorProductId(null);
       if (product) {
         setCartFeedback(`${product.title} added to cart`);
@@ -813,6 +851,23 @@ export function PublicStorePage() {
     if (q <= 0) { removeProduct(cartItemId); return; }
     const currentItem = cart[cartItemId];
     if (!currentItem) return;
+
+    const product = products.find(p => p._id === currentItem.productId);
+    if (product?.trackInventory && q > currentItem.quantity) {
+      let maxAvailable = product.stock !== undefined ? product.stock : 0;
+      if (currentItem.variantId) {
+        const vItem = getNormalizedVariantItems(product).find(v => v.variantId === currentItem.variantId);
+        if (vItem && vItem.stock !== undefined) {
+          maxAvailable = vItem.stock;
+        }
+      }
+      if (q > maxAvailable) {
+        setCartFeedback(`Only ${maxAvailable} unit(s) available.`);
+        window.setTimeout(() => setCartFeedback(""), 2000);
+        return;
+      }
+    }
+
     resetSavedProgress();
     setCart(prev => ({
       ...prev,
@@ -1376,9 +1431,11 @@ rzp.open(); } catch (err: any) {
             const requiresVariantSelection = normalizedVariantItems.length > 0 || normalizedVariants.some(v => (v.options || []).length > 0);
             const discountPercent = unitMrp > unitPrice ? Math.round(((unitMrp - unitPrice) / unitMrp) * 100) : 0;
             const hasConfiguredVariantItems = Array.isArray(product.variantItems) && product.variantItems.length > 0;
-            const isOutOfStock = requiresVariantSelection
-              ? hasConfiguredVariantItems && normalizedVariantItems.length === 0
-              : false;
+            const isOutOfStock = product.trackInventory
+              ? requiresVariantSelection
+                ? normalizedVariantItems.length > 0 && normalizedVariantItems.every((item) => item.isOutOfStock || (item.stock !== undefined && item.stock <= 0))
+                : Boolean(product.isOutOfStock || (product.stock !== undefined && product.stock <= 0))
+              : (requiresVariantSelection ? hasConfiguredVariantItems && normalizedVariantItems.length === 0 : false);
             const isNewProduct = Date.now() - new Date(product.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7;
             const productImages = getProductImages(product);
             return (
@@ -1833,68 +1890,91 @@ rzp.open(); } catch (err: any) {
                     const selections = variantItem.attributes || {};
                     const price = variantItem.price;
                     const mrp = variantItem.mrp || product.mrp;
+                    const isOutOfStock = product.trackInventory && Boolean(variantItem.isOutOfStock || (variantItem.stock !== undefined && variantItem.stock <= 0));
+                    const maxAvailable = product.trackInventory && variantItem.stock !== undefined ? variantItem.stock : 999;
+                    const isLowStock = product.trackInventory && !isOutOfStock && variantItem.stock !== undefined && variantItem.stock > 0 && variantItem.stock <= 3;
 
                     return (
                       <div
                         key={variantItem.variantId}
-                        className="grid grid-cols-3 items-center py-3.5 px-3 hover:bg-slate-50/60 dark:hover:bg-slate-900/10 transition-all duration-200 rounded-2xl"
+                        className={`grid grid-cols-3 items-center py-3.5 px-3 transition-all duration-200 rounded-2xl ${
+                          isOutOfStock ? "opacity-60 bg-slate-50/40 dark:bg-slate-900/20" : "hover:bg-slate-50/60 dark:hover:bg-slate-900/10"
+                        }`}
                       >
                         {/* Left Side: Variant Title / Description */}
                         <div className="text-left min-w-0 pr-4">
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          <p className={`text-sm font-semibold truncate ${isOutOfStock ? "line-through text-slate-500" : "text-slate-800 dark:text-slate-200"}`}>
                             {variantItem.title}
                           </p>
-                          {/* If it has other attributes than title itself */}
-                          {Object.entries(selections).length > 0 && 
-                            Object.values(selections).join(" / ") !== variantItem.title && (
+                          {isOutOfStock ? (
+                            <span className="inline-block mt-0.5 rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950/60 dark:text-rose-400">
+                              Out of Stock
+                            </span>
+                          ) : isLowStock ? (
+                            <span className="inline-block mt-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
+                              Only {variantItem.stock} left
+                            </span>
+                          ) : Object.entries(selections).length > 0 && 
+                            Object.values(selections).join(" / ") !== variantItem.title ? (
                               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">
                                 {Object.entries(selections)
                                   .map(([label, val]) => `${label}: ${val}`)
                                   .join(" | ")}
                               </p>
-                            )}
+                            ) : null}
                         </div>
 
                         {/* Center Side: Adding/decreasing controls */}
                         <div className="flex justify-center">
-                          <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-orange-500/20">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPopupVariantQuantity(variantItem.variantId, {
-                                  quantity: Math.max(0, qty - 1),
-                                  selections,
-                                  variantTitle: variantItem.title || product.title,
-                                  unitPrice: price,
-                                });
-                              }}
-                              disabled={qty === 0}
-                              className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
-                                qty === 0
-                                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
-                                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-rose-500 dark:hover:text-rose-400"
-                              }`}
-                            >
-                              -
-                            </button>
-                            <span className={`min-w-8 text-center text-sm font-bold transition-colors ${qty === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-900 dark:text-white"}`}>
-                              {qty}
+                          {isOutOfStock ? (
+                            <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              Sold out
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPopupVariantQuantity(variantItem.variantId, {
-                                  quantity: qty + 1,
-                                  selections,
-                                  variantTitle: variantItem.title || product.title,
-                                  unitPrice: price,
-                                });
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-orange-500 dark:hover:text-orange-400 transition-all"
-                            >
-                              +
-                            </button>
-                          </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-orange-500/20">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPopupVariantQuantity(variantItem.variantId, {
+                                    quantity: Math.max(0, qty - 1),
+                                    selections,
+                                    variantTitle: variantItem.title || product.title,
+                                    unitPrice: price,
+                                  });
+                                }}
+                                disabled={qty === 0}
+                                className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
+                                  qty === 0
+                                    ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-rose-500 dark:hover:text-rose-400"
+                                }`}
+                              >
+                                -
+                              </button>
+                              <span className={`min-w-8 text-center text-sm font-bold transition-colors ${qty === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-900 dark:text-white"}`}>
+                                {qty}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPopupVariantQuantity(variantItem.variantId, {
+                                    quantity: qty + 1,
+                                    selections,
+                                    variantTitle: variantItem.title || product.title,
+                                    unitPrice: price,
+                                  });
+                                }}
+                                disabled={qty >= maxAvailable}
+                                className={`flex h-8 w-8 items-center justify-center rounded-xl text-base font-bold transition-all ${
+                                  qty >= maxAvailable
+                                    ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-orange-500 dark:hover:text-orange-400"
+                                }`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Right Side: Price */}

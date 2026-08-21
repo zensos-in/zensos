@@ -18,9 +18,18 @@ async function sendOrderConfirmationForParentOrder(parentOrderOrId) {
     return;
   }
 
+  const Shipment = require("../models/Shipment");
+  const subOrderIds = (parentOrder.subOrders || []).map((o) => o._id);
+  const shipments = await Shipment.find({
+    order: { $in: subOrderIds },
+    status: { $ne: "CANCELLED" },
+    awbCode: { $ne: "" },
+  });
+
   await sendOrderConfirmationEmail(parentOrder.customerEmail, {
     parentOrder,
     orders: parentOrder.subOrders || [],
+    shipments: shipments || [],
   });
 
   parentOrder.orderConfirmationEmailSentAt = new Date();

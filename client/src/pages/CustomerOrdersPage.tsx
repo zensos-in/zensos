@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { ZensosLogo } from "../components/ZensosLogo";
 import { AppIcon } from "../components/ui/AppIcon";
+import { ShipmentTrackingModal } from "../components/ShipmentTrackingModal";
 import { usePublicStoreHeader } from "../context/PublicStoreHeaderContext";
 import type { Order, OrderStatus, Seller } from "../types";
 import { openOrderPrintDocument } from "../utils/orderPrintDocument";
@@ -73,6 +74,7 @@ export function CustomerOrdersPage() {
   const [error, setError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
   const [seller, setSeller] = useState<Seller | null>(null);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const { setPublicStoreHeader } = usePublicStoreHeader();
 
   const fetchSeller = useCallback(async () => {
@@ -342,16 +344,26 @@ export function CustomerOrdersPage() {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        openOrderPrintDocument(order, (order as any).seller as Seller, { status: STATUS_LABEL });
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      <AppIcon name="orders" className="text-[14px]" />
-                      Download PDF
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTrackingOrderId(order._id)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 shadow-sm transition hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
+                      >
+                        <AppIcon name="shipping" className="text-[14px]" />
+                        Track Order
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openOrderPrintDocument(order, (order as any).seller as Seller, { status: STATUS_LABEL });
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <AppIcon name="orders" className="text-[14px]" />
+                        Download PDF
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -370,6 +382,11 @@ export function CustomerOrdersPage() {
               Back to Store
             </Link>
           </div>
+        )}
+
+        {/* ── Tracking Modal ────────────────────────────────────── */}
+        {trackingOrderId && (
+          <ShipmentTrackingModal orderId={trackingOrderId} onClose={() => setTrackingOrderId(null)} />
         )}
 
         {/* ── Footer ────────────────────────────────────────────── */}

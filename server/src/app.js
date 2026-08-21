@@ -11,6 +11,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const deliveryAddonRoutes = require("./routes/deliveryAddonRoutes");
+const shippingRoutes = require("./routes/shippingRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 
 const app = express();
@@ -23,6 +25,7 @@ const allowedOrigins = [
   "https://zensos.vercel.app",
   "https://www.zensos.in",
   "http://localhost:5173",
+  "https://localhost:5000"
 ];
 
 const corsOptions = {
@@ -101,6 +104,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/webhooks", paymentRoutes); // Same handler: POST /api/webhooks/webhook
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/delivery-addon", deliveryAddonRoutes);
+app.use("/api/shipping", shippingRoutes);
 app.use("/api/upload", uploadRoutes);
 
 app.use("/api/contact", contactRoutes);

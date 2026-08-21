@@ -422,6 +422,93 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Delivery Add-on & Shipping fields
+    deliveryAddonStatus: {
+      type: String,
+      enum: ["NOT_ACTIVE", "PAYMENT_PENDING", "ACTIVE", "EXPIRED", "CANCELLED"],
+      default: "NOT_ACTIVE",
+      index: true,
+    },
+    deliveryAddonExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    preferredLogisticsProvider: {
+      type: String,
+      enum: ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "SELF_MANUAL"],
+      default: "SHIPROCKET",
+    },
+    // Shiprocket Credentials
+    shiprocketEmail: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    shiprocketPassword: {
+      type: String,
+      default: "",
+    },
+    shiprocketApiToken: {
+      type: String,
+      default: "",
+    },
+    shiprocketTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    shiprocketAccountStatus: {
+      type: String,
+      enum: ["UNCONFIGURED", "CONNECTED", "FAILED"],
+      default: "UNCONFIGURED",
+    },
+    // NimbusPost Credentials
+    nimbuspostEmail: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    nimbuspostPassword: {
+      type: String,
+      default: "",
+    },
+    nimbuspostApiToken: {
+      type: String,
+      default: "",
+    },
+    nimbuspostAccountStatus: {
+      type: String,
+      enum: ["UNCONFIGURED", "CONNECTED", "FAILED"],
+      default: "UNCONFIGURED",
+    },
+    // Velocity Credentials
+    velocityEmail: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    velocityPassword: {
+      type: String,
+      default: "",
+    },
+    velocityApiToken: {
+      type: String,
+      default: "",
+    },
+    velocityAccountStatus: {
+      type: String,
+      enum: ["UNCONFIGURED", "CONNECTED", "FAILED"],
+      default: "UNCONFIGURED",
+    },
+    shiprocketPickupLocation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    courierPreference: {
+      type: String,
+      trim: true,
+      default: "BEST_AVAILABLE",
+    },
   },
   {
     timestamps: true,
