@@ -8,6 +8,11 @@ const { getPolicyContent } = require("../utils/policyDefaults");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { sendOtpEmail } = require("../utils/mailer");
 const { deleteR2Objects } = require("../utils/r2Storage");
+const {
+  syncProductInventory,
+  cleanupProductInventory,
+  getInventoryMapForProducts,
+} = require("../utils/inventoryService");
 
 const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
@@ -143,6 +148,7 @@ function normalizeVariantItems(input) {
     }, {});
     const price = Number(item?.price);
     const mrp = Number(item?.mrp);
+    const stock = Number(item?.stock);
     if (!variantId || !Number.isFinite(price) || price < 0) {
       return acc;
     }
@@ -153,6 +159,7 @@ function normalizeVariantItems(input) {
       attributes,
       price,
       mrp: Number.isFinite(mrp) && mrp >= 0 ? mrp : 0,
+      stock: Number.isFinite(stock) && stock >= 0 ? stock : 0,
       isActive: item?.isActive !== false,
     });
     return acc;
@@ -262,6 +269,8 @@ router.post("/", auth, checkSubscription, async (req, res) => {
       variantPrices,
       variantMrps,
       isRecommended,
+      trackInventory,
+      stock,
     } = req.body;
 
     const normalizedCategories = normalizeProductCategories({ category, categories });
@@ -364,6 +373,14 @@ router.post("/", auth, checkSubscription, async (req, res) => {
       variantPrices: normalizedVariantPrices,
       variantMrps: normalizedVariantMrps,
       isRecommended: isRecommended === true,
+      trackInventory: trackInventory === true,
+      stock: Math.max(0, Number(stock) || 0),
+    });
+
+    await syncProductInventory(seller._id, product._id, {
+      trackInventory: product.trackInventory,
+      variantItems: product.variantItems,
+      stock: product.stock,
     });
 
     await syncSellerCategoryTags(seller, normalizedCategories.categories);
@@ -375,6 +392,32 @@ router.post("/", auth, checkSubscription, async (req, res) => {
   }
 });
 
+function decorateProductsWithInventory(products, inventoryMap) {
+  return products.map((prodDoc) => {
+    const prod = prodDoc.toObject ? prodDoc.toObject() : { ...prodDoc };
+    const pId = String(prod._id);
+    const prodInventory = inventoryMap[pId] || {};
+
+    if (prod.trackInventory) {
+      if (prodInventory["default"]) {
+        prod.stock = prodInventory["default"].quantity;
+        prod.isOutOfStock = prodInventory["default"].isOutOfStock;
+      }
+      if (Array.isArray(prod.variantItems)) {
+        prod.variantItems = prod.variantItems.map((vItem) => {
+          const vInv = prodInventory[vItem.variantId];
+          return {
+            ...vItem,
+            stock: vInv ? vInv.quantity : (Number(vItem.stock) || 0),
+            isOutOfStock: vInv ? vInv.isOutOfStock : (Number(vItem.stock) || 0) <= 0,
+          };
+        });
+      }
+    }
+    return prod;
+  });
+}
+
 // ─── GET /products/my — Seller's own products (auth) ─────────────────────
 router.get("/my", auth, async (req, res) => {
   try {
@@ -382,7 +425,11 @@ router.get("/my", auth, async (req, res) => {
       createdAt: -1,
     });
 
-    return res.json({ products });
+    const productIds = products.map((p) => p._id);
+    const inventoryMap = await getInventoryMapForProducts(productIds);
+    const enrichedProducts = decorateProductsWithInventory(products, inventoryMap);
+
+    return res.json({ products: enrichedProducts });
   } catch (error) {
     return res.status(500).json({ message: "Unable to fetch products" });
   }
@@ -410,7 +457,11 @@ router.get("/public/:sellerSlug", async (req, res) => {
       ...(isAdminPreview ? {} : { isActive: true }),
     }).sort({ createdAt: -1 });
 
-    return res.json({ seller: withPolicyDefaults(seller), products });
+    const productIds = products.map((p) => p._id);
+    const inventoryMap = await getInventoryMapForProducts(productIds);
+    const enrichedProducts = decorateProductsWithInventory(products, inventoryMap);
+
+    return res.json({ seller: withPolicyDefaults(seller), products: enrichedProducts });
   } catch (error) {
     return res.status(500).json({ message: "Unable to fetch seller store" });
   }
@@ -468,6 +519,8 @@ router.put("/:productId", auth, checkSubscription, async (req, res) => {
       variantPrices,
       variantMrps,
       isRecommended,
+      trackInventory,
+      stock,
     } =
       req.body;
 
@@ -567,6 +620,8 @@ router.put("/:productId", auth, checkSubscription, async (req, res) => {
       product.markModified("variantMrps");
     }
     if (isRecommended !== undefined) product.isRecommended = isRecommended === true;
+    if (trackInventory !== undefined) product.trackInventory = trackInventory === true;
+    if (stock !== undefined) product.stock = Math.max(0, Number(stock) || 0);
 
     if (variantItems === undefined && (variantPrices !== undefined || variantMrps !== undefined || Array.isArray(variants))) {
       product.variantItems = deriveVariantItemsFromLegacy(
@@ -578,6 +633,12 @@ router.put("/:productId", auth, checkSubscription, async (req, res) => {
     }
 
     await product.save();
+
+    await syncProductInventory(product.seller, product._id, {
+      trackInventory: product.trackInventory,
+      variantItems: product.variantItems,
+      stock: product.stock,
+    });
 
     if (category !== undefined || categories !== undefined) {
       const seller = await Seller.findById(req.sellerId);
@@ -693,6 +754,7 @@ router.post("/:productId/confirm-delete", auth, checkSubscription, async (req, r
     ].filter(Boolean);
     await deleteR2Objects({ keys: r2Keys });
 
+    await cleanupProductInventory(product._id);
     await product.deleteOne();
     return res.json({ message: "Product deleted successfully." });
   } catch (error) {

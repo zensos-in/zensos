@@ -25,6 +25,7 @@ const allowedOrigins = [
   "https://zensos.vercel.app",
   "https://www.zensos.in",
   "http://localhost:5173",
+  "https://localhost:5000"
 ];
 
 const corsOptions = {

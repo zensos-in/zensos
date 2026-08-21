@@ -33,6 +33,8 @@ export interface VariantItem {
   price: number;
   mrp: number;
   isActive: boolean;
+  stock?: number;
+  isOutOfStock?: boolean;
 }
 
 export interface TrialState {
@@ -210,6 +212,9 @@ export interface Product {
   variantMrps?: Record<string, number>;
   isActive: boolean;
   isRecommended?: boolean;
+  trackInventory?: boolean;
+  stock?: number;
+  isOutOfStock?: boolean;
   createdAt: string;
 }
 
@@ -261,5 +266,13 @@ export interface Order {
   platformFeePaise?: number;
   grossAmountPaise?: number;
   vendorAmountPaise?: number;
+  shipment?: {
+    _id: string;
+    status: string;
+    statusLabel?: string;
+    awbCode?: string;
+    courierName?: string;
+    trackingUrl?: string;
+  } | null;
   createdAt: string;
 }

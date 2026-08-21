@@ -11,6 +11,7 @@ const {
   createShiprocketOrder,
   getTrackingByAwb,
 } = require("../utils/shiprocket");
+const { syncOrderStatusFromShipment } = require("../utils/shipmentService");
 
 const router = express.Router();
 
@@ -286,10 +287,24 @@ router.get("/track/:orderId", async (req, res) => {
     if (shipment.awbCode) {
       // Sync latest tracking if available
       const liveTracking = await getTrackingByAwb(shipment.awbCode);
-      if (liveTracking.success && liveTracking.events && liveTracking.events.length > 0) {
-        shipment.trackingEvents = liveTracking.events;
-        shipment.statusLabel = liveTracking.statusLabel || shipment.statusLabel;
+      if (liveTracking.success) {
+        if (liveTracking.events && liveTracking.events.length > 0) {
+          shipment.trackingEvents = liveTracking.events;
+        }
+        if (liveTracking.statusLabel) {
+          shipment.statusLabel = liveTracking.statusLabel;
+        }
+        if (liveTracking.currentStatus) {
+          const statusUpper = String(liveTracking.currentStatus).toUpperCase();
+          if (statusUpper.includes("DELIVERED")) shipment.status = "DELIVERED";
+          else if (statusUpper.includes("OUT FOR DELIVERY")) shipment.status = "OUT_FOR_DELIVERY";
+          else if (statusUpper.includes("IN TRANSIT")) shipment.status = "IN_TRANSIT";
+          else if (statusUpper.includes("PICKED")) shipment.status = "PICKED_UP";
+          else if (statusUpper.includes("RTO")) shipment.status = "RTO";
+          else if (statusUpper.includes("CANCEL")) shipment.status = "CANCELLED";
+        }
         await shipment.save();
+        await syncOrderStatusFromShipment(shipment);
       }
     }
 
@@ -334,6 +349,8 @@ router.post("/webhook", async (req, res) => {
     }
 
     await shipment.save();
+    await syncOrderStatusFromShipment(shipment);
+
     return res.status(200).json({ status: "ok" });
   } catch (error) {
     console.error("[Shiprocket Webhook Error]", error);

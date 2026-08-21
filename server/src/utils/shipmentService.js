@@ -207,9 +207,53 @@ async function tryAutoCreateShipmentsForParentOrder(parentOrderOrId) {
   }
 }
 
+/**
+ * Automatically synchronizes an Order's status and inventory when a Shipment updates
+ * (e.g. DELIVERED -> mark order as delivered, CANCELLED/RTO -> mark cancelled and restock).
+ */
+async function syncOrderStatusFromShipment(shipmentDocOrId) {
+  try {
+    const shipment = typeof shipmentDocOrId === "object" && shipmentDocOrId._id
+      ? shipmentDocOrId
+      : await Shipment.findById(shipmentDocOrId);
+    if (!shipment || !shipment.order) return null;
+
+    const order = await Order.findById(shipment.order);
+    if (!order) return null;
+
+    const currentStatus = shipment.status;
+    const previousOrderStatus = order.paymentStatus;
+
+    if (currentStatus === "DELIVERED" && order.paymentStatus !== "delivered") {
+      order.paymentStatus = "delivered";
+      await order.save();
+      console.log(`[ShipmentService] Auto-updated order ${order._id} status to 'delivered' via shipment ${shipment._id}`);
+    } else if (
+      (currentStatus === "CANCELLED" || currentStatus === "RTO" || currentStatus === "RETURN") &&
+      order.paymentStatus !== "cancelled"
+    ) {
+      order.paymentStatus = "cancelled";
+      await order.save();
+      try {
+        const { restockInventoryForOrder } = require("./inventoryService");
+        await restockInventoryForOrder(order);
+      } catch (invErr) {
+        console.warn("[ShipmentService] Failed to restock inventory during auto-cancellation:", invErr.message);
+      }
+      console.log(`[ShipmentService] Auto-updated order ${order._id} status to 'cancelled' and restocked inventory via shipment ${shipment._id}`);
+    }
+
+    return order;
+  } catch (error) {
+    console.error("[ShipmentService] Error syncing order status from shipment:", error.message);
+    return null;
+  }
+}
+
 module.exports = {
   isSellerShippingReady,
   autoSetupPickupLocation,
   createShipmentForSubOrder,
   tryAutoCreateShipmentsForParentOrder,
+  syncOrderStatusFromShipment,
 };

@@ -20,6 +20,7 @@ const {
   recordPlatformCommissionLedger,
   recordVendorTransferLedger,
 } = require("../utils/settlement");
+const { deductInventoryForOrder } = require("../utils/inventoryService");
 
 const router = express.Router();
 
@@ -170,6 +171,7 @@ async function handlePaymentCaptured(payment) {
   for (const subOrder of parentOrder.subOrders) {
     subOrder.paymentStatus = "paid";
     await subOrder.save();
+    await deductInventoryForOrder(subOrder);
     // Sub-orders with transferStatus "pending" have their Route transfer embedded in the
     // Razorpay order — Razorpay auto-fires the split on capture and the transfer.processed
     // webhook reconciles it. Only trigger a manual Route transfer for the rest.
