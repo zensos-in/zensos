@@ -45,11 +45,16 @@ function parseAddressSimple(address = "") {
 // Helper: Check if seller satisfies all conditions for shipping
 async function isShippingEligible(seller) {
   if (!seller) return false;
+  // TEMPORARY TEST MODE: Enabled for testing without Razorpay
+  return true;
+
+  /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT
   const now = new Date();
   const isMainSubActive = seller.subscriptionStatus === "ACTIVE" && seller.subscriptionEndDate && seller.subscriptionEndDate > now;
   const isAddonActive = seller.deliveryAddonStatus === "ACTIVE" && seller.deliveryAddonExpiresAt && seller.deliveryAddonExpiresAt > now;
 
   return Boolean(isMainSubActive && isAddonActive);
+  */
 }
 
 // ─── PUT /api/shipping/provider ──────────────────────────────────────────────

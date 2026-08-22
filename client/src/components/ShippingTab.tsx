@@ -6,6 +6,7 @@ import { AppIcon } from "./ui/AppIcon";
 import { ShipmentTrackingModal } from "./ShipmentTrackingModal";
 import type { Shipment, CourierPreference } from "../types";
 
+/* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT FLOW
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if ((window as any).Razorpay) {
@@ -19,6 +20,7 @@ function loadRazorpayScript(): Promise<boolean> {
     document.body.appendChild(script);
   });
 }
+*/
 
 const COURIER_OPTIONS: { label: string; value: CourierPreference }[] = [
   { label: "Best Available (Recommended)", value: "BEST_AVAILABLE" },
@@ -31,18 +33,32 @@ const COURIER_OPTIONS: { label: string; value: CourierPreference }[] = [
   { label: "Xpressbees", value: "XPRESSBEES" },
 ];
 
+const LOGISTICS_PROVIDERS = [
+  { id: "SHIPROCKET", name: "Shiprocket", description: "All-in-one multi-courier shipping (Bluedart, Delhivery, DTDC, Ekart, etc.)" },
+  { id: "NIMBUSPOST", name: "NimbusPost", description: "Advanced ecommerce multi-carrier shipping automation" },
+  { id: "VELOCITY", name: "Velocity", description: "High-speed logistics and warehousing delivery" },
+  { id: "SELF_MANUAL", name: "Self / Manual Delivery", description: "Direct local delivery or self-managed courier dispatch" },
+];
+
 export function ShippingTab() {
   const { seller, refreshProfile } = useAuth();
   const { showError, showSuccess } = useToast();
 
   const [loading, setLoading] = useState(true);
-  const [isAddonActive, setIsAddonActive] = useState(false);
+  // TEMPORARY TEST MODE: Enabled by default without Razorpay payment
+  const [isAddonActive, setIsAddonActive] = useState(true);
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
   const [pickupLocation, setPickupLocation] = useState<string>("");
   const [courierPreference, setCourierPreference] = useState<string>("BEST_AVAILABLE");
 
+  // Provider Settings
+  const [selectedProvider, setSelectedProvider] = useState<string>("SHIPROCKET");
+  const [providerEmail, setProviderEmail] = useState<string>("");
+  const [providerPassword, setProviderPassword] = useState<string>("");
+  const [savingProvider, setSavingProvider] = useState(false);
+
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [purchasing, setPurchasing] = useState(false);
+  // const [purchasing, setPurchasing] = useState(false);
   const [settingUpPickup, setSettingUpPickup] = useState(false);
   const [updatingPref, setUpdatingPref] = useState(false);
 
@@ -87,6 +103,10 @@ export function ShippingTab() {
           seller: {
             deliveryAddonStatus: string;
             deliveryAddonExpiresAt: string | null;
+            preferredLogisticsProvider?: string;
+            shiprocketEmail?: string;
+            nimbuspostEmail?: string;
+            velocityEmail?: string;
             shiprocketPickupLocation: string;
             courierPreference: string;
           };
@@ -94,15 +114,24 @@ export function ShippingTab() {
         api.get<{ shipments: Shipment[] }>("/shipping/shipments").catch(() => ({ data: { shipments: [] } })),
       ]);
 
-      setIsAddonActive(resStatus.data.isAddonActive);
+      // TEMPORARY TEST MODE: Forced active for testing
+      setIsAddonActive(true);
       setExpiryDate(resStatus.data.seller.deliveryAddonExpiresAt);
       const loc = resStatus.data.seller.shiprocketPickupLocation || "";
       setPickupLocation(loc);
       setCourierPreference(resStatus.data.seller.courierPreference || "BEST_AVAILABLE");
+      setSelectedProvider(resStatus.data.seller.preferredLogisticsProvider || "SHIPROCKET");
+      setProviderEmail(
+        resStatus.data.seller.preferredLogisticsProvider === "NIMBUSPOST"
+          ? resStatus.data.seller.nimbuspostEmail || ""
+          : resStatus.data.seller.preferredLogisticsProvider === "VELOCITY"
+          ? resStatus.data.seller.velocityEmail || ""
+          : resStatus.data.seller.shiprocketEmail || ""
+      );
       setShipments(resShipments.data.shipments || []);
 
       // If active add-on but no pickup location configured yet, open the confirmation form
-      if (resStatus.data.isAddonActive && !loc) {
+      if (!loc) {
         setShowPickupForm(true);
         prefillFromSeller();
       }
@@ -123,6 +152,7 @@ export function ShippingTab() {
     }
   }, [seller]);
 
+  /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT FLOW
   async function handlePurchaseAddon() {
     setPurchasing(true);
     try {
@@ -212,6 +242,7 @@ export function ShippingTab() {
       setPurchasing(false);
     }
   }
+  */
 
   async function handleConfirmPickup(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -225,7 +256,7 @@ export function ShippingTab() {
       const res = await api.post<{ pickupLocation: string }>("/shipping/onboarding/setup", pickupForm);
       setPickupLocation(res.data.pickupLocation);
       setShowPickupForm(false);
-      showSuccess("Pickup location registered successfully in Shiprocket!");
+      showSuccess("Pickup location registered successfully!");
       await refreshProfile();
       fetchStatus();
     } catch (err: any) {
@@ -250,6 +281,27 @@ export function ShippingTab() {
     }
   }
 
+  async function handleSaveProvider(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingProvider(true);
+    try {
+      await api.put("/shipping/provider", {
+        provider: selectedProvider,
+        email: providerEmail,
+        password: providerPassword,
+      });
+      showSuccess(`Saved logistics provider as ${selectedProvider}`);
+      setProviderPassword("");
+      await refreshProfile();
+      fetchStatus();
+    } catch (err: any) {
+      console.error(err);
+      showError(err?.response?.data?.message || "Could not update logistics provider.");
+    } finally {
+      setSavingProvider(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center text-slate-400 text-sm">
@@ -270,357 +322,370 @@ export function ShippingTab() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">Shipping & Delivery Partner</h2>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Automate multi-vendor courier shipping, print labels, and provide live customer tracking with Shiprocket.
+              Automate courier shipping, print labels, and provide live customer tracking across your preferred logistics network.
             </p>
           </div>
 
           <div>
-            {isAddonActive ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Shipping Add-on ACTIVE
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400">
-                Not Activated
-              </span>
-            )}
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isAddonActive ? "Shipping Feature ACTIVE" : "Shipping Inactive"}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* BEFORE PURCHASE / INACTIVE STATE */}
-      {!isAddonActive && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 text-3xl">
-              🚚
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Enable Shipping Add-on for <span className="text-orange-500">₹200</span>
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                Get full access to automated shipping and live tracking for all your store orders during your subscription cycle.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left pt-2">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="text-orange-500">✓</span> Automatic Shipment Creation
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Orders automatically generate pickup requests and AWB numbers.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="text-orange-500">✓</span> Top India Couriers
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Ship via Blue Dart, DTDC, Delhivery, Ekart, and Xpressbees.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="text-orange-500">✓</span> Real-Time Order Tracking
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Live tracking status available for both seller and customer.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span className="text-orange-500">✓</span> Unified Seller Dashboard
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Manage all shipments, AWBs, and tracking timelines in one place.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <button
-                onClick={handlePurchaseAddon}
-                disabled={purchasing}
-                className="w-full sm:w-auto rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/25 transition hover:scale-[1.02] disabled:opacity-50"
-              >
-                {purchasing ? "Processing Payment..." : "Enable Shipping Add-on — ₹200"}
-              </button>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
-                * Flat ₹200 platform add-on fee for your active subscription period. Actual courier logistics charges apply per shipment.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ACTIVE STATE CONFIGURATION & DASHBOARD */}
-      {isAddonActive && (
-        <div className="space-y-6">
-          {/* Pickup Setup / Edit Form Modal/Panel */}
-          {showPickupForm && (
-            <div className="rounded-3xl border-2 border-orange-200 bg-white p-6 dark:border-orange-900/50 dark:bg-slate-900 shadow-md">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <AppIcon name="shipping" className="text-orange-500" />
-                    {pickupLocation ? "Update Pickup Location" : "Confirm Pickup Location"}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Couriers will pick up shipments from this warehouse/store location.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={prefillFromSeller}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+      <div className="space-y-6">
+        {/* Logistics Provider & Credentials Setup */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <AppIcon name="truck" className="text-orange-500" />
+                Logistics Courier Provider
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Select your preferred courier integration partner or use your own custom credentials.
+              </p>
+            </div>
+            <span className="rounded-full bg-orange-50 border border-orange-200 px-3 py-1 text-xs font-bold text-orange-700 dark:bg-orange-950/50 dark:border-orange-900/50 dark:text-orange-400">
+              Active: {selectedProvider}
+            </span>
+          </div>
+
+          <form onSubmit={handleSaveProvider} className="space-y-4">
+            {/* Provider Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {LOGISTICS_PROVIDERS.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedProvider(p.id)}
+                  className={`cursor-pointer rounded-2xl border p-4 transition ${
+                    selectedProvider === p.id
+                      ? "border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/20 dark:border-orange-500 dark:bg-orange-950/30"
+                      : "border-slate-200 bg-slate-50/50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/40"
+                  }`}
                 >
-                  ↺ Copy Store Profile Address
-                </button>
-              </div>
-
-              <form onSubmit={handleConfirmPickup} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Contact Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={pickupForm.name}
-                      onChange={(e) => setPickupForm({ ...pickupForm, name: e.target.value })}
-                      placeholder="Contact Person Name"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-sm text-slate-900 dark:text-white">{p.name}</span>
+                    <span
+                      className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                        selectedProvider === p.id ? "border-orange-500 bg-orange-500" : "border-slate-300"
+                      }`}
+                    >
+                      {selectedProvider === p.id && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    </span>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Phone Number *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={pickupForm.phone}
-                      onChange={(e) => setPickupForm({ ...pickupForm, phone: e.target.value })}
-                      placeholder="10-digit Phone"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={pickupForm.email}
-                      onChange={(e) => setPickupForm({ ...pickupForm, email: e.target.value })}
-                      placeholder="Email for dispatch updates"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">{p.description}</p>
                 </div>
+              ))}
+            </div>
 
+            {/* Credential Inputs for API Providers */}
+            {selectedProvider !== "SELF_MANUAL" && (
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">
+                  {selectedProvider} API Account Credentials (Optional fallback provided if empty)
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Pickup Address (Line 1) *</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      {selectedProvider} Account Email / API User
+                    </label>
                     <input
                       type="text"
-                      required
-                      value={pickupForm.address}
-                      onChange={(e) => setPickupForm({ ...pickupForm, address: e.target.value })}
-                      placeholder="Shop/Building No, Street Name"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      value={providerEmail}
+                      onChange={(e) => setProviderEmail(e.target.value)}
+                      placeholder={`your-email@example.com`}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Address (Line 2 / Landmark)</label>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      {selectedProvider} API User Password
+                    </label>
                     <input
-                      type="text"
-                      value={pickupForm.address2}
-                      onChange={(e) => setPickupForm({ ...pickupForm, address2: e.target.value })}
-                      placeholder="Area, Near Landmark"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      type="password"
+                      value={providerPassword}
+                      onChange={(e) => setProviderPassword(e.target.value)}
+                      placeholder="Leave blank to keep existing"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">City *</label>
-                    <input
-                      type="text"
-                      required
-                      value={pickupForm.city}
-                      onChange={(e) => setPickupForm({ ...pickupForm, city: e.target.value })}
-                      placeholder="City"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">State *</label>
-                    <input
-                      type="text"
-                      required
-                      value={pickupForm.state}
-                      onChange={(e) => setPickupForm({ ...pickupForm, state: e.target.value })}
-                      placeholder="State"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Pincode *</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={6}
-                      value={pickupForm.pincode}
-                      onChange={(e) => setPickupForm({ ...pickupForm, pincode: e.target.value })}
-                      placeholder="6-digit Pincode"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={settingUpPickup}
-                    className="rounded-xl bg-orange-500 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-50 transition"
-                  >
-                    {settingUpPickup ? "Registering with Shiprocket..." : "Confirm & Save Pickup Location"}
-                  </button>
-                  {pickupLocation && (
-                    <button
-                      type="button"
-                      onClick={() => setShowPickupForm(false)}
-                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Subscription Summary Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Add-on Status</p>
-              <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">ACTIVE</p>
-              {expiryDate && (
-                <p className="text-xs text-slate-400 mt-1">
-                  Expires: {new Date(expiryDate).toLocaleDateString("en-IN")}
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pickup Location</p>
-                <p className="text-base font-bold text-slate-900 dark:text-white mt-1 truncate" title={pickupLocation || "Not Configured"}>
-                  {pickupLocation || "Not Configured"}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                  {pickupLocation ? `${pickupForm.address || seller?.businessAddress || ""}` : "Pending seller confirmation"}
-                </p>
-              </div>
-              <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  onClick={() => {
-                    prefillFromSeller();
-                    setShowPickupForm(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/40 px-3 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-950/60 transition"
-                >
-                  <AppIcon name="shipping" className="text-xs" />
-                  {pickupLocation ? "Change Pickup Location" : "Confirm Pickup Location"}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Courier Preference</p>
-              <select
-                value={courierPreference}
-                onChange={(e) => handleSavePreference(e.target.value)}
-                disabled={updatingPref}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-              >
-                {COURIER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Recent Shipments Table */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Store Shipments</h3>
-              <span className="text-xs text-slate-400">Total: {shipments.length}</span>
-            </div>
-
-            {shipments.length === 0 ? (
-              <div className="py-12 text-center text-sm text-slate-400">
-                No shipments created yet. When you receive orders, you can trigger shipment creation from your Orders tab!
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
-                      <th className="pb-3">Order Number</th>
-                      <th className="pb-3">Courier</th>
-                      <th className="pb-3">AWB</th>
-                      <th className="pb-3">Status</th>
-                      <th className="pb-3">Created Date</th>
-                      <th className="pb-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {shipments.map((s) => {
-                      const orderObj = typeof s.order === "object" ? s.order : null;
-                      return (
-                        <tr key={s._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                          <td className="py-3 font-semibold text-slate-900 dark:text-white">
-                            #{orderObj?.customOrderId || (typeof s.order === "string" ? s.order.slice(-6) : orderObj?._id?.slice(-6) ?? "")}
-                          </td>
-                          <td className="py-3 text-slate-600 dark:text-slate-300">
-                            {s.courierName || "Standard"}
-                          </td>
-                          <td className="py-3 font-mono font-medium text-slate-800 dark:text-slate-200">
-                            {s.awbCode || "Pending"}
-                          </td>
-                          <td className="py-3">
-                            <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-                              {s.statusLabel || s.status}
-                            </span>
-                          </td>
-                          <td className="py-3 text-xs text-slate-400">
-                            {new Date(s.createdAt).toLocaleDateString("en-IN")}
-                          </td>
-                          <td className="py-3 text-right">
-                            <button
-                              onClick={() => setTrackingOrderId(String(typeof s.order === "object" ? s.order._id : s.order))}
-                              className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
-                            >
-                              Track →
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
               </div>
             )}
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                disabled={savingProvider}
+                className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition dark:bg-slate-100 dark:text-slate-950 dark:hover:bg-white"
+              >
+                {savingProvider ? "Saving Provider..." : "Save Provider Settings"}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Pickup Setup / Edit Form Modal/Panel */}
+        {showPickupForm && (
+          <div className="rounded-3xl border-2 border-orange-200 bg-white p-6 dark:border-orange-900/50 dark:bg-slate-900 shadow-md">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <AppIcon name="shipping" className="text-orange-500" />
+                  {pickupLocation ? "Update Pickup Warehouse Location" : "Confirm Pickup Location"}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Couriers will pick up shipments from this warehouse/store location.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={prefillFromSeller}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              >
+                ↺ Copy Store Profile Address
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmPickup} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Contact Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={pickupForm.name}
+                    onChange={(e) => setPickupForm({ ...pickupForm, name: e.target.value })}
+                    placeholder="Contact Person Name"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={pickupForm.phone}
+                    onChange={(e) => setPickupForm({ ...pickupForm, phone: e.target.value })}
+                    placeholder="10-digit Phone"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={pickupForm.email}
+                    onChange={(e) => setPickupForm({ ...pickupForm, email: e.target.value })}
+                    placeholder="Email for dispatch updates"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Pickup Address (Line 1) *</label>
+                  <input
+                    type="text"
+                    required
+                    value={pickupForm.address}
+                    onChange={(e) => setPickupForm({ ...pickupForm, address: e.target.value })}
+                    placeholder="Shop/Building No, Street Name"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Address (Line 2 / Landmark)</label>
+                  <input
+                    type="text"
+                    value={pickupForm.address2}
+                    onChange={(e) => setPickupForm({ ...pickupForm, address2: e.target.value })}
+                    placeholder="Area, Near Landmark"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">City *</label>
+                  <input
+                    type="text"
+                    required
+                    value={pickupForm.city}
+                    onChange={(e) => setPickupForm({ ...pickupForm, city: e.target.value })}
+                    placeholder="City"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">State *</label>
+                  <input
+                    type="text"
+                    required
+                    value={pickupForm.state}
+                    onChange={(e) => setPickupForm({ ...pickupForm, state: e.target.value })}
+                    placeholder="State"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Pincode *</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={pickupForm.pincode}
+                    onChange={(e) => setPickupForm({ ...pickupForm, pincode: e.target.value })}
+                    placeholder="6-digit Pincode"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={settingUpPickup}
+                  className="rounded-xl bg-orange-500 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-orange-500/20 hover:bg-orange-600 disabled:opacity-50 transition"
+                >
+                  {settingUpPickup ? "Registering Location..." : "Confirm & Save Pickup Location"}
+                </button>
+                {pickupLocation && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPickupForm(false)}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Subscription & Preference Summary Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Shipping Status</p>
+            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">ACTIVE</p>
+            {expiryDate && (
+              <p className="text-xs text-slate-400 mt-1">
+                Valid until: {new Date(expiryDate).toLocaleDateString("en-IN")}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pickup Location</p>
+              <p className="text-base font-bold text-slate-900 dark:text-white mt-1 truncate" title={pickupLocation || "Not Configured"}>
+                {pickupLocation || "Not Configured"}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                {pickupLocation ? `${pickupForm.address || seller?.businessAddress || ""}` : "Pending seller confirmation"}
+              </p>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => {
+                  prefillFromSeller();
+                  setShowPickupForm(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/40 px-3 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-950/60 transition"
+              >
+                <AppIcon name="shipping" className="text-xs" />
+                {pickupLocation ? "Change Pickup Location" : "Confirm Pickup Location"}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Courier Preference</p>
+            <select
+              value={courierPreference}
+              onChange={(e) => handleSavePreference(e.target.value)}
+              disabled={updatingPref}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              {COURIER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
-      )}
+
+        {/* Recent Shipments Table */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Store Shipments</h3>
+            <span className="text-xs text-slate-400">Total: {shipments.length}</span>
+          </div>
+
+          {shipments.length === 0 ? (
+            <div className="py-12 text-center text-sm text-slate-400">
+              No shipments created yet. When you receive orders, you can trigger shipment creation from your Orders tab!
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
+                    <th className="pb-3">Order Number</th>
+                    <th className="pb-3">Courier</th>
+                    <th className="pb-3">AWB</th>
+                    <th className="pb-3">Status</th>
+                    <th className="pb-3">Created Date</th>
+                    <th className="pb-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {shipments.map((s) => {
+                    const orderObj = typeof s.order === "object" ? s.order : null;
+                    return (
+                      <tr key={s._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td className="py-3 font-semibold text-slate-900 dark:text-white">
+                          #{orderObj?.customOrderId || (typeof s.order === "string" ? s.order.slice(-6) : orderObj?._id?.slice(-6) ?? "")}
+                        </td>
+                        <td className="py-3 text-slate-600 dark:text-slate-300">
+                          {s.courierName || "Standard"}
+                        </td>
+                        <td className="py-3 font-mono font-medium text-slate-800 dark:text-slate-200">
+                          {s.awbCode || "Pending"}
+                        </td>
+                        <td className="py-3">
+                          <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+                            {s.statusLabel || s.status}
+                          </span>
+                        </td>
+                        <td className="py-3 text-xs text-slate-400">
+                          {new Date(s.createdAt).toLocaleDateString("en-IN")}
+                        </td>
+                        <td className="py-3 text-right">
+                          <button
+                            onClick={() => setTrackingOrderId(String(typeof s.order === "object" ? s.order._id : s.order))}
+                            className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
+                          >
+                            Track →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Tracking Modal */}
       {trackingOrderId && (

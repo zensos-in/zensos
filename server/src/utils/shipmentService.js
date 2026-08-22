@@ -23,6 +23,10 @@ function parseAddressSimple(address = "") {
  */
 function isSellerShippingReady(seller) {
   if (!seller) return false;
+  // TEMPORARY TEST MODE: Enabled for testing without Razorpay
+  return true;
+
+  /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT
   const now = new Date();
   const isMainSubActive =
     seller.subscriptionStatus === "ACTIVE" &&
@@ -35,6 +39,7 @@ function isSellerShippingReady(seller) {
   const hasPickup = Boolean(seller.shiprocketPickupLocation);
 
   return Boolean(isMainSubActive && isAddonActive && hasPickup);
+  */
 }
 
 /**

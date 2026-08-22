@@ -111,8 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem(TOKEN_KEY)
   );
   const [seller, setSeller] = useState<Seller | null>(() => {
-    const value = localStorage.getItem(SELLER_KEY);
-    return value ? (JSON.parse(value) as Seller) : null;
+    try {
+      const value = localStorage.getItem(SELLER_KEY);
+      return value ? (JSON.parse(value) as Seller) : null;
+    } catch {
+      localStorage.removeItem(SELLER_KEY);
+      return null;
+    }
   });
   const [loading, setLoading] = useState(true);
 

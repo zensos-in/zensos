@@ -21,9 +21,10 @@ router.get("/status", auth, async (req, res) => {
     }
 
     const now = new Date();
-    let isAddonActive = false;
+    // TEMPORARY TEST MODE: Payment flow bypassed for testing without Razorpay
+    let isAddonActive = true;
 
-    // Check if add-on is active and unexpired
+    /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT
     if (
       seller.deliveryAddonStatus === "ACTIVE" &&
       seller.deliveryAddonExpiresAt &&
@@ -32,6 +33,7 @@ router.get("/status", auth, async (req, res) => {
     ) {
       isAddonActive = true;
     }
+    */
 
     const latestAddonDoc = await DeliverySubscription.findOne({ seller: req.sellerId })
       .sort({ createdAt: -1 });
