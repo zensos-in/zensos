@@ -699,7 +699,7 @@ router.get("/my", auth, async (req, res) => {
       .sort({ createdAt: -1 });
 
     const orderIds = orders.map((o) => o._id);
-    const shipments = await Shipment.find({ order: { $in: orderIds } }).lean();
+    const shipments = await Shipment.find({ order: { $in: orderIds }, status: { $ne: "CANCELLED" } }).lean();
     const shipmentMap = new Map();
     for (const sh of shipments) {
       shipmentMap.set(String(sh.order), sh);

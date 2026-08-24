@@ -6,7 +6,6 @@ import { AppIcon } from "./ui/AppIcon";
 import { ShipmentTrackingModal } from "./ShipmentTrackingModal";
 import type { Shipment, CourierPreference } from "../types";
 
-/* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT FLOW
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if ((window as any).Razorpay) {
@@ -20,7 +19,6 @@ function loadRazorpayScript(): Promise<boolean> {
     document.body.appendChild(script);
   });
 }
-*/
 
 const COURIER_OPTIONS: { label: string; value: CourierPreference }[] = [
   { label: "Best Available (Recommended)", value: "BEST_AVAILABLE" },
@@ -35,6 +33,7 @@ const COURIER_OPTIONS: { label: string; value: CourierPreference }[] = [
 
 const LOGISTICS_PROVIDERS = [
   { id: "SHIPROCKET", name: "Shiprocket", description: "All-in-one multi-courier shipping (Bluedart, Delhivery, DTDC, Ekart, etc.)" },
+  { id: "CLICKPOST", name: "ClickPost AI", description: "AI-driven multi-carrier logistics routing & tracking (500+ couriers)" },
   { id: "NIMBUSPOST", name: "NimbusPost", description: "Advanced ecommerce multi-carrier shipping automation" },
   { id: "VELOCITY", name: "Velocity", description: "High-speed logistics and warehousing delivery" },
   { id: "SELF_MANUAL", name: "Self / Manual Delivery", description: "Direct local delivery or self-managed courier dispatch" },
@@ -55,14 +54,58 @@ export function ShippingTab() {
   const [selectedProvider, setSelectedProvider] = useState<string>("SHIPROCKET");
   const [providerEmail, setProviderEmail] = useState<string>("");
   const [providerPassword, setProviderPassword] = useState<string>("");
+  const [clickpostApiKey, setClickpostApiKey] = useState<string>("");
+  const [clickpostUsername, setClickpostUsername] = useState<string>("");
   const [savingProvider, setSavingProvider] = useState(false);
 
   const [shipments, setShipments] = useState<Shipment[]>([]);
-  // const [purchasing, setPurchasing] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
   const [settingUpPickup, setSettingUpPickup] = useState(false);
   const [updatingPref, setUpdatingPref] = useState(false);
-
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const [assigningAwbId, setAssigningAwbId] = useState<string | null>(null);
+  const [cancellingShipment, setCancellingShipment] = useState<Shipment | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>("Customer requested cancellation / address change");
+  const [customCancelReason, setCustomCancelReason] = useState<string>("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  async function handleAssignAwb(shipmentId: string) {
+    setAssigningAwbId(shipmentId);
+    try {
+      const res = await api.post(`/shipping/shipments/${shipmentId}/assign-awb`, {});
+      showSuccess(res.data?.message || "AWB assigned successfully!");
+      await fetchStatus();
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Could not assign AWB. Please verify your Shiprocket wallet balance or courier availability.";
+      showError(msg);
+    } finally {
+      setAssigningAwbId(null);
+    }
+  }
+
+  async function handleConfirmCancelShipment() {
+    if (!cancellingShipment) return;
+    setIsCancelling(true);
+    try {
+      const finalReason = cancelReason === "Other" ? customCancelReason : cancelReason;
+      const res = await api.post(`/shipping/shipments/${cancellingShipment._id}/cancel`, {
+        reason: finalReason || "Cancelled by seller",
+      });
+      showSuccess(res.data?.message || "Shipment cancelled successfully!");
+      setCancellingShipment(null);
+      setCancelReason("Customer requested cancellation / address change");
+      setCustomCancelReason("");
+      await fetchStatus();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || "Could not cancel shipment.");
+    } finally {
+      setIsCancelling(false);
+    }
+  }
 
   // Pickup location configuration & edit form state
   const [showPickupForm, setShowPickupForm] = useState(false);
@@ -107,6 +150,8 @@ export function ShippingTab() {
             shiprocketEmail?: string;
             nimbuspostEmail?: string;
             velocityEmail?: string;
+            clickpostApiKey?: string;
+            clickpostUsername?: string;
             shiprocketPickupLocation: string;
             courierPreference: string;
           };
@@ -114,13 +159,15 @@ export function ShippingTab() {
         api.get<{ shipments: Shipment[] }>("/shipping/shipments").catch(() => ({ data: { shipments: [] } })),
       ]);
 
-      // TEMPORARY TEST MODE: Forced active for testing
-      setIsAddonActive(true);
+      const active = Boolean(resStatus.data.isAddonActive);
+      setIsAddonActive(active);
       setExpiryDate(resStatus.data.seller.deliveryAddonExpiresAt);
       const loc = resStatus.data.seller.shiprocketPickupLocation || "";
       setPickupLocation(loc);
       setCourierPreference(resStatus.data.seller.courierPreference || "BEST_AVAILABLE");
       setSelectedProvider(resStatus.data.seller.preferredLogisticsProvider || "SHIPROCKET");
+      setClickpostApiKey(resStatus.data.seller.clickpostApiKey || "");
+      setClickpostUsername(resStatus.data.seller.clickpostUsername || "");
       setProviderEmail(
         resStatus.data.seller.preferredLogisticsProvider === "NIMBUSPOST"
           ? resStatus.data.seller.nimbuspostEmail || ""
@@ -131,7 +178,7 @@ export function ShippingTab() {
       setShipments(resShipments.data.shipments || []);
 
       // If active add-on but no pickup location configured yet, open the confirmation form
-      if (!loc) {
+      if (active && !loc) {
         setShowPickupForm(true);
         prefillFromSeller();
       }
@@ -152,7 +199,6 @@ export function ShippingTab() {
     }
   }, [seller]);
 
-  /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT FLOW
   async function handlePurchaseAddon() {
     setPurchasing(true);
     try {
@@ -242,7 +288,6 @@ export function ShippingTab() {
       setPurchasing(false);
     }
   }
-  */
 
   async function handleConfirmPickup(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -289,6 +334,10 @@ export function ShippingTab() {
         provider: selectedProvider,
         email: providerEmail,
         password: providerPassword,
+        clickpostApiKey,
+        clickpostUsername,
+        apiKey: clickpostApiKey,
+        username: clickpostUsername,
       });
       showSuccess(`Saved logistics provider as ${selectedProvider}`);
       setProviderPassword("");
@@ -326,11 +375,30 @@ export function ShippingTab() {
             </p>
           </div>
 
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              {isAddonActive ? "Shipping Feature ACTIVE" : "Shipping Inactive"}
-            </span>
+          <div className="flex items-center gap-3">
+            {isAddonActive ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Shipping Feature ACTIVE
+                </span>
+                {expiryDate && (
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Expires: {new Date(expiryDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePurchaseAddon}
+                disabled={purchasing}
+                className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition disabled:opacity-50"
+              >
+                <AppIcon name="shipping" className="text-sm" />
+                {purchasing ? "Opening Payment..." : "Activate Delivery Add-on (₹200/mo)"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -356,7 +424,7 @@ export function ShippingTab() {
 
           <form onSubmit={handleSaveProvider} className="space-y-4">
             {/* Provider Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {LOGISTICS_PROVIDERS.map((p) => (
                 <div
                   key={p.id}
@@ -382,8 +450,43 @@ export function ShippingTab() {
               ))}
             </div>
 
-            {/* Credential Inputs for API Providers */}
-            {selectedProvider !== "SELF_MANUAL" && (
+            {/* Credential Inputs for ClickPost */}
+            {selectedProvider === "CLICKPOST" && (
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">
+                  ClickPost API Credentials (Optional fallback provided if empty)
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      ClickPost API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={clickpostApiKey}
+                      onChange={(e) => setClickpostApiKey(e.target.value)}
+                      placeholder="Enter ClickPost API Key"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      ClickPost Username
+                    </label>
+                    <input
+                      type="text"
+                      value={clickpostUsername}
+                      onChange={(e) => setClickpostUsername(e.target.value)}
+                      placeholder="Enter ClickPost Username"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-orange-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Credential Inputs for other API Providers */}
+            {selectedProvider !== "SELF_MANUAL" && selectedProvider !== "CLICKPOST" && (
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/50">
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">
                   {selectedProvider} API Account Credentials (Optional fallback provided if empty)
@@ -662,20 +765,52 @@ export function ShippingTab() {
                           {s.awbCode || "Pending"}
                         </td>
                         <td className="py-3">
-                          <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-                            {s.statusLabel || s.status}
-                          </span>
+                          {s.status === "CANCELLED" ? (
+                            <div>
+                              <span className="inline-block rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-800 dark:bg-rose-950/50 dark:text-rose-300">
+                                Cancelled
+                              </span>
+                              {s.cancellationReason && (
+                                <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[140px]" title={s.cancellationReason}>
+                                  {s.cancellationReason}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              {s.statusLabel || s.status}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 text-xs text-slate-400">
                           {new Date(s.createdAt).toLocaleDateString("en-IN")}
                         </td>
                         <td className="py-3 text-right">
-                          <button
-                            onClick={() => setTrackingOrderId(String(typeof s.order === "object" ? s.order._id : s.order))}
-                            className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400"
-                          >
-                            Track →
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {!s.awbCode && s.status !== "CANCELLED" && (
+                              <>
+                                <button
+                                  onClick={() => void handleAssignAwb(s._id)}
+                                  disabled={assigningAwbId === s._id}
+                                  className="rounded-xl border border-blue-400 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300 whitespace-nowrap"
+                                >
+                                  {assigningAwbId === s._id ? "Assigning..." : "Assign AWB"}
+                                </button>
+                                <button
+                                  onClick={() => setCancellingShipment(s)}
+                                  className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300 whitespace-nowrap"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => setTrackingOrderId(String(typeof s.order === "object" ? s.order._id : s.order))}
+                              className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 hover:bg-orange-100 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-400 whitespace-nowrap"
+                            >
+                              Track →
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -686,6 +821,80 @@ export function ShippingTab() {
           )}
         </div>
       </div>
+
+      {/* Cancel Shipment Modal */}
+      {cancellingShipment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setCancellingShipment(null)}>
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🚫</span>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Cancel Shipment</h3>
+              </div>
+              <button
+                onClick={() => setCancellingShipment(null)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 mb-4">
+              Are you sure you want to cancel the shipment for{" "}
+              <span className="font-bold text-slate-900 dark:text-white">
+                #{typeof cancellingShipment.order === "object" ? cancellingShipment.order.customOrderId || cancellingShipment.order._id?.slice(-6) : cancellingShipment.order.slice(-6)}
+              </span>
+              ? Since the AWB is not assigned yet, this will cancel the shipment in Shiprocket and allow you to re-create or adjust it anytime.
+            </p>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Reason for Cancellation
+              </label>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <option value="Customer requested cancellation / address change">Customer requested cancellation / address change</option>
+                <option value="Package weight / dimensions incorrect">Package weight / dimensions incorrect</option>
+                <option value="Need to switch courier partner / method">Need to switch courier partner / method</option>
+                <option value="Out of stock / unable to dispatch">Out of stock / unable to dispatch</option>
+                <option value="Other">Other (specify below)</option>
+              </select>
+
+              {cancelReason === "Other" && (
+                <input
+                  type="text"
+                  placeholder="Enter custom cancellation reason..."
+                  value={customCancelReason}
+                  onChange={(e) => setCustomCancelReason(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                />
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancellingShipment(null)}
+                disabled={isCancelling}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Keep Shipment
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelShipment}
+                disabled={isCancelling}
+                className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50 transition shadow-sm"
+              >
+                {isCancelling ? "Cancelling..." : "Confirm Cancel Shipment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tracking Modal */}
       {trackingOrderId && (

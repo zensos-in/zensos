@@ -21,48 +21,156 @@ const { syncOrderStatusFromShipment } = require("../utils/shipmentService");
 
 const router = express.Router();
 
+const VALID_INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala",
+  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha",
+  "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+  "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Ladakh", "Lakshadweep", "Puducherry"
+];
+
+const PINCODE_STATE_MAP = {
+  "11": { state: "Delhi", city: "New Delhi" },
+  "12": { state: "Haryana", city: "Gurgaon" },
+  "13": { state: "Haryana", city: "Ambala" },
+  "14": { state: "Punjab", city: "Ludhiana" },
+  "15": { state: "Punjab", city: "Bathinda" },
+  "16": { state: "Chandigarh", city: "Chandigarh" },
+  "17": { state: "Himachal Pradesh", city: "Shimla" },
+  "18": { state: "Jammu and Kashmir", city: "Jammu" },
+  "19": { state: "Jammu and Kashmir", city: "Srinagar" },
+  "20": { state: "Uttar Pradesh", city: "Aligarh" },
+  "21": { state: "Uttar Pradesh", city: "Allahabad" },
+  "22": { state: "Uttar Pradesh", city: "Lucknow" },
+  "23": { state: "Uttar Pradesh", city: "Varanasi" },
+  "24": { state: "Uttarakhand", city: "Dehradun" },
+  "25": { state: "Uttar Pradesh", city: "Meerut" },
+  "26": { state: "Uttarakhand", city: "Bareilly" },
+  "27": { state: "Uttar Pradesh", city: "Gorakhpur" },
+  "28": { state: "Uttar Pradesh", city: "Agra" },
+  "30": { state: "Rajasthan", city: "Jaipur" },
+  "31": { state: "Rajasthan", city: "Udaipur" },
+  "32": { state: "Rajasthan", city: "Kota" },
+  "33": { state: "Rajasthan", city: "Bikaner" },
+  "34": { state: "Rajasthan", city: "Jodhpur" },
+  "36": { state: "Gujarat", city: "Rajkot" },
+  "37": { state: "Gujarat", city: "Jamnagar" },
+  "38": { state: "Gujarat", city: "Ahmedabad" },
+  "39": { state: "Gujarat", city: "Surat" },
+  "40": { state: "Maharashtra", city: "Mumbai" },
+  "41": { state: "Maharashtra", city: "Pune" },
+  "42": { state: "Maharashtra", city: "Nashik" },
+  "43": { state: "Maharashtra", city: "Aurangabad" },
+  "44": { state: "Maharashtra", city: "Nagpur" },
+  "45": { state: "Madhya Pradesh", city: "Indore" },
+  "46": { state: "Madhya Pradesh", city: "Bhopal" },
+  "47": { state: "Madhya Pradesh", city: "Gwalior" },
+  "48": { state: "Madhya Pradesh", city: "Jabalpur" },
+  "49": { state: "Chhattisgarh", city: "Raipur" },
+  "50": { state: "Telangana", city: "Hyderabad" },
+  "51": { state: "Andhra Pradesh", city: "Tirupati" },
+  "52": { state: "Andhra Pradesh", city: "Vijayawada" },
+  "53": { state: "Andhra Pradesh", city: "Visakhapatnam" },
+  "56": { state: "Karnataka", city: "Bengaluru" },
+  "57": { state: "Karnataka", city: "Mangaluru" },
+  "58": { state: "Karnataka", city: "Hubli" },
+  "59": { state: "Karnataka", city: "Belgaum" },
+  "60": { state: "Tamil Nadu", city: "Chennai" },
+  "61": { state: "Tamil Nadu", city: "Thanjavur" },
+  "62": { state: "Tamil Nadu", city: "Madurai" },
+  "63": { state: "Tamil Nadu", city: "Salem" },
+  "64": { state: "Tamil Nadu", city: "Coimbatore" },
+  "67": { state: "Kerala", city: "Kozhikode" },
+  "68": { state: "Kerala", city: "Kochi" },
+  "69": { state: "Kerala", city: "Thiruvananthapuram" },
+  "70": { state: "West Bengal", city: "Kolkata" },
+  "71": { state: "West Bengal", city: "Howrah" },
+  "72": { state: "West Bengal", city: "Midnapore" },
+  "73": { state: "West Bengal", city: "Siliguri" },
+  "74": { state: "West Bengal", city: "Bardhaman" },
+  "75": { state: "Odisha", city: "Bhubaneswar" },
+  "76": { state: "Odisha", city: "Cuttack" },
+  "77": { state: "Odisha", city: "Rourkela" },
+  "78": { state: "Assam", city: "Guwahati" },
+  "79": { state: "Meghalaya", city: "Shillong" },
+  "80": { state: "Bihar", city: "Patna" },
+  "81": { state: "Bihar", city: "Bhagalpur" },
+  "82": { state: "Bihar", city: "Gaya" },
+  "83": { state: "Jharkhand", city: "Ranchi" },
+  "84": { state: "Bihar", city: "Muzaffarpur" },
+  "85": { state: "Bihar", city: "Purnia" },
+};
+
 /**
- * Simple inline address parser — extracts pincode and city from a free-form address string.
- * The server doesn't share the frontend's contactFields utility.
+ * Robust address parser — extracts pincode, valid state, city, and compliant line1 for Shiprocket.
  */
 function parseAddressSimple(address = "") {
-  const str = String(address).trim();
+  const str = String(address || "").trim();
   const pincodeMatch = str.match(/\b(\d{6})\b/);
   const pincode = pincodeMatch ? pincodeMatch[1] : "";
+  const prefix = pincode ? pincode.slice(0, 2) : "";
+  const fallback = PINCODE_STATE_MAP[prefix] || { state: "Karnataka", city: "Bengaluru" };
 
-  // Split on commas/newlines and take sensible parts
   const parts = str.split(/[,\n]+/).map((p) => p.trim()).filter(Boolean);
-  const line1 = parts[0] || str;
-  const line2 = parts[1] || "";
-  // City is often the second-to-last meaningful segment before pincode
-  const city = parts.find((p) => !/\d{6}/.test(p) && p !== line1) || "";
-  // State heuristic: last non-pincode, non-city, non-line1 segment
-  const state = parts.slice(2).find((p) => !/\d{6}/.test(p)) || "";
 
-  return { line1, line2, city, state, pincode };
+  let detectedState = "";
+  for (const part of parts) {
+    const matched = VALID_INDIAN_STATES.find((s) => s.toLowerCase() === part.toLowerCase());
+    if (matched) {
+      detectedState = matched;
+      break;
+    }
+  }
+
+  const state = detectedState || fallback.state;
+
+  let detectedCity = "";
+  const nonStateParts = parts.filter(
+    (p) => !/\d{6}/.test(p) && p.toLowerCase() !== state.toLowerCase()
+  );
+  if (nonStateParts.length >= 2) {
+    detectedCity = nonStateParts[nonStateParts.length - 1];
+  } else if (nonStateParts.length === 1) {
+    detectedCity = nonStateParts[0];
+  }
+
+  const city = detectedCity || fallback.city;
+
+  let line1 = str.replace(/\b\d{6}\b/, "").replace(/,\s*,/g, ",").trim().replace(/^,|,$/g, "").trim();
+  if (line1.length < 10) {
+    line1 = `${str}, ${city}, ${state}`.trim();
+  }
+  if (line1.length < 10) {
+    line1 = `${line1}, Main Road, ${city}`;
+  }
+
+  return {
+    line1: line1.slice(0, 190),
+    line2: "",
+    city: city.slice(0, 50),
+    state: state.slice(0, 50),
+    pincode: pincode || "560001",
+  };
 }
 
 // Helper: Check if seller satisfies all conditions for shipping
 async function isShippingEligible(seller) {
   if (!seller) return false;
-  // TEMPORARY TEST MODE: Enabled for testing without Razorpay
-  return true;
 
-  /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT
   const now = new Date();
-  const isMainSubActive = seller.subscriptionStatus === "ACTIVE" && seller.subscriptionEndDate && seller.subscriptionEndDate > now;
-  const isAddonActive = seller.deliveryAddonStatus === "ACTIVE" && seller.deliveryAddonExpiresAt && seller.deliveryAddonExpiresAt > now;
+  const isMainSubActive = seller.subscriptionStatus === "ACTIVE" && seller.subscriptionEndDate && new Date(seller.subscriptionEndDate) > now;
+  const isAddonActive = seller.deliveryAddonStatus === "ACTIVE" && seller.deliveryAddonExpiresAt && new Date(seller.deliveryAddonExpiresAt) > now;
 
   return Boolean(isMainSubActive && isAddonActive);
-  */
 }
 
 // ─── PUT /api/shipping/provider ──────────────────────────────────────────────
-// Allows seller to switch preferred logistics provider (SHIPROCKET, NIMBUSPOST, VELOCITY, SELF_MANUAL)
+// Allows seller to switch preferred logistics provider (SHIPROCKET, NIMBUSPOST, VELOCITY, CLICKPOST, SELF_MANUAL)
 router.put("/provider", auth, async (req, res) => {
   try {
-    const { provider, email, password } = req.body || {};
-    const validProviders = ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "SELF_MANUAL"];
+    const { provider, email, password, apiKey, username, clickpostApiKey, clickpostUsername } = req.body || {};
+    const validProviders = ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "CLICKPOST", "SELF_MANUAL"];
 
     if (!validProviders.includes(provider)) {
       return res.status(400).json({ message: "Invalid logistics provider selected" });
@@ -88,6 +196,14 @@ router.put("/provider", auth, async (req, res) => {
       seller.velocityEmail = String(email).trim();
       seller.velocityPassword = String(password);
       seller.velocityAccountStatus = "CONNECTED";
+    } else if (provider === "CLICKPOST") {
+      const finalKey = (apiKey || clickpostApiKey || "").trim();
+      const finalUser = (username || clickpostUsername || "").trim();
+      if (finalKey) seller.clickpostApiKey = finalKey;
+      if (finalUser) seller.clickpostUsername = finalUser;
+      if (finalKey && finalUser) {
+        seller.clickpostAccountStatus = "CONNECTED";
+      }
     }
 
     await seller.save();
@@ -253,10 +369,28 @@ router.post("/shipments/create/:orderId", auth, checkSubscription, async (req, r
     }
 
     const parentOrder = subOrder.parentOrder;
-    const shippingAddr = parseAddressSimple(parentOrder?.shippingAddress || "");
+    const rawShippingAddress =
+      subOrder.shippingAddress ||
+      subOrder.deliveryAddress ||
+      subOrder.billingAddress ||
+      parentOrder?.shippingAddress ||
+      parentOrder?.deliveryAddress ||
+      parentOrder?.billingAddress ||
+      "";
+
+    const shippingAddr = parseAddressSimple(rawShippingAddress);
     const sellerAddr = parseAddressSimple(seller?.businessAddress || "");
 
-    const pickupLocation = seller.shiprocketPickupLocation || `Pickup_${seller.slug}`;
+    const customerName =
+      (subOrder.shippingCustomerName || subOrder.customerName || parentOrder?.customerName || "Customer").trim();
+    const rawPhone =
+      subOrder.shippingCustomerPhone || subOrder.customerPhone || parentOrder?.customerPhone || "";
+    const cleanPhone = String(rawPhone).replace(/\D/g, "").slice(-10);
+    const customerPhone = cleanPhone.length === 10 ? cleanPhone : "9876543210";
+    const customerEmail =
+      (subOrder.customerEmail || parentOrder?.customerEmail || "customer@zensos.in").trim();
+
+    const pickupLocation = seller.shiprocketPickupLocation || `Pickup_${seller.slug || seller._id.toString().slice(-6)}`;
 
     const items = subOrder.items && subOrder.items.length > 0 ? subOrder.items : [
       {
@@ -271,16 +405,17 @@ router.post("/shipments/create/:orderId", auth, checkSubscription, async (req, r
       orderId: subOrder._id,
       orderDate: subOrder.createdAt,
       pickupLocation,
-      billingName: parentOrder?.customerName || "Customer",
-      billingAddress: shippingAddr.line1 || parentOrder?.shippingAddress || "Delivery Address",
-      billingCity: shippingAddr.city || "City",
-      billingState: shippingAddr.state || "State",
-      billingPincode: shippingAddr.pincode || "110001",
-      billingPhone: parentOrder?.customerPhone || "9999999999",
-      billingEmail: parentOrder?.customerEmail || "customer@zensos.in",
+      billingName: customerName,
+      billingAddress: shippingAddr.line1,
+      billingCity: shippingAddr.city,
+      billingState: shippingAddr.state,
+      billingPincode: shippingAddr.pincode,
+      billingPhone: customerPhone,
+      billingEmail: customerEmail,
       orderItems: items,
       paymentMethod: subOrder.paymentMethod === "cod" ? "COD" : "Prepaid",
       subTotal: subOrder.amount,
+      seller,
     });
 
     if (!srResult.success) {
@@ -292,7 +427,7 @@ router.post("/shipments/create/:orderId", auth, checkSubscription, async (req, r
 
     shipment = await Shipment.create({
       order: subOrder._id,
-      parentOrder: parentOrder._id,
+      parentOrder: parentOrder?._id || subOrder.parentOrder || null,
       seller: seller._id,
       provider: "SHIPROCKET",
       shiprocketOrderId: srResult.shiprocketOrderId,
@@ -392,13 +527,15 @@ router.post("/shipments/:shipmentId/assign-awb", auth, async (req, res) => {
       return res.status(400).json({ message: "No Shiprocket shipment ID associated with this shipment" });
     }
 
+    const seller = await Seller.findById(req.sellerId);
     const result = await assignAwb({
       shipmentId: shipment.shiprocketShipmentId,
       courierId: courierId ? Number(courierId) : undefined,
+      seller,
     });
 
     if (!result.success) {
-      return res.status(400).json({ message: "Failed to assign AWB", error: result.error });
+      return res.status(400).json({ message: result.error || "Failed to assign AWB", error: result.error });
     }
 
     shipment.awbCode = result.awbCode || shipment.awbCode;
@@ -515,6 +652,7 @@ router.get("/shipments/:shipmentId/manifest", auth, async (req, res) => {
 // ─── POST /api/shipping/shipments/:shipmentId/cancel ─────────────────────────
 router.post("/shipments/:shipmentId/cancel", auth, async (req, res) => {
   try {
+    const { reason } = req.body || {};
     const shipment = await Shipment.findById(req.params.shipmentId);
 
     if (!shipment) {
@@ -525,15 +663,22 @@ router.post("/shipments/:shipmentId/cancel", auth, async (req, res) => {
       return res.status(403).json({ message: "Not authorized to cancel this shipment" });
     }
 
+    const seller = await Seller.findById(req.sellerId);
     if (shipment.shiprocketOrderId) {
-      await cancelShiprocketOrder({ orderIds: [shipment.shiprocketOrderId] });
+      await cancelShiprocketOrder({ orderIds: [shipment.shiprocketOrderId], seller });
     }
 
+    const cancelReasonText = String(reason || "Cancelled by seller").trim();
     shipment.status = "CANCELLED";
     shipment.statusLabel = "Shipment Cancelled";
+    shipment.cancellationReason = cancelReasonText;
+    shipment.trackingEvents.push({
+      status: "CANCELLED",
+      activity: `Shipment cancelled by seller: ${cancelReasonText}`,
+      location: "Store",
+      timestamp: new Date(),
+    });
     await shipment.save();
-
-    await syncOrderStatusFromShipment(shipment);
 
     return res.json({ message: "Shipment cancelled successfully", shipment });
   } catch (error) {
@@ -573,17 +718,29 @@ router.post("/webhook", async (req, res) => {
       console.warn("[Shiprocket Webhook Log Warning]", logErr.message);
     }
 
-    if (!awb) {
-      return res.status(200).json({ status: "ignored_no_awb" });
+    const srOrderId = Number(body.order_id || body.shipment_track?.order_id) || null;
+    const srShipmentId = Number(body.shipment_id || body.shipment_track?.shipment_id) || null;
+
+    const lookupQueries = [];
+    if (awb) lookupQueries.push({ awbCode: awb });
+    if (srOrderId) lookupQueries.push({ shiprocketOrderId: srOrderId });
+    if (srShipmentId) lookupQueries.push({ shiprocketShipmentId: srShipmentId });
+
+    if (lookupQueries.length === 0) {
+      return res.status(200).json({ status: "ignored_no_identifier" });
     }
 
-    const shipment = await Shipment.findOne({ awbCode: awb });
+    const shipment = await Shipment.findOne({ $or: lookupQueries });
     if (!shipment) {
       if (webhookLog) {
-        webhookLog.error = "Shipment record not found for AWB";
+        webhookLog.error = "Shipment record not found for webhook identifiers";
         await webhookLog.save();
       }
       return res.status(200).json({ status: "shipment_not_found" });
+    }
+
+    if (awb && !shipment.awbCode) {
+      shipment.awbCode = awb;
     }
 
     if (currentStatus) {
@@ -620,6 +777,88 @@ router.post("/webhook", async (req, res) => {
     return res.status(200).json({ status: "ok" });
   } catch (error) {
     console.error("[Shiprocket Webhook Error]", error);
+    return res.status(500).json({ message: "Webhook processing error" });
+  }
+});
+
+// ─── POST /api/shipping/webhook/clickpost ────────────────────────────────────
+// Webhook endpoint to receive real-time shipping events from ClickPost
+router.post("/webhook/clickpost", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const waybill = body.waybill || body.awb || body.result?.waybill || body.tracking_number || "";
+    const orderId = body.order_id || body.result?.order_id || "";
+    const currentStatus = body.status || body.latest_status?.status || body.current_status || "";
+    const scans = body.scans || body.history || [];
+
+    const eventId = `cp_wh_${waybill || "no_awb"}_${currentStatus || "status"}_${Date.now()}`;
+
+    let webhookLog;
+    try {
+      webhookLog = await WebhookLog.create({
+        eventId,
+        eventType: `CLICKPOST_${String(currentStatus || "EVENT").toUpperCase().replace(/\s+/g, "_")}`,
+        payload: body,
+      });
+    } catch (logErr) {
+      console.warn("[ClickPost Webhook Log Warning]", logErr.message);
+    }
+
+    const lookupQueries = [];
+    if (waybill) lookupQueries.push({ awbCode: waybill });
+    if (orderId) lookupQueries.push({ order: orderId });
+
+    if (lookupQueries.length === 0) {
+      return res.status(200).json({ status: "ignored_no_identifier" });
+    }
+
+    const shipment = await Shipment.findOne({ $or: lookupQueries });
+    if (!shipment) {
+      if (webhookLog) {
+        webhookLog.error = "Shipment record not found for ClickPost webhook identifiers";
+        await webhookLog.save();
+      }
+      return res.status(200).json({ status: "shipment_not_found" });
+    }
+
+    if (waybill && !shipment.awbCode) {
+      shipment.awbCode = waybill;
+    }
+
+    if (currentStatus) {
+      shipment.statusLabel = currentStatus;
+      const statusUpper = String(currentStatus).toUpperCase();
+
+      if (statusUpper.includes("DELIVERED")) shipment.status = "DELIVERED";
+      else if (statusUpper.includes("OUT FOR DELIVERY") || statusUpper.includes("OFD")) shipment.status = "OUT_FOR_DELIVERY";
+      else if (statusUpper.includes("TRANSIT") || statusUpper.includes("DISPATCH")) shipment.status = "IN_TRANSIT";
+      else if (statusUpper.includes("PICKED") || statusUpper.includes("PICKUP")) shipment.status = "PICKED_UP";
+      else if (statusUpper.includes("RTO")) shipment.status = "RTO";
+      else if (statusUpper.includes("RETURN")) shipment.status = "RETURN";
+      else if (statusUpper.includes("CANCEL")) shipment.status = "CANCELLED";
+    }
+
+    if (Array.isArray(scans) && scans.length > 0) {
+      shipment.trackingEvents = scans.map((s) => ({
+        status: s.status || "UPDATE",
+        activity: s.remark || s.activity || s.status_description || "Status Update",
+        location: s.location || "",
+        timestamp: s.timestamp ? new Date(s.timestamp) : new Date(),
+      }));
+    }
+
+    await shipment.save();
+    await syncOrderStatusFromShipment(shipment);
+
+    if (webhookLog) {
+      webhookLog.processed = true;
+      webhookLog.processedAt = new Date();
+      await webhookLog.save();
+    }
+
+    return res.status(200).json({ status: "ok" });
+  } catch (error) {
+    console.error("[ClickPost Webhook Error]", error);
     return res.status(500).json({ message: "Webhook processing error" });
   }
 });

@@ -21,19 +21,16 @@ router.get("/status", auth, async (req, res) => {
     }
 
     const now = new Date();
-    // TEMPORARY TEST MODE: Payment flow bypassed for testing without Razorpay
-    let isAddonActive = true;
+    let isAddonActive = false;
 
-    /* UNCOMMENT WHEN READY FOR PRODUCTION PAYMENT
     if (
       seller.deliveryAddonStatus === "ACTIVE" &&
       seller.deliveryAddonExpiresAt &&
-      seller.deliveryAddonExpiresAt > now &&
+      new Date(seller.deliveryAddonExpiresAt) > now &&
       seller.subscriptionStatus === "ACTIVE"
     ) {
       isAddonActive = true;
     }
-    */
 
     const latestAddonDoc = await DeliverySubscription.findOne({ seller: req.sellerId })
       .sort({ createdAt: -1 });

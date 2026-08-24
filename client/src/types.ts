@@ -140,6 +140,16 @@ export interface Seller {
   };
   deliveryAddonStatus?: "NOT_ACTIVE" | "PAYMENT_PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED";
   deliveryAddonExpiresAt?: string | null;
+  preferredLogisticsProvider?: "SHIPROCKET" | "NIMBUSPOST" | "VELOCITY" | "CLICKPOST" | "SELF_MANUAL";
+  shiprocketEmail?: string;
+  shiprocketAccountStatus?: "UNCONFIGURED" | "CONNECTED" | "FAILED";
+  nimbuspostEmail?: string;
+  nimbuspostAccountStatus?: "UNCONFIGURED" | "CONNECTED" | "FAILED";
+  velocityEmail?: string;
+  velocityAccountStatus?: "UNCONFIGURED" | "CONNECTED" | "FAILED";
+  clickpostApiKey?: string;
+  clickpostUsername?: string;
+  clickpostAccountStatus?: "UNCONFIGURED" | "CONNECTED" | "FAILED";
   shiprocketPickupLocation?: string;
   courierPreference?: string;
 }
@@ -187,6 +197,7 @@ export interface Shipment {
   freightCharge?: number;
   estimatedDeliveryDate?: string;
   trackingEvents: TrackingEvent[];
+  cancellationReason?: string;
   createdAt: string;
 }
 

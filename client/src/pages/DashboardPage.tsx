@@ -365,6 +365,7 @@ export function DashboardPage() {
   const [success, setSuccess] = useState("");
   const [pricingOpen, setPricingOpen] = useState(false);
   const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
+  const isShippingEnabled = Boolean(seller?.shiprocketPickupLocation || seller?.deliveryAddonStatus === "ACTIVE");
 
   // ── Product form + edit mode
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
@@ -3680,14 +3681,14 @@ export function DashboardPage() {
                         {/* Actions */}
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-orange-400 bg-orange-50/70 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
-                          {!order.shipment && (
+                          {isShippingEnabled && !order.shipment && (
                             <button
                               type="button"
                               onClick={() => void handleShipOrder(order._id)}
                               disabled={shippingOrderId === order._id}
                               className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-blue-500 bg-blue-50/80 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50"
                             >
-                              🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship via Shiprocket"}
+                              🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship Order"}
                             </button>
                           )}
                           <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
@@ -3708,9 +3709,9 @@ export function DashboardPage() {
                       <th className="pb-2 pr-4">Product</th>
                       <th className="pb-2 pr-4">Order Value</th>
                       <th className="pb-2 pr-4">Order Status</th>
+                      {isShippingEnabled && <th className="pb-2 pr-4">Shipment</th>}
                       <th className="pb-2 pr-4">Update</th>
-                      <th className="pb-2 pr-4">Ship</th>
-                      <th className="pb-2 pr-5">View</th>
+                      <th className="pb-2 pr-5 text-right">View</th>
                     </tr></thead>
                     <tbody>
                       {filtered.map(order => {
@@ -3719,73 +3720,77 @@ export function DashboardPage() {
                           <tr key={order._id} className={`border-b transition ${isUnread ? "border-zinc-300 bg-zinc-200 hover:bg-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 [&_td]:text-zinc-800 dark:[&_td]:text-zinc-200 [&_td_p]:text-zinc-900 dark:[&_td_p]:text-zinc-100" : "border-slate-100 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/50"}`}>
                             {/* Order No */}
                             <td className="py-3 pr-4 pl-5">
-                              <p className={`text-xs font-mono ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>#{order.customOrderId || order._id.slice(-8).toUpperCase()}</p>
+                              <p className={`text-xs font-mono font-bold ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-700 dark:text-slate-300"}`}>#{order.customOrderId || order._id.slice(-8).toUpperCase()}</p>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                                {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}{" · "}{new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                              </p>
                             </td>
                             {/* Customer Name */}
                             <td className="py-3 pr-4">
                               <div className="flex items-center gap-2">
                                 <p className={`font-semibold whitespace-nowrap ${isUnread ? "text-zinc-950 dark:text-white" : "text-slate-800 dark:text-slate-100"}`}>{order.customerName}</p>
-                                {isUnread && <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">Unread</span>}
+                                {isUnread && <span className="rounded-full bg-zinc-700 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white dark:bg-zinc-300 dark:text-zinc-950">New</span>}
                               </div>
                             </td>
                             {/* Contact — Phone, City, Pincode */}
                             <td className="py-3 pr-4">
-                              <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-500 dark:text-slate-400"}`}>{order.customerPhone}</p>
-                              {getOrderCityPincode(order) && <p className={`text-xs ${isUnread ? "text-zinc-600 dark:text-zinc-400" : "text-slate-400 dark:text-slate-500"}`}>{getOrderCityPincode(order)}</p>}
+                              <p className={`text-xs ${isUnread ? "text-zinc-700 dark:text-zinc-300" : "text-slate-600 dark:text-slate-400"}`}>{order.customerPhone}</p>
+                              {getOrderCityPincode(order) && <p className={`text-[11px] ${isUnread ? "text-zinc-600 dark:text-zinc-400" : "text-slate-400 dark:text-slate-500"}`}>{getOrderCityPincode(order)}</p>}
                             </td>
                             {/* Product — comma-separated names */}
                             <td className="py-3 pr-4">
-                              <p className="text-slate-700 dark:text-slate-200">{getOrderProductNames(order)}</p>
+                              <p className="text-xs text-slate-700 dark:text-slate-200 line-clamp-2 max-w-[180px]">{getOrderProductNames(order)}</p>
                             </td>
                             {/* Order Value */}
-                            <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">₹{order.amount + (order.deliveryCharge || 0)}</td>
+                            <td className="py-3 pr-4 whitespace-nowrap">
+                              <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">₹{order.amount + (order.deliveryCharge || 0)}</p>
+                              <p className="text-[10px] text-slate-400 uppercase font-medium">{order.paymentMethod || "Prepaid"}</p>
+                            </td>
                             {/* Order Status */}
-                            <td className="py-3 pr-4">
-                              <div className="space-y-1">
-                                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
-                                  <span className={`h-2 w-2 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
-                                  {STATUS_LABEL[order.paymentStatus]}
-                                </span>
-                                {order.shipment && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="inline-flex items-center gap-1 rounded bg-orange-50 border border-orange-200/80 px-1.5 py-0.5 text-[10px] font-medium text-orange-800 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300">
-                                      🚚 {order.shipment.statusLabel || order.shipment.status}
+                            <td className="py-3 pr-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusClasses[order.paymentStatus]}`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.paymentStatus]}`} />
+                                {STATUS_LABEL[order.paymentStatus]}
+                              </span>
+                            </td>
+                            {/* Shipment Column (Only if shipping is enabled) */}
+                            {isShippingEnabled && (
+                              <td className="py-3 pr-4 whitespace-nowrap">
+                                {order.shipment ? (
+                                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-orange-200/80 bg-orange-50/80 px-2 py-1 dark:border-orange-900/50 dark:bg-orange-950/30">
+                                    <span className="text-xs">🚚</span>
+                                    <span className="text-[11px] font-semibold text-orange-800 dark:text-orange-300">
+                                      {order.shipment.statusLabel || order.shipment.status}
                                     </span>
                                     <button
                                       type="button"
                                       onClick={() => setTrackingOrderId(order._id)}
-                                      className="text-[10px] font-bold text-orange-600 hover:text-orange-700 underline dark:text-orange-400"
+                                      className="ml-1 text-[11px] font-bold text-orange-600 hover:text-orange-700 underline dark:text-orange-400"
                                     >
                                       Track
                                     </button>
                                   </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleShipOrder(order._id)}
+                                    disabled={shippingOrderId === order._id}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-blue-500 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50 whitespace-nowrap shadow-sm"
+                                  >
+                                    🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship Order"}
+                                  </button>
                                 )}
-                              </div>
-                            </td>
+                              </td>
+                            )}
                             {/* Update */}
                             <td className="py-3 pr-4">
-                              <select className="rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
+                              <select className="rounded-lg border border-slate-200 bg-white px-2 pr-8 py-1 text-xs outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 shadow-sm" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                               </select>
                             </td>
-                            {/* Ship */}
-                            <td className="py-3 pr-4">
-                              {order.shipment ? (
-                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">✓ Shipped</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => void handleShipOrder(order._id)}
-                                  disabled={shippingOrderId === order._id}
-                                  className="inline-flex items-center gap-1 rounded-full border border-blue-500 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50 whitespace-nowrap"
-                                >
-                                  🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship"}
-                                </button>
-                              )}
-                            </td>
                             {/* View Order */}
-                            <td className="py-3 pr-5">
-                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-2 rounded-full border border-orange-400 bg-orange-50/70 px-3.5 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50 whitespace-nowrap"><AppIcon name="visibility" className="text-[16px]" /> View Order</button>
+                            <td className="py-3 pr-5 text-right">
+                              <button onClick={() => void handleViewOrder(order)} className="inline-flex items-center gap-1.5 rounded-full border border-orange-400 bg-orange-50/70 px-3.5 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50 whitespace-nowrap shadow-sm"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
                             </td>
                           </tr>
                         );
@@ -3918,7 +3923,7 @@ export function DashboardPage() {
                 onChange={e => { handleOrderStatus(viewingOrder._id, e.target.value as OrderStatus); setViewingOrder(o => o ? { ...o, paymentStatus: e.target.value as OrderStatus } : o); }}>
                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
-              {!viewingOrder.shipment && (
+              {isShippingEnabled && !viewingOrder.shipment && (
                 <button
                   type="button"
                   onClick={() => void handleShipOrder(viewingOrder._id)}

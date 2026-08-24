@@ -435,7 +435,7 @@ const sellerSchema = new mongoose.Schema(
     },
     preferredLogisticsProvider: {
       type: String,
-      enum: ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "SELF_MANUAL"],
+      enum: ["SHIPROCKET", "NIMBUSPOST", "VELOCITY", "CLICKPOST", "SELF_MANUAL"],
       default: "SHIPROCKET",
     },
     // Shiprocket Credentials
@@ -495,6 +495,22 @@ const sellerSchema = new mongoose.Schema(
       default: "",
     },
     velocityAccountStatus: {
+      type: String,
+      enum: ["UNCONFIGURED", "CONNECTED", "FAILED"],
+      default: "UNCONFIGURED",
+    },
+    // ClickPost Credentials
+    clickpostApiKey: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    clickpostUsername: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    clickpostAccountStatus: {
       type: String,
       enum: ["UNCONFIGURED", "CONNECTED", "FAILED"],
       default: "UNCONFIGURED",

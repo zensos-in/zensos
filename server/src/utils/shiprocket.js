@@ -249,32 +249,64 @@ async function createShiprocketOrder({
   }
 
   try {
+    const rawPincode = String(billingPincode || "").replace(/\D/g, "");
+    const cleanPincode = rawPincode.length === 6 ? rawPincode : "560001";
+    const cleanPhone = String(billingPhone || "").replace(/\D/g, "").slice(-10) || "9876543210";
+    const cleanName = String(billingName || "Customer").trim() || "Customer";
+    const cleanAddress = String(billingAddress || "Delivery Address, Main Road").trim();
+    const finalAddress = cleanAddress.length >= 10 ? cleanAddress : `${cleanAddress}, Main Road, ${billingCity || "City"}`.slice(0, 190);
+    const cleanCity = String(billingCity || "Bengaluru").trim() || "Bengaluru";
+    const cleanState = String(billingState || "Karnataka").trim() || "Karnataka";
+    const cleanEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(billingEmail || ""))
+      ? String(billingEmail).trim()
+      : "customer@zensos.in";
+
+    const cleanPaymentMethod = String(paymentMethod).toUpperCase() === "COD" ? "COD" : "Prepaid";
+
+    const cleanItems = Array.isArray(orderItems) && orderItems.length > 0
+      ? orderItems.map((item, idx) => ({
+          name: String(item.productTitle || item.title || item.name || "Product Item").slice(0, 100),
+          sku: String(item.variantId || item.sku || item.product?._id || item.product || `SKU_${idx + 1}`).slice(0, 50),
+          units: Math.max(1, parseInt(item.quantity || item.units, 10) || 1),
+          selling_price: Math.max(0, parseFloat(item.unitPrice || item.lineTotal || item.selling_price || item.price) || 0),
+        }))
+      : [
+          {
+            name: "Product Item",
+            sku: "SKU1",
+            units: 1,
+            selling_price: Math.max(0, parseFloat(subTotal) || 0),
+          },
+        ];
+
+    let orderDateStr = "";
+    try {
+      orderDateStr = new Date(orderDate || Date.now()).toISOString().slice(0, 19).replace("T", " ");
+    } catch {
+      orderDateStr = new Date().toISOString().slice(0, 19).replace("T", " ");
+    }
+
     const payload = {
       order_id: String(orderId),
-      order_date: new Date(orderDate).toISOString().slice(0, 19).replace("T", " "),
+      order_date: orderDateStr,
       pickup_location: pickupLocation,
-      billing_customer_name: billingName,
+      billing_customer_name: cleanName,
       billing_last_name: "",
-      billing_address: billingAddress,
-      billing_city: billingCity,
-      billing_pincode: String(billingPincode),
-      billing_state: billingState,
+      billing_address: finalAddress,
+      billing_city: cleanCity,
+      billing_pincode: cleanPincode,
+      billing_state: cleanState,
       billing_country: "India",
-      billing_email: billingEmail || "customer@zensos.in",
-      billing_phone: billingPhone,
+      billing_email: cleanEmail,
+      billing_phone: cleanPhone,
       shipping_is_billing: true,
-      order_items: orderItems.map((item) => ({
-        name: item.productTitle || "Product",
-        sku: String(item.variantId || item.product || "SKU1"),
-        units: item.quantity || 1,
-        selling_price: item.unitPrice || item.lineTotal || 0,
-      })),
-      payment_method: paymentMethod,
-      sub_total: subTotal,
+      order_items: cleanItems,
+      payment_method: cleanPaymentMethod,
+      sub_total: Math.max(1, parseFloat(subTotal) || 1),
       length: 10,
       breadth: 10,
       height: 10,
-      weight: weightKg,
+      weight: Math.max(0.1, parseFloat(weightKg) || 0.5),
     };
 
     const response = await axios.post(`${SHIPROCKET_BASE_URL}/orders/create/adhoc`, payload, {
@@ -320,10 +352,31 @@ async function createShiprocketOrder({
       raw: resData,
     };
   } catch (error) {
-    console.error("[Shiprocket Order Creation Error]", error?.response?.data || error.message);
+    const errData = error?.response?.data;
+    console.error("[Shiprocket Order Creation Error]", errData || error.message);
+
+    let errorMsg = "";
+    if (errData?.errors && typeof errData.errors === "object") {
+      const fieldErrors = Object.entries(errData.errors)
+        .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(", ") : val}`)
+        .join("; ");
+      if (fieldErrors) errorMsg = fieldErrors;
+    } else if (typeof errData?.errors === "string") {
+      errorMsg = errData.errors;
+    }
+
+    if (!errorMsg && errData?.message && errData.message !== "Oops! Invalid Data") {
+      errorMsg = errData.message;
+    }
+
+    if (!errorMsg && errData?.message) {
+      errorMsg = errData.message;
+    }
+
     return {
       success: false,
-      error: error?.response?.data?.message || error.message || "Failed to create shipment in Shiprocket",
+      error: errorMsg || error.message || "Failed to create shipment in Shiprocket",
+      raw: errData,
     };
   }
 }
@@ -353,19 +406,39 @@ async function assignAwb({ shipmentId, courierId, seller = null }) {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = response.data?.response?.data || {};
+    const resData = response.data;
+    if (resData?.awb_assign_status === 0 || resData?.status === 0) {
+      const assignErr =
+        resData?.response?.data?.awb_assign_error ||
+        resData?.message ||
+        "Could not assign AWB. Please check your Shiprocket wallet balance or courier availability.";
+      return {
+        success: false,
+        error: assignErr,
+        raw: resData,
+      };
+    }
+
+    const data = resData?.response?.data || {};
     return {
-      success: true,
+      success: Boolean(data.awb_code),
       awbCode: data.awb_code || "",
       courierName: data.courier_name || "",
       courierCompanyId: data.courier_company_id || null,
-      raw: response.data,
+      raw: resData,
     };
   } catch (error) {
-    console.error("[Shiprocket Assign AWB Error]", error?.response?.data || error.message);
+    const errData = error?.response?.data;
+    const msg =
+      errData?.response?.data?.awb_assign_error ||
+      errData?.message ||
+      error.message ||
+      "Failed to assign AWB in Shiprocket";
+    console.error("[Shiprocket Assign AWB Error]", errData || error.message);
     return {
       success: false,
-      error: error?.response?.data?.message || error.message || "Failed to assign AWB",
+      error: msg,
+      raw: errData,
     };
   }
 }

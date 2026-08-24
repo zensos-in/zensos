@@ -109,6 +109,11 @@ const shipmentSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    cancellationReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
   },
   { timestamps: true }
 );

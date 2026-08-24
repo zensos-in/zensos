@@ -13,6 +13,30 @@ export function ShipmentTrackingModal({ orderId, onClose }: ShipmentTrackingModa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [assigningAwb, setAssigningAwb] = useState(false);
+  const [awbError, setAwbError] = useState("");
+
+  async function handleAssignAwb() {
+    if (!shipment?._id) return;
+    setAssigningAwb(true);
+    setAwbError("");
+    try {
+      const res = await api.post(`/shipping/shipments/${shipment._id}/assign-awb`, {});
+      if (res.data?.shipment) {
+        setShipment(res.data.shipment);
+      }
+    } catch (err: any) {
+      setAwbError(
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Could not assign AWB. Please verify your Shiprocket wallet balance or courier availability."
+      );
+    } finally {
+      setAssigningAwb(false);
+    }
+  }
+
   useEffect(() => {
     setLoading(true);
     setError("");
@@ -79,6 +103,28 @@ export function ShipmentTrackingModal({ orderId, onClose }: ShipmentTrackingModa
                 <span className="text-slate-600 dark:text-slate-300">Current Status:</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">{shipment.statusLabel || shipment.status}</span>
               </div>
+
+              {!shipment.awbCode && (
+                <div className="mt-3 pt-3 border-t border-orange-200/60 dark:border-orange-900/40">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      AWB not assigned yet.
+                    </p>
+                    <button
+                      onClick={handleAssignAwb}
+                      disabled={assigningAwb}
+                      className="rounded-xl border border-blue-500 bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 transition"
+                    >
+                      {assigningAwb ? "Assigning AWB..." : "Assign AWB Now"}
+                    </button>
+                  </div>
+                  {awbError && (
+                    <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
+                      {awbError}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {shipment.trackingUrl && (
                 <div className="mt-3 pt-3 border-t border-orange-200/60 dark:border-orange-900/40 text-right">
