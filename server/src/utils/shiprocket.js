@@ -133,10 +133,33 @@ async function addPickupLocation({
       locationName,
     };
   } catch (error) {
-    console.error("[Shiprocket Add Pickup Error]", error?.response?.data || error.message);
+    const errData = error?.response?.data;
+    console.error("[Shiprocket Add Pickup Error]", errData || error.message);
+
+    // If Shiprocket says the location already exists, treat it as a success —
+    // the location is already registered and usable.
+    const errMsg = (errData?.message || errData?.error || error.message || "").toLowerCase();
+    if (
+      errMsg.includes("already exist") ||
+      errMsg.includes("already been added") ||
+      errMsg.includes("duplicate") ||
+      errMsg.includes("pickup location name") // Shiprocket: "Pickup Location Name has already been taken."
+    ) {
+      console.log("[Shiprocket Add Pickup] Location already exists — treating as success.");
+      return { success: true, alreadyExists: true, locationName };
+    }
+
+    // Extract the most descriptive error from Shiprocket's response
+    const friendlyError =
+      errData?.errors?.pickup_location?.[0] ||
+      errData?.message ||
+      errData?.error ||
+      error.message ||
+      "Failed to add pickup location";
+
     return {
       success: false,
-      error: error?.response?.data?.message || error.message || "Failed to add pickup location",
+      error: friendlyError,
     };
   }
 }

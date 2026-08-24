@@ -148,8 +148,11 @@ router.post("/onboarding/setup", auth, async (req, res) => {
         { seller: seller._id, status: "ACTIVE" },
         { $set: { onboardingStatus: "FAILED" } }
       );
+      const detailedMessage = resLocation.error
+        ? `Shiprocket error: ${resLocation.error}`
+        : "Failed to configure pickup location in Shiprocket";
       return res.status(400).json({
-        message: "Failed to configure pickup location in Shiprocket",
+        message: detailedMessage,
         error: resLocation.error,
       });
     }
