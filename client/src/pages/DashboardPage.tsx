@@ -364,6 +364,7 @@ export function DashboardPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [shippingOrderId, setShippingOrderId] = useState<string | null>(null);
 
   // ── Product form + edit mode
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
@@ -1404,6 +1405,24 @@ export function DashboardPage() {
   async function handleOrderStatus(orderId: string, status: OrderStatus) {
     try { await api.patch(`/orders/${orderId}/status`, { status }); await loadData(); }
     catch { setError("Could not update status."); }
+  }
+
+  async function handleShipOrder(orderId: string) {
+    setShippingOrderId(orderId);
+    try {
+      const res = await api.post(`/shipping/shipments/create/${orderId}`);
+      if (showSuccess) showSuccess("Shipment created successfully!");
+      await loadData();
+      if (res.data?.shipment) {
+        setViewingOrder((prev) => (prev?._id === orderId ? { ...prev, shipment: res.data.shipment } : prev));
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || "Could not create shipment.";
+      if (showError) showError(msg);
+      else setError(msg);
+    } finally {
+      setShippingOrderId(null);
+    }
   }
 
   async function handleViewOrder(order: Order) {
@@ -3659,8 +3678,18 @@ export function DashboardPage() {
                           </div>
                         )}
                         {/* Actions */}
-                        <div className="mt-3 flex gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
                           <button onClick={() => void handleViewOrder(order)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-orange-400 bg-orange-50/70 px-3 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-100/60 transition dark:border-orange-850 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:bg-orange-950/50"><AppIcon name="visibility" className="text-[14px]" /> View Order</button>
+                          {!order.shipment && (
+                            <button
+                              type="button"
+                              onClick={() => void handleShipOrder(order._id)}
+                              disabled={shippingOrderId === order._id}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-blue-500 bg-blue-50/80 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50"
+                            >
+                              🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship via Shiprocket"}
+                            </button>
+                          )}
                           <select className="flex-1 rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1.5 text-xs outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                             {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                           </select>
@@ -3680,6 +3709,7 @@ export function DashboardPage() {
                       <th className="pb-2 pr-4">Order Value</th>
                       <th className="pb-2 pr-4">Order Status</th>
                       <th className="pb-2 pr-4">Update</th>
+                      <th className="pb-2 pr-4">Ship</th>
                       <th className="pb-2 pr-5">View</th>
                     </tr></thead>
                     <tbody>
@@ -3737,6 +3767,21 @@ export function DashboardPage() {
                               <select className="rounded-lg border border-slate-200 bg-white px-2 pr-10 py-1 text-xs outline-none" value={order.paymentStatus} onChange={e => handleOrderStatus(order._id, e.target.value as OrderStatus)}>
                                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                               </select>
+                            </td>
+                            {/* Ship */}
+                            <td className="py-3 pr-4">
+                              {order.shipment ? (
+                                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">✓ Shipped</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleShipOrder(order._id)}
+                                  disabled={shippingOrderId === order._id}
+                                  className="inline-flex items-center gap-1 rounded-full border border-blue-500 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  🚚 {shippingOrderId === order._id ? "Shipping..." : "Ship"}
+                                </button>
+                              )}
                             </td>
                             {/* View Order */}
                             <td className="py-3 pr-5">
@@ -3873,6 +3918,16 @@ export function DashboardPage() {
                 onChange={e => { handleOrderStatus(viewingOrder._id, e.target.value as OrderStatus); setViewingOrder(o => o ? { ...o, paymentStatus: e.target.value as OrderStatus } : o); }}>
                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
+              {!viewingOrder.shipment && (
+                <button
+                  type="button"
+                  onClick={() => void handleShipOrder(viewingOrder._id)}
+                  disabled={shippingOrderId === viewingOrder._id}
+                  className="w-full rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-100 transition dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300 disabled:opacity-50 sm:w-auto sm:whitespace-nowrap"
+                >
+                  🚚 {shippingOrderId === viewingOrder._id ? "Shipping..." : "Ship via Shiprocket"}
+                </button>
+              )}
               <button
                 onClick={() => {
                   openOrderPrintDocument(viewingOrder, seller, {
