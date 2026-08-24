@@ -119,7 +119,7 @@ async function addPickupLocation({
         address_2: address2,
         city,
         state,
-        pincode: String(pincode),
+        pin_code: String(pincode),
         country,
       },
       {
