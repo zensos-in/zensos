@@ -12,7 +12,6 @@ const auth = require("../middleware/auth");
 const { collectKycIssues, isPayoutEligible, recordComplianceEvent } = require("../utils/kycCompliance");
 const { applyAccountWebhookToSeller } = require("../utils/razorpayLinkedAccount");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
-const { tryAutoCreateShipmentsForParentOrder } = require("../utils/shipmentService");
 const {
   getVendorTransferAmountPaise,
   hasProcessedTransfer,
@@ -161,7 +160,6 @@ async function handlePaymentCaptured(payment) {
         await processSubOrderTransfer(subOrder, parentOrder.razorpayPaymentId || razorpayPaymentId);
       }
     }
-    await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
     return;
   }
@@ -182,7 +180,6 @@ async function handlePaymentCaptured(payment) {
     }
   }
 
-  await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
   await trySendOrderConfirmationForParentOrder(parentOrder._id);
 }
 

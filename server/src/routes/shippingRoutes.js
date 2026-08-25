@@ -18,6 +18,7 @@ const {
   getTrackingByAwb,
 } = require("../utils/shiprocket");
 const { syncOrderStatusFromShipment } = require("../utils/shipmentService");
+const { trySendShippingNotificationForShipment } = require("../utils/orderConfirmation");
 
 const router = express.Router();
 
@@ -449,6 +450,10 @@ router.post("/shipments/create/:orderId", auth, checkSubscription, async (req, r
       ],
     });
 
+    if (shipment.awbCode || shipment.trackingUrl) {
+      await trySendShippingNotificationForShipment(shipment._id);
+    }
+
     return res.json({ message: "Shipment created successfully", shipment });
   } catch (error) {
     console.error("[POST /shipping/shipments/create error]", error);
@@ -544,6 +549,10 @@ router.post("/shipments/:shipmentId/assign-awb", auth, async (req, res) => {
     shipment.statusLabel = "AWB Assigned";
     shipment.trackingUrl = result.awbCode ? `https://shiprocket.co/tracking/${result.awbCode}` : shipment.trackingUrl;
     await shipment.save();
+
+    if (shipment.awbCode || shipment.trackingUrl) {
+      await trySendShippingNotificationForShipment(shipment._id);
+    }
 
     return res.json({ message: "AWB assigned successfully", shipment });
   } catch (error) {

@@ -11,7 +11,6 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 const { getStoreAccessState } = require("../utils/trialService");
 const { trySendOrderConfirmationForParentOrder } = require("../utils/orderConfirmation");
-const { tryAutoCreateShipmentsForParentOrder } = require("../utils/shipmentService");
 const {
   calculatePlatformFeePaise,
   getPlatformCommissionPercentage,
@@ -536,7 +535,6 @@ router.post("/", async (req, res) => {
         await deductInventoryForOrder(subOrder);
       }
 
-      await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
       await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
       return res.status(201).json({
@@ -677,7 +675,6 @@ router.post("/verify-payment", async (req, res) => {
       await deductInventoryForOrder(subOrder);
     }
 
-    await tryAutoCreateShipmentsForParentOrder(parentOrder._id);
     await trySendOrderConfirmationForParentOrder(parentOrder._id);
 
     return res.json({

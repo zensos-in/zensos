@@ -174,7 +174,7 @@ function getOrderItemRows(order) {
   });
 }
 
-function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }) {
+function buildOrderConfirmationEmailHtml({ parentOrder, orders }) {
   const firstOrder = orders[0] || {};
   const seller = firstOrder.seller || {};
   const safeSellerName = escapeHtml(seller.businessName || "Seller");
@@ -187,10 +187,6 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }
   const total = subtotal + deliveryTotal;
   const paymentMethod = firstOrder.paymentMethod === "cod" ? "Cash on Delivery" : "Prepaid";
   const displayOrderId = firstOrder.customOrderId || String(parentOrder._id).slice(-8).toUpperCase();
-
-  const validShipments = Array.isArray(shipments)
-    ? shipments.filter((s) => s && s.awbCode)
-    : [];
 
   const itemRows = orders.flatMap(getOrderItemRows).map((item) => `
     <tr>
@@ -213,15 +209,6 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }
     seller.businessAddress ? `Address: ${escapeHtml(seller.businessAddress)}` : "",
   ].filter(Boolean);
 
-  const deliverySections = validShipments.map((s) => `
-    <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#f0fdf4;margin-bottom:12px;">
-      <p style="margin:0 0 8px;color:#166534;font-size:13px;font-weight:700;">Delivery details</p>
-      <p style="margin:0 0 4px;color:#15803d;font-size:13px;"><strong>Delivery Partner:</strong> ${escapeHtml(s.courierName || "Standard Shipping")}</p>
-      <p style="margin:0 0 8px;color:#15803d;font-size:13px;"><strong>Tracking Number:</strong> ${escapeHtml(s.awbCode)}</p>
-      ${s.trackingUrl ? `<a href="${escapeHtml(s.trackingUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 12px;background:#16a34a;color:#ffffff;text-decoration:none;border-radius:6px;font-size:12px;font-weight:600;">Track Your Order &rarr;</a>` : ""}
-    </div>
-  `).join("");
-
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:640px;margin:auto;padding:28px;border:1px solid #e5e7eb;border-radius:18px;background:#ffffff;">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
@@ -238,8 +225,6 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }
         <p style="margin:0 0 6px;color:#111827;font-size:14px;font-weight:700;">Order #${escapeHtml(displayOrderId)}</p>
         <p style="margin:0;color:#6b7280;font-size:13px;">${escapeHtml(orderDate)} · ${escapeHtml(paymentMethod)}</p>
       </div>
-
-      ${deliverySections}
 
       <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
         <thead>
@@ -274,7 +259,7 @@ function buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments = [] }
   `;
 }
 
-function buildOrderConfirmationEmailText({ parentOrder, orders, shipments = [] }) {
+function buildOrderConfirmationEmailText({ parentOrder, orders }) {
   const firstOrder = orders[0] || {};
   const seller = firstOrder.seller || {};
   const subtotal = orders.reduce((sum, order) => sum + Number(order.amount || 0), 0);
@@ -286,18 +271,6 @@ function buildOrderConfirmationEmailText({ parentOrder, orders, shipments = [] }
     `- ${item.title}${item.variantText ? ` (${item.variantText})` : ""} x${item.quantity}: ${formatMoney(item.lineTotal)}`
   );
 
-  const validShipments = Array.isArray(shipments)
-    ? shipments.filter((s) => s && s.awbCode)
-    : [];
-
-  const shipmentLines = validShipments.flatMap((s) => [
-    "Delivery Details:",
-    `Delivery Partner: ${s.courierName || "Standard Shipping"}`,
-    `Tracking Number: ${s.awbCode}`,
-    s.trackingUrl ? `Track Your Order: ${s.trackingUrl}` : "",
-    "",
-  ]).filter(Boolean);
-
   return [
     `Hi ${parentOrder.customerName || "there"},`,
     "",
@@ -305,7 +278,6 @@ function buildOrderConfirmationEmailText({ parentOrder, orders, shipments = [] }
     `Order ID: ${displayOrderId}`,
     `Payment method: ${paymentMethod}`,
     "",
-    ...shipmentLines,
     "Items:",
     ...lines,
     "",
@@ -325,6 +297,127 @@ function buildOrderConfirmationEmailText({ parentOrder, orders, shipments = [] }
     seller.businessAddress ? `Address: ${seller.businessAddress}` : "",
     "",
     "Zensos",
+  ].filter((line) => line !== "").join("\n");
+}
+
+function buildShippingNotificationEmailHtml({ order, shipment, seller, parentOrder }) {
+  const safeSellerName = escapeHtml(seller?.businessName || "Seller");
+  const sellerLogo = String(seller?.businessLogo || "").trim();
+  const customerName = escapeHtml(
+    order?.shippingCustomerName ||
+    order?.customerName ||
+    parentOrder?.shippingCustomerName ||
+    parentOrder?.customerName ||
+    "Customer"
+  );
+  const displayOrderId = order?.customOrderId || String(order?._id || parentOrder?._id || "").slice(-8).toUpperCase();
+  const trackingNumber = escapeHtml(shipment?.awbCode || "");
+  const courierName = escapeHtml(shipment?.courierName || "Standard Shipping");
+  const trackingUrl = shipment?.trackingUrl || (shipment?.awbCode ? `https://shiprocket.co/tracking/${shipment.awbCode}` : "");
+
+  const itemRows = getOrderItemRows(order).map((item) => `
+    <tr>
+      <td style="padding:12px;border-bottom:1px solid #e5e7eb;">
+        <p style="margin:0 0 4px;color:#111827;font-size:14px;font-weight:700;">${escapeHtml(item.title)}</p>
+        ${item.category ? `<p style="margin:0 0 4px;color:#0f766e;font-size:12px;font-weight:600;">${escapeHtml(item.category)}</p>` : ""}
+        ${item.variantText ? `<p style="margin:0;color:#6b7280;font-size:12px;">${escapeHtml(item.variantText)}</p>` : ""}
+      </td>
+      <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#374151;font-size:13px;text-align:center;">${item.quantity}</td>
+      <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#111827;font-size:13px;text-align:right;">${formatMoney(item.lineTotal)}</td>
+    </tr>
+  `).join("");
+
+  const rawAddress =
+    order?.shippingAddress ||
+    order?.deliveryAddress ||
+    parentOrder?.shippingAddress ||
+    parentOrder?.deliveryAddress ||
+    "";
+  const addressHtml = escapeHtml(rawAddress).replace(/\n/g, "<br />");
+
+  return `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:640px;margin:auto;padding:28px;border:1px solid #e5e7eb;border-radius:18px;background:#ffffff;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+        ${sellerLogo ? `<img src="${escapeHtml(sellerLogo)}" alt="${safeSellerName}" style="width:54px;height:54px;border-radius:12px;object-fit:contain;border:1px solid #e5e7eb;" />` : ""}
+        <div>
+          <p style="margin:0;color:#0d9488;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Shipment Update</p>
+          <h1 style="margin:4px 0 0;color:#111827;font-size:22px;line-height:1.2;">${safeSellerName}</h1>
+        </div>
+      </div>
+
+      <p style="color:#475569;margin:0 0 16px;font-size:15px;line-height:1.5;">Hi ${customerName},</p>
+      <h2 style="color:#0f172a;margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.35;">Your order #${escapeHtml(displayOrderId)} has been shipped!</h2>
+      <p style="color:#475569;margin:0 0 20px;font-size:14px;line-height:1.6;">Great news! Your package is on its way. You can track your shipment using the tracking details below.</p>
+
+      <div style="border:1px solid #bbf7d0;border-radius:14px;padding:18px;background:#f0fdf4;margin-bottom:20px;">
+        <p style="margin:0 0 10px;color:#166534;font-size:14px;font-weight:700;">🚚 Tracking Information</p>
+        <p style="margin:0 0 6px;color:#15803d;font-size:13px;"><strong>Delivery Partner:</strong> ${courierName}</p>
+        ${trackingNumber ? `<p style="margin:0 0 12px;color:#15803d;font-size:13px;"><strong>Tracking Number:</strong> ${trackingNumber}</p>` : ""}
+        ${trackingUrl ? `<a href="${escapeHtml(trackingUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 20px;background:#0d9488;color:#ffffff;text-decoration:none;font-weight:600;border-radius:8px;font-size:13px;margin-top:4px;">Track Order &rarr;</a>` : ""}
+      </div>
+
+      <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:18px;background:#f9fafb;">
+        <p style="margin:0 0 4px;color:#111827;font-size:13px;font-weight:700;">Items in this shipment</p>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="padding:10px 12px;text-align:left;color:#4b5563;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Item</th>
+            <th style="padding:10px 12px;text-align:center;color:#4b5563;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Qty</th>
+            <th style="padding:10px 12px;text-align:right;color:#4b5563;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Total</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+
+      ${addressHtml ? `
+        <div style="border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:18px;">
+          <p style="margin:0 0 8px;color:#111827;font-size:13px;font-weight:700;">Shipping address</p>
+          <p style="margin:0;color:#4b5563;font-size:13px;line-height:1.6;">${addressHtml}</p>
+        </div>
+      ` : ""}
+
+      <p style="color:#475569;margin:20px 0 0;font-size:14px;line-height:1.6;">Thank you for shopping with ${safeSellerName}!</p>
+      <hr style="border:none;border-top:1px solid #f1f5f9;margin:20px 0;" />
+      <p style="color:#94a3b8;font-size:11px;margin:0;line-height:1.5;">Zensos — Your Store. Your Link. Your Sales.<br />This is an automated shipping notification.</p>
+    </div>
+  `;
+}
+
+function buildShippingNotificationEmailText({ order, shipment, seller, parentOrder }) {
+  const sellerName = seller?.businessName || "the seller";
+  const customerName =
+    order?.shippingCustomerName ||
+    order?.customerName ||
+    parentOrder?.shippingCustomerName ||
+    parentOrder?.customerName ||
+    "Customer";
+  const displayOrderId = order?.customOrderId || String(order?._id || parentOrder?._id || "").slice(-8).toUpperCase();
+  const trackingNumber = shipment?.awbCode || "";
+  const courierName = shipment?.courierName || "Standard Shipping";
+  const trackingUrl = shipment?.trackingUrl || (shipment?.awbCode ? `https://shiprocket.co/tracking/${shipment.awbCode}` : "");
+
+  const itemLines = getOrderItemRows(order).map((item) =>
+    `- ${item.title}${item.variantText ? ` (${item.variantText})` : ""} x${item.quantity}: ${formatMoney(item.lineTotal)}`
+  );
+
+  return [
+    `Hi ${customerName},`,
+    "",
+    `Your order #${displayOrderId} with ${sellerName} has been shipped!`,
+    "",
+    "Tracking Information:",
+    `Delivery Partner: ${courierName}`,
+    trackingNumber ? `Tracking Number: ${trackingNumber}` : "",
+    trackingUrl ? `Track Order: ${trackingUrl}` : "",
+    "",
+    "Items in this shipment:",
+    ...itemLines,
+    "",
+    `Thank you for shopping with ${sellerName}.`,
+    "",
+    "— Zensos",
   ].filter((line) => line !== "").join("\n");
 }
 
@@ -406,7 +499,7 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   }
 }
 
-async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders, shipments = [] }) {
+async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
   if (!isSmtpConfigured()) {
     console.log(`[mailer DEMO MODE] Skipping order confirmation email to ${toEmail} (no SMTP configured).`);
     return;
@@ -422,14 +515,42 @@ async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders, shipme
       from: sender,
       to: toEmail,
       subject: `Order confirmed - ${sanitizeSubjectLine(sellerName)}`,
-      text: buildOrderConfirmationEmailText({ parentOrder, orders, shipments }),
-      html: buildOrderConfirmationEmailHtml({ parentOrder, orders, shipments }),
+      text: buildOrderConfirmationEmailText({ parentOrder, orders }),
+      html: buildOrderConfirmationEmailHtml({ parentOrder, orders }),
       headers: {
         "X-Auto-Response-Suppress": "OOF, AutoReply",
       },
     });
   } catch (err) {
     console.error(`[mailer] Failed to send order confirmation email to ${toEmail}:`, err?.message || err);
+  }
+}
+
+async function sendShippingNotificationEmail(toEmail, { order, shipment, seller, parentOrder }) {
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Skipping shipping notification email to ${toEmail} (no SMTP configured).`);
+    return;
+  }
+
+  try {
+    const transporter = getTransporter();
+    const sellerName = seller?.businessName || order?.seller?.businessName || "your order";
+    const displayOrderId = order?.customOrderId || String(order?._id || parentOrder?._id || "").slice(-8).toUpperCase();
+    const smtpUser = String(process.env.SMTP_USER || "").trim();
+    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+
+    await transporter.sendMail({
+      from: sender,
+      to: toEmail,
+      subject: `Your order #${displayOrderId} has been shipped - ${sanitizeSubjectLine(sellerName)}`,
+      text: buildShippingNotificationEmailText({ order, shipment, seller, parentOrder }),
+      html: buildShippingNotificationEmailHtml({ order, shipment, seller, parentOrder }),
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
+    });
+  } catch (err) {
+    console.error(`[mailer] Failed to send shipping notification email to ${toEmail}:`, err?.message || err);
   }
 }
 
@@ -576,6 +697,7 @@ async function sendOutOfStockAlert({ email, businessName, productTitle, variantT
 module.exports = {
   sendOtpEmail,
   sendOrderConfirmationEmail,
+  sendShippingNotificationEmail,
   sendContactEmail,
   sendSubscriptionReminderEmail,
   sendOutOfStockAlert,

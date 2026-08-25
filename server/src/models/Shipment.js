@@ -114,6 +114,15 @@ const shipmentSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    shippingNotificationSent: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    shippingNotificationSentAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
