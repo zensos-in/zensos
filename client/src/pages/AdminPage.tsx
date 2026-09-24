@@ -12,7 +12,9 @@ import type { Seller, LinkedAccountOnboardingStatus } from "../types";
 type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
 type ApprovalStatusFilter = "all" | ApprovalStatus;
 type SortBy = "latest" | "oldest" | "business" | "expiring_soon";
-type AdminTab = "sellers" | "subscriptions" | "revenue";
+type AdminTab = "sellers" | "subscriptions" | "revenue" | "leads";
+
+type RegistrationLead = { _id: string; email: string; phone: string; createdAt: string };
 
 type PlanFilter = "all" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS" | "NONE";
 type SubscriptionStatusFilter = "all" | "ACTIVE" | "EXPIRED" | "PENDING" | "NONE";
@@ -618,6 +620,11 @@ export function AdminPage() {
   const [adminTab, setAdminTab] = useState<AdminTab>("sellers");
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [allSellersForSubs, setAllSellersForSubs] = useState<Seller[]>([]);
+  const [leads, setLeads] = useState<RegistrationLead[]>([]);
+  const [leadPage, setLeadPage] = useState(1);
+  const [leadsRefresh, setLeadsRefresh] = useState(0);
+  const [leadTotal, setLeadTotal] = useState(0);
+  const [leadsLoading, setLeadsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingAllSellers, setLoadingAllSellers] = useState(false);
   const [submittingLogin, setSubmittingLogin] = useState(false);
@@ -700,6 +707,26 @@ export function AdminPage() {
   }, [token, adminTab]);
 
   useEffect(() => {
+    if (!token || adminTab !== "leads") return;
+    let active = true;
+    setLeadsLoading(true);
+    setLeads([]);
+    api.get<{ leads: RegistrationLead[]; total: number }>("/admin/registration-leads", {
+      params: { page: leadPage }, headers: authHeaders,
+    }).then((response) => {
+      if (!active) return;
+      setLeads(response.data.leads);
+      setLeadTotal(response.data.total);
+    }).catch(() => {
+      if (active) setError("Unable to fetch registration leads.");
+    }).finally(() => {
+      if (active) setLeadsLoading(false);
+    });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, adminTab, leadPage, leadsRefresh]);
+
+  useEffect(() => {
     if (!token) return;
     void loadPlatformFinance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -757,6 +784,9 @@ export function AdminPage() {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     setToken("");
     setSellers([]);
+    setLeads([]);
+    setLeadPage(1);
+    setLeadTotal(0);
     setSelectedSeller(null);
     setSuccess("");
   }
@@ -1194,6 +1224,8 @@ export function AdminPage() {
               ? "Moderation Queue"
               : adminTab === "subscriptions"
               ? "Subscription Manager"
+              : adminTab === "leads"
+              ? "Registration Leads"
               : "Revenue Console"}
           </div>
           <h1 className="mt-3 font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
@@ -1201,6 +1233,8 @@ export function AdminPage() {
               ? t("admin.title", "Seller Approvals")
               : adminTab === "subscriptions"
               ? "Seller Subscriptions & Add-ons"
+              : adminTab === "leads"
+              ? "Registration Leads"
               : "Platform Revenue"}
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
@@ -1208,6 +1242,8 @@ export function AdminPage() {
               ? "Search, review and approve seller onboarding requests quickly."
               : adminTab === "subscriptions"
               ? "Track active seller plans, expiration dates, remaining validities, and delivery partner add-ons."
+              : adminTab === "leads"
+              ? "View contacts captured when a seller continues past the registration contact step."
               : "Manage commission, platform revenue, settlement retries, and audit logs."}
           </p>
         </div>
@@ -1221,6 +1257,7 @@ export function AdminPage() {
         {[
           { key: "sellers", label: "Seller Approvals", icon: "orders" },
           { key: "subscriptions", label: "Subscriptions & Add-ons", icon: "earnings" },
+          { key: "leads", label: "Registration Leads", icon: "register" },
           { key: "revenue", label: "Platform Revenue", icon: "reports" },
         ].map((item) => (
           <button
@@ -1243,6 +1280,42 @@ export function AdminPage() {
       </div>
 
       {/* ─── TAB 1: SELLER APPROVALS ─── */}
+      {adminTab === "leads" && (
+        <Card className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-600 dark:text-slate-300">{leadTotal} captured contacts</p>
+            <Button variant="secondary" onClick={() => setLeadsRefresh((count) => count + 1)} disabled={leadsLoading}>
+              <AppIcon name="refresh" className="text-[13px]" /> Refresh list
+            </Button>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80">
+                <tr><th className="px-4 py-3">Email</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Captured</th></tr>
+              </thead>
+              <tbody>
+                {leadsLoading ? (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Loading leads...</td></tr>
+                ) : leads.length === 0 ? (
+                  <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">No registration leads found.</td></tr>
+                ) : leads.map((lead) => (
+                  <tr key={lead._id} className="border-t border-slate-200 dark:border-slate-700">
+                    <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{lead.email}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{lead.phone}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{new Date(lead.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-end gap-3 text-sm text-slate-600 dark:text-slate-300">
+            <Button variant="secondary" disabled={leadsLoading || leadPage === 1} onClick={() => setLeadPage((page) => page - 1)}>Previous</Button>
+            <span>Page {leadPage} of {Math.max(1, Math.ceil(leadTotal / 50))}</span>
+            <Button variant="secondary" disabled={leadsLoading || leadPage * 50 >= leadTotal} onClick={() => setLeadPage((page) => page + 1)}>Next</Button>
+          </div>
+        </Card>
+      )}
+
       {adminTab === "sellers" ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

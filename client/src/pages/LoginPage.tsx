@@ -200,6 +200,7 @@ export function LoginPage() {
   const allPoliciesAccepted = Object.values(policyChecks).every(Boolean);
 
   const [submitting, setSubmitting] = useState(false);
+  const leadSubmittingRef = useRef(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>(
     searchParams.get("plan")?.toUpperCase() || "TRIAL"
@@ -357,12 +358,30 @@ export function LoginPage() {
 
   async function handleRegisterSectionSubmit(e: FormEvent) {
     e.preventDefault();
+    if (leadSubmittingRef.current) return;
     const sectionError = getRegisterSectionError(registerSection);
     if (sectionError) {
       setError(sectionError);
       return;
     }
     if (!isLastRegisterSection) {
+      if (registerSection === "contact") {
+        leadSubmittingRef.current = true;
+        setSubmitting(true);
+        setError("");
+        try {
+          await api.post("/auth/registration-lead", {
+            email: email.trim(),
+            phone: `${phone.countryCode}${phoneDigits}`,
+          });
+        } catch (err) {
+          setError(errMsg(err, "Could not save your contact details. Please try again."));
+          return;
+        } finally {
+          leadSubmittingRef.current = false;
+          setSubmitting(false);
+        }
+      }
       goToRegisterSection(registerSectionIndex + 1);
       return;
     }

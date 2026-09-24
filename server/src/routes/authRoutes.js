@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
+const RegistrationLead = require("../models/RegistrationLead");
 const auth = require("../middleware/auth");
 const { slugify } = require("../utils/slug");
 const Product = require("../models/Product");
@@ -24,6 +25,35 @@ const { deleteR2Objects } = require("../utils/r2Storage");
 const { getStoreAccessState } = require("../utils/trialService");
 
 const router = express.Router();
+
+// Capture a registration contact as soon as the contact section is completed.
+router.post("/registration-lead", async (req, res) => {
+  const { email, phone } = req.body || {};
+  if (typeof email !== "string" || typeof phone !== "string") {
+    return res.status(400).json({ message: "A valid email and phone number are required." });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPhone = phone.trim();
+  if (normalizedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
+      !/^\+91\d{10}$/.test(normalizedPhone)) {
+    return res.status(400).json({ message: "A valid email and phone number are required." });
+  }
+
+  try {
+    await RegistrationLead.updateOne(
+      { email: normalizedEmail, phone: normalizedPhone },
+      { $setOnInsert: { email: normalizedEmail, phone: normalizedPhone } },
+      { upsert: true }
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    // Concurrent submissions of the same contact can race on the unique index.
+    if (error.code === 11000) return res.json({ success: true });
+    console.error("Unable to save registration lead:", error);
+    return res.status(500).json({ message: "Unable to save your contact details. Please try again." });
+  }
+});
 
 function issueToken(sellerId) {
   return jwt.sign({ sellerId }, process.env.JWT_SECRET || "dev_secret", {

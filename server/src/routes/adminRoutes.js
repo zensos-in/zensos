@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
+const RegistrationLead = require("../models/RegistrationLead");
 const { ADMIN_SELLER_OMIT, toAdminSellerView } = require("../utils/adminSellerView");
 const { sendSubscriptionReminderEmail } = require("../utils/mailer");
 
@@ -44,6 +45,23 @@ router.post("/login", (req, res) => {
 
   const token = issueAdminToken(expectedUsername);
   return res.json({ token, username: expectedUsername });
+});
+
+router.get("/registration-leads", adminAuth, async (req, res) => {
+  const requestedPage = Number(req.query.page);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 1000000
+    ? requestedPage : 1;
+  const limit = 50;
+  try {
+    const [leads, total] = await Promise.all([
+      RegistrationLead.find().select("email phone createdAt").sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit).limit(limit).lean(),
+      RegistrationLead.countDocuments(),
+    ]);
+    return res.json({ leads, total, page, limit });
+  } catch (_error) {
+    return res.status(500).json({ message: "Unable to fetch registration leads" });
+  }
 });
 
 router.get("/sellers", adminAuth, async (req, res) => {
