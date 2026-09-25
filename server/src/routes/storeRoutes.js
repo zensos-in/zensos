@@ -1,5 +1,6 @@
 const express = require("express");
 const Seller = require("../models/Seller");
+const RegistrationLead = require("../models/RegistrationLead");
 const Product = require("../models/Product");
 const auth = require("../middleware/auth");
 const checkSubscription = require("../middleware/checkSubscription");
@@ -149,6 +150,15 @@ router.post("/publish", auth, checkSubscription, async (req, res) => {
     seller.approvedBy = "";
 
     await seller.save();
+    const phoneDigits = String(seller.phone || "").replace(/\D/g, "");
+    if (/^(?:91)?\d{10}$/.test(phoneDigits)) {
+      try {
+        await RegistrationLead.deleteMany({ phone: `+91${phoneDigits.slice(-10)}` });
+      } catch (error) {
+        // The publish request has already succeeded; don't report it as failed.
+        console.error("Unable to remove published seller from registration leads:", error);
+      }
+    }
     return res.json({ seller: withPolicyDefaults(seller) });
   } catch (error) {
     return res.status(500).json({ message: "Unable to publish store" });

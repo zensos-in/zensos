@@ -234,6 +234,17 @@ router.patch("/sellers/:sellerId/approval", adminAuth, async (req, res) => {
 
     await seller.save();
 
+    if (seller.storePublished) {
+      const phoneDigits = String(seller.phone || "").replace(/\D/g, "");
+      if (/^(?:91)?\d{10}$/.test(phoneDigits)) {
+        try {
+          await RegistrationLead.deleteMany({ phone: `+91${phoneDigits.slice(-10)}` });
+        } catch (error) {
+          console.error("Unable to remove approved seller from registration leads:", error);
+        }
+      }
+    }
+
     const refreshed = await Seller.findById(seller._id).select(ADMIN_SELLER_OMIT);
 
     return res.json({

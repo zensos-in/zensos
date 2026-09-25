@@ -41,6 +41,13 @@ router.post("/registration-lead", async (req, res) => {
   }
 
   try {
+    const localPhone = normalizedPhone.slice(3);
+    const alreadyPublishing = await Seller.exists({
+      phone: { $in: [localPhone, `+91 ${localPhone}`, normalizedPhone, `91${localPhone}`] },
+      $or: [{ publishRequestedAt: { $ne: null } }, { storePublished: true }],
+    });
+    if (alreadyPublishing) return res.json({ success: true });
+
     await RegistrationLead.updateOne(
       { email: normalizedEmail, phone: normalizedPhone },
       { $setOnInsert: { email: normalizedEmail, phone: normalizedPhone } },
