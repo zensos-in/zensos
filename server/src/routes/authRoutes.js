@@ -3,10 +3,11 @@ const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
 const RegistrationLead = require("../models/RegistrationLead");
 const auth = require("../middleware/auth");
-const { encrypt, decrypt, phoneHash: getPhoneHash, emailHash: getEmailHash } = require("../utils/encryption");
+const { encrypt,phoneHash: getPhoneHash, emailHash: getEmailHash } = require("../utils/encryption");
 const { slugify } = require("../utils/slug");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
+const TransactionLedger = require("../models/TransactionLedger");
 const { generateOtp, hashOtp, verifyOtp: verifyHashedOtp } = require("../utils/otp");
 const { getPolicyContent } = require("../utils/policyDefaults");
 const { sendOtpEmail } = require("../utils/mailer");
@@ -382,8 +383,8 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
-const { encrypt, decrypt, phoneHash: getPhoneHash, emailHash: getEmailHash } = require("../utils/encryption");
-const TransactionLedger = require("../models/TransactionLedger");
+
+
 
 function maskText(text, visibleCount = 4) {
   if (!text) return "";
