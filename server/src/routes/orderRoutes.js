@@ -6,6 +6,7 @@ const Seller = require("../models/Seller");
 const Shipment = require("../models/Shipment");
 const CustomerOtp = require("../models/CustomerOtp");
 const { generateOtp, hashOtp, verifyOtp } = require("../utils/otp");
+const { phoneHash, emailHash } = require("../utils/encryption");
 const { sendOtpEmail } = require("../utils/mailer");
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
@@ -861,10 +862,18 @@ router.get("/public/by-customer", async (req, res) => {
     const phoneDigits = String(decoded.customerPhone || "").replace(/\D/g, "").slice(-10);
     const emailClean = String(decoded.customerEmail || "").trim().toLowerCase();
 
+    const pHash = phoneHash(phoneDigits);
+    const eHash = emailHash(emailClean);
+
     const orders = await Order.find({
       seller: seller._id,
-      customerPhone: phoneDigits ? new RegExp(`${phoneDigits}$`) : decoded.customerPhone,
-      customerEmail: new RegExp(`^${emailClean}$`, "i"),
+      $or: [
+        { customerPhoneHash: pHash, customerEmailHash: eHash },
+        {
+          customerPhone: phoneDigits ? new RegExp(`${phoneDigits}$`) : decoded.customerPhone,
+          customerEmail: new RegExp(`^${emailClean}$`, "i"),
+        },
+      ],
     })
       .select("_id customOrderId paymentStatus paymentMethod amount deliveryCharge items quantity customerName customerPhone customerEmail deliveryAddress billingAddress shippingAddress shippingSameAsBilling shippingCustomerName shippingCustomerPhone note createdAt seller")
       .populate("items.product", "title imageUrl category")
@@ -899,11 +908,19 @@ router.post("/public/request-otp", async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
+    const pHash = phoneHash(phoneDigits);
+    const eHash = emailHash(emailClean);
+
     // Check if any order exists for this customer (matching phone digits and email)
     const orderExists = await Order.exists({
       seller: seller._id,
-      customerPhone: new RegExp(`${phoneDigits}$`),
-      customerEmail: new RegExp(`^${emailClean}$`, "i"),
+      $or: [
+        { customerPhoneHash: pHash, customerEmailHash: eHash },
+        {
+          customerPhone: new RegExp(`${phoneDigits}$`),
+          customerEmail: new RegExp(`^${emailClean}$`, "i"),
+        },
+      ],
     });
 
     if (!orderExists) {
@@ -916,14 +933,18 @@ router.post("/public/request-otp", async (req, res) => {
     // Delete any existing OTP for this customer/store combination
     await CustomerOtp.deleteMany({
       sellerId: seller._id,
-      customerPhone: phoneDigits,
-      customerEmail: emailClean,
+      $or: [
+        { customerPhoneHash: pHash, customerEmailHash: eHash },
+        { customerPhone: phoneDigits, customerEmail: emailClean },
+      ],
     });
 
     await CustomerOtp.create({
       sellerId: seller._id,
       customerPhone: phoneDigits,
+      customerPhoneHash: pHash,
       customerEmail: emailClean,
+      customerEmailHash: eHash,
       hashedOtp: hashOtp(otp),
       expiresAt,
     });
@@ -957,10 +978,15 @@ router.post("/public/verify-otp", async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
+    const pHash = phoneHash(phoneDigits);
+    const eHash = emailHash(emailClean);
+
     const otpDoc = await CustomerOtp.findOne({
       sellerId: seller._id,
-      customerPhone: phoneDigits,
-      customerEmail: emailClean,
+      $or: [
+        { customerPhoneHash: pHash, customerEmailHash: eHash },
+        { customerPhone: phoneDigits, customerEmail: emailClean },
+      ],
     });
 
     if (!otpDoc || !verifyOtp(otp.trim(), otpDoc.hashedOtp)) {

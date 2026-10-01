@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
 const RegistrationLead = require("../models/RegistrationLead");
 const auth = require("../middleware/auth");
+const { encrypt, decrypt, phoneHash: getPhoneHash, emailHash: getEmailHash } = require("../utils/encryption");
 const { slugify } = require("../utils/slug");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
@@ -42,15 +43,32 @@ router.post("/registration-lead", async (req, res) => {
 
   try {
     const localPhone = normalizedPhone.slice(3);
+    const targetPhoneHash = getPhoneHash(normalizedPhone);
+    const targetEmailHash = getEmailHash(normalizedEmail);
     const alreadyPublishing = await Seller.exists({
-      phone: { $in: [localPhone, `+91 ${localPhone}`, normalizedPhone, `91${localPhone}`] },
+      $or: [
+        { phoneHash: targetPhoneHash },
+        { phone: { $in: [localPhone, `+91 ${localPhone}`, normalizedPhone, `91${localPhone}`] } },
+      ],
       $or: [{ publishRequestedAt: { $ne: null } }, { storePublished: true }],
     });
     if (alreadyPublishing) return res.json({ success: true });
 
     await RegistrationLead.updateOne(
-      { email: normalizedEmail, phone: normalizedPhone },
-      { $setOnInsert: { email: normalizedEmail, phone: normalizedPhone } },
+      {
+        $or: [
+          { emailHash: targetEmailHash, phoneHash: targetPhoneHash },
+          { email: normalizedEmail, phone: normalizedPhone },
+        ],
+      },
+      {
+        $setOnInsert: {
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          emailHash: targetEmailHash,
+          phoneHash: targetPhoneHash,
+        },
+      },
       { upsert: true }
     );
     return res.json({ success: true });
@@ -190,11 +208,16 @@ function hasCompletedSellerProfile(seller, normalizedPhone) {
 }
 
 async function findSellerByPhone(normalizedPhone) {
-  return Seller.findOne({ phone: { $in: getPhoneLookupValues(normalizedPhone) } });
+  const hash = getPhoneHash(normalizedPhone);
+  return (
+    (await Seller.findOne({ phoneHash: hash })) ||
+    Seller.findOne({ phone: { $in: getPhoneLookupValues(normalizedPhone) } })
+  );
 }
 
 async function findSellerByEmail(normalizedEmail) {
   return (
+    (await Seller.findOne({ businessEmailHash: getEmailHash(normalizedEmail) })) ||
     (await Seller.findOne({ businessEmail: normalizedEmail })) ||
     Seller.findOne({ businessEmail: new RegExp(`^${escapeRegExp(normalizedEmail)}$`, "i") })
   );
@@ -202,7 +225,7 @@ async function findSellerByEmail(normalizedEmail) {
 
 async function findSellerByPhoneAndEmail(normalizedPhone, normalizedEmail) {
   const seller = await Seller.findOne({
-    phone: { $in: getPhoneLookupValues(normalizedPhone) },
+    $or: [{ phoneHash: getPhoneHash(normalizedPhone) }, { phone: { $in: getPhoneLookupValues(normalizedPhone) } }],
     businessEmail: new RegExp(`^${escapeRegExp(normalizedEmail)}$`, "i"),
   });
 
@@ -359,7 +382,7 @@ router.post("/verify-otp", async (req, res) => {
   }
 });
 
-const { encrypt, decrypt } = require("../utils/encryption");
+const { encrypt, decrypt, phoneHash: getPhoneHash, emailHash: getEmailHash } = require("../utils/encryption");
 const TransactionLedger = require("../models/TransactionLedger");
 
 function maskText(text, visibleCount = 4) {
@@ -667,7 +690,7 @@ router.put("/me", auth, async (req, res) => {
     }
 
     const duplicateSeller = await Seller.findOne({
-      businessEmail: nextBusinessEmail,
+      $or: [{ businessEmailHash: getEmailHash(nextBusinessEmail) }, { businessEmail: nextBusinessEmail }],
       _id: { $ne: seller._id },
     }).select("_id");
     if (duplicateSeller) {

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { DEFAULT_POLICY_CONTENT } = require("../utils/policyDefaults");
+const { encrypt, decrypt, phoneHash, emailHash } = require("../utils/encryption");
 
 const socialLinkSchema = new mongoose.Schema(
   {
@@ -41,13 +42,26 @@ const sellerSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
+      set: encrypt,
+      get: decrypt,
+    },
+    phoneHash: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
     },
     businessEmail: {
       type: String,
       trim: true,
-      lowercase: true,
+      default: "",
+      set: encrypt,
+      get: decrypt,
+    },
+    businessEmailHash: {
+      type: String,
+      trim: true,
       default: "",
       index: true,
     },
@@ -55,6 +69,8 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     bankAccountName: {
       type: String,
@@ -86,6 +102,8 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     businessGST: {
       type: String,
@@ -180,11 +198,15 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     callNumber: {
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     idProofUrl: {
       type: String,
@@ -528,9 +550,24 @@ const sellerSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true },
   }
 );
 
+sellerSchema.index(
+  { phoneHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { phoneHash: { $type: "string", $gt: "" } },
+  }
+);
+sellerSchema.index(
+  { businessEmailHash: 1 },
+  {
+    partialFilterExpression: { businessEmailHash: { $type: "string", $gt: "" } },
+  }
+);
 sellerSchema.index(
   { panHash: 1 },
   {
@@ -547,9 +584,24 @@ sellerSchema.index(
 );
 sellerSchema.index({ kycStatus: 1, payoutStatus: 1, approvalStatus: 1 });
 
+sellerSchema.pre("validate", function () {
+  if (this.phone && !this.phoneHash) {
+    this.phoneHash = phoneHash(this.phone);
+  }
+  if (this.businessEmail && !this.businessEmailHash) {
+    this.businessEmailHash = emailHash(this.businessEmail);
+  }
+});
+
 sellerSchema.pre("save", function (next) {
   if (this.isNew) {
     this.trialStatus = "not_started";
+  }
+  if (this.isModified("phone") || (!this.phoneHash && this.phone)) {
+    this.phoneHash = phoneHash(this.phone);
+  }
+  if (this.isModified("businessEmail") || (!this.businessEmailHash && this.businessEmail)) {
+    this.businessEmailHash = emailHash(this.businessEmail);
   }
   if (typeof next === "function") {
     next();

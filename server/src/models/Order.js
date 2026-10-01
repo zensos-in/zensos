@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { encrypt, decrypt, phoneHash, emailHash } = require("../utils/encryption");
 
 const orderItemSchema = new mongoose.Schema(
   {
@@ -149,32 +150,55 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      set: encrypt,
+      get: decrypt,
     },
     customerPhone: {
       type: String,
       required: true,
       trim: true,
+      set: encrypt,
+      get: decrypt,
+    },
+    customerPhoneHash: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
     },
     customerEmail: {
       type: String,
       trim: true,
-      lowercase: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
+    },
+    customerEmailHash: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
     },
     deliveryAddress: {
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     billingAddress: {
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     shippingAddress: {
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     shippingSameAsBilling: {
       type: Boolean,
@@ -184,11 +208,15 @@ const orderSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     shippingCustomerPhone: {
       type: String,
       trim: true,
       default: "",
+      set: encrypt,
+      get: decrypt,
     },
     note: {
       type: String,
@@ -241,11 +269,35 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true },
   }
 );
 
 // Optimize order list sorting and report filtering
 orderSchema.index({ seller: 1, createdAt: -1 });
 orderSchema.index({ seller: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ seller: 1, customerPhoneHash: 1, customerEmailHash: 1 });
+
+orderSchema.pre("validate", function () {
+  if (this.customerPhone && !this.customerPhoneHash) {
+    this.customerPhoneHash = phoneHash(this.customerPhone);
+  }
+  if (this.customerEmail && !this.customerEmailHash) {
+    this.customerEmailHash = emailHash(this.customerEmail);
+  }
+});
+
+orderSchema.pre("save", function (next) {
+  if (this.isModified("customerPhone") || (!this.customerPhoneHash && this.customerPhone)) {
+    this.customerPhoneHash = phoneHash(this.customerPhone);
+  }
+  if (this.isModified("customerEmail") || (!this.customerEmailHash && this.customerEmail)) {
+    this.customerEmailHash = emailHash(this.customerEmail);
+  }
+  if (typeof next === "function") {
+    next();
+  }
+});
 
 module.exports = mongoose.model("Order", orderSchema);

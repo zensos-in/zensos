@@ -10,6 +10,9 @@ const PLANS = [
     subtitle: "For sellers just getting started",
     price: "₹1,299",
     strikePrice: "₹999",
+    baseAmount: 999,
+    gstAmount: "179.82",
+    totalPrice: "₹1,178.82",
     color: "#6366f1",
     popular: false,
     cta: "Get Started",
@@ -32,6 +35,9 @@ const PLANS = [
     subtitle: "For sellers ready to scale",
     price: "₹1,799",
     strikePrice: "₹1,499",
+    baseAmount: 1499,
+    gstAmount: "269.82",
+    totalPrice: "₹1,768.82",
     color: "#ff751f",
     popular: true,
     cta: "Start Growing",
@@ -47,7 +53,6 @@ const PLANS = [
       "Trust Badge",
     ],
     comingSoon: [
-      "Delivery Partner Integration",
       "Instagram Reels Integration",
       "Coupon Code Integration",
     ],
@@ -58,6 +63,9 @@ const PLANS = [
     subtitle: "For established sellers",
     price: "₹2,799",
     strikePrice: "₹2,499",
+    baseAmount: 2499,
+    gstAmount: "449.82",
+    totalPrice: "₹2,948.82",
     color: "#10b981",
     popular: false,
     cta: "Go Business",
@@ -73,11 +81,9 @@ const PLANS = [
       "Trust Badge",
     ],
     comingSoon: [
-      "Delivery Partner Integration",
       "Instagram Reels Integration",
       "Coupon Code Integration",
       "Affiliate Program Integration",
-      "Google Reviews Integration",
     ],
   },
 ];
@@ -143,7 +149,7 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
           amount: purchaseRes.amountPaise,
           currency: purchaseRes.currency || "INR",
           name: "Zensos",
-          description: `Subscription: ${planKey}`,
+          description: `Subscription: ${planKey} (incl. 18% GST)`,
           order_id: purchaseRes.orderId,
           handler: async function (response: any) {
             try {
@@ -304,11 +310,18 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                     </span>
                     <span
                       className="text-xs font-semibold"
-                      style={{ color: plan.popular ? "rgba(255,255,255,0.4)" : "#94a3b8" }}
+                      style={{ color: plan.popular ? "rgba(255,255,255,0.7)" : "#64748b" }}
                     >
-                      + 18% GST /Monthly
+                      + 18% GST /mo
                     </span>
                   </div>
+                  <p
+                    className="text-xs font-medium mb-3"
+                    style={{ color: plan.popular ? "rgba(255,255,255,0.85)" : "#64748b" }}
+                  >
+                    Total: <span className="font-bold" style={{ color: plan.popular ? "#ff9a5c" : "#0b183f" }}>{plan.totalPrice}</span>{" "}
+                    <span className="opacity-80">({plan.strikePrice} + ₹{plan.gstAmount} GST)</span>
+                  </p>
 
                   {/* Handling charge */}
                   <p

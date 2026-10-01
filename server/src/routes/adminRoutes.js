@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
 const RegistrationLead = require("../models/RegistrationLead");
 const { ADMIN_SELLER_OMIT, toAdminSellerView } = require("../utils/adminSellerView");
+const { decryptObject } = require("../utils/encryption");
 const { sendSubscriptionReminderEmail } = require("../utils/mailer");
 
 const router = express.Router();
@@ -58,7 +59,12 @@ router.get("/registration-leads", adminAuth, async (req, res) => {
         .skip((page - 1) * limit).limit(limit).lean(),
       RegistrationLead.countDocuments(),
     ]);
-    return res.json({ leads, total, page, limit });
+    return res.json({
+      leads: leads.map((lead) => decryptObject(lead, ["email", "phone"])),
+      total,
+      page,
+      limit,
+    });
   } catch (_error) {
     return res.status(500).json({ message: "Unable to fetch registration leads" });
   }

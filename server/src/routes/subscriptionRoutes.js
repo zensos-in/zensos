@@ -8,6 +8,8 @@ const { sendOtpEmail } = require("../utils/mailer"); // Optional: for emails lat
 
 const router = express.Router();
 
+const GST_PERCENTAGE = 18;
+
 const PLAN_PRICES = {
   STARTER: 999,
   GROWTH: 1499,
@@ -50,8 +52,10 @@ router.post("/purchase", auth, async (req, res) => {
       return res.status(400).json({ message: "Invalid plan selected" });
     }
 
-    const amount = PLAN_PRICES[planType];
-    const amountPaise = amount * 100;
+    const baseAmount = PLAN_PRICES[planType];
+    const gstAmount = Math.round(((baseAmount * GST_PERCENTAGE) / 100) * 100) / 100;
+    const totalAmount = Math.round((baseAmount + gstAmount) * 100) / 100;
+    const amountPaise = Math.round(totalAmount * 100);
 
     const seller = await Seller.findById(req.sellerId);
     if (!seller) {
@@ -70,6 +74,10 @@ router.post("/purchase", auth, async (req, res) => {
         notes: {
           sellerId: seller._id.toString(),
           planType,
+          baseAmount: String(baseAmount),
+          gstAmount: String(gstAmount),
+          totalAmount: String(totalAmount),
+          gstPercentage: String(GST_PERCENTAGE),
         },
       };
       const order = await razorpay.orders.create(options);
@@ -84,12 +92,15 @@ router.post("/purchase", auth, async (req, res) => {
       startDate: new Date(),
       endDate: new Date(), // Will be updated on verification
       orderId,
-      amountPaid: amount,
+      amountPaid: totalAmount,
     });
 
     return res.json({
       orderId,
       amountPaise,
+      baseAmount,
+      gstAmount,
+      totalAmount,
       currency: "INR",
       subscriptionId: subscription._id,
       planType,
