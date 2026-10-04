@@ -7,7 +7,11 @@ interface SubscriptionContextType {
   subscription: Subscription | null;
   loading: boolean;
   refreshSubscription: () => Promise<void>;
-  purchaseSubscription: (planType: PlanType) => Promise<any>;
+  purchaseSubscription: (
+    planType: PlanType,
+    billingCycle?: "MONTHLY" | "QUARTERLY",
+    durationMonths?: number
+  ) => Promise<any>;
   verifyPurchase: (paymentData: any) => Promise<any>;
   dismissExpiredPopup: () => Promise<void>;
 }
@@ -45,8 +49,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  const purchaseSubscription = async (planType: PlanType) => {
-    const response = await api.post("/subscriptions/purchase", { planType });
+  const purchaseSubscription = async (
+    planType: PlanType,
+    billingCycle: "MONTHLY" | "QUARTERLY" = "MONTHLY",
+    durationMonths: number = billingCycle === "QUARTERLY" ? 3 : 1
+  ) => {
+    const response = await api.post("/subscriptions/purchase", {
+      planType,
+      billingCycle,
+      durationMonths,
+    });
     return response.data;
   };
 

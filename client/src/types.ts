@@ -45,12 +45,16 @@ export interface TrialState {
 }
 
 export type PlanType = "NONE" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS";
+export type BillingCycle = "MONTHLY" | "QUARTERLY" | "ANNUAL";
 export type SubscriptionStatus = "NONE" | "ACTIVE" | "EXPIRED" | "CANCELLED" | "PENDING";
 
 export interface Subscription {
   _id: string;
   seller: string;
   planType: PlanType;
+  billingCycle?: BillingCycle;
+  durationMonths?: number;
+  complimentaryOfferActive?: boolean;
   status: SubscriptionStatus;
   startDate: string;
   endDate: string;
@@ -61,8 +65,36 @@ export interface Subscription {
   amountPaid: number;
 }
 
+export type ComplimentaryOfferStatus =
+  | "pending_assets"
+  | "assets_submitted"
+  | "in_production"
+  | "reels_published"
+  | "ad_running"
+  | "completed";
+
+export interface ComplimentaryOfferDetails {
+  status?: ComplimentaryOfferStatus;
+  assetsSubmittedAt?: string | null;
+  brandDescription?: string;
+  productImages?: string[];
+  uspHighlights?: string;
+  targetAudience?: string;
+  socialHandle?: string;
+  additionalNotes?: string;
+  reel1Url?: string;
+  reel2Url?: string;
+  metaAdCampaignId?: string;
+  metaAdSpend?: number;
+  metaAdNotes?: string;
+  updatedAt?: string;
+}
+
 export interface Seller {
   currentPlan?: PlanType;
+  billingCycle?: BillingCycle;
+  complimentaryOfferActive?: boolean;
+  complimentaryOfferDetails?: ComplimentaryOfferDetails;
   subscriptionStatus?: SubscriptionStatus;
   subscriptionEndDate?: string | null;
   trialEndDate?: string | null;

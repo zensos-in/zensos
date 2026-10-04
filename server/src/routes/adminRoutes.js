@@ -654,5 +654,84 @@ router.patch("/sellers/:sellerId/razorpay-account", adminAuth, async (req, res) 
   }
 });
 
+// ─── GET /complimentary-offers — List all sellers with partner offers ────────
+router.get("/complimentary-offers", adminAuth, async (req, res) => {
+  try {
+    const status = String(req.query.status || "all").trim();
+    const search = String(req.query.search || "").trim();
+
+    const query = { complimentaryOfferActive: true };
+
+    if (status && status !== "all") {
+      query["complimentaryOfferDetails.status"] = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { businessName: { $regex: search, $options: "i" } },
+        { slug: { $regex: search, $options: "i" } },
+        { "complimentaryOfferDetails.socialHandle": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const sellers = await Seller.find(query)
+      .select(ADMIN_SELLER_OMIT)
+      .sort({ "complimentaryOfferDetails.updatedAt": -1, createdAt: -1 });
+
+    return res.json({
+      offers: sellers.map((s) => toAdminSellerView(s)),
+      total: sellers.length,
+    });
+  } catch (error) {
+    console.error("[GET /complimentary-offers]", error);
+    return res.status(500).json({ message: "Unable to fetch partner spotlight offers", error: error.message });
+  }
+});
+
+// ─── PATCH /complimentary-offers/:sellerId — Update offer fulfillment details ──
+router.patch("/complimentary-offers/:sellerId", adminAuth, async (req, res) => {
+  try {
+    const seller = await Seller.findById(req.params.sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: "Seller not found." });
+    }
+
+    const {
+      status,
+      reel1Url,
+      reel2Url,
+      metaAdCampaignId,
+      metaAdSpend,
+      metaAdNotes,
+      additionalNotes,
+    } = req.body;
+
+    const currentDetails = seller.complimentaryOfferDetails || {};
+
+    seller.complimentaryOfferDetails = {
+      ...currentDetails,
+      status: status || currentDetails.status || "pending_assets",
+      reel1Url: reel1Url !== undefined ? String(reel1Url).trim() : (currentDetails.reel1Url || ""),
+      reel2Url: reel2Url !== undefined ? String(reel2Url).trim() : (currentDetails.reel2Url || ""),
+      metaAdCampaignId: metaAdCampaignId !== undefined ? String(metaAdCampaignId).trim() : (currentDetails.metaAdCampaignId || ""),
+      metaAdSpend: metaAdSpend !== undefined ? Number(metaAdSpend) : (currentDetails.metaAdSpend || 500),
+      metaAdNotes: metaAdNotes !== undefined ? String(metaAdNotes).trim() : (currentDetails.metaAdNotes || ""),
+      additionalNotes: additionalNotes !== undefined ? String(additionalNotes).trim() : (currentDetails.additionalNotes || ""),
+      updatedAt: new Date(),
+    };
+
+    await seller.save();
+
+    const refreshed = await Seller.findById(seller._id).select(ADMIN_SELLER_OMIT);
+    return res.json({
+      message: "Partner Spotlight Offer details updated successfully",
+      seller: toAdminSellerView(refreshed),
+    });
+  } catch (error) {
+    console.error("[PATCH /complimentary-offers/:sellerId]", error);
+    return res.status(500).json({ message: "Unable to update offer details", error: error.message });
+  }
+});
+
 module.exports = router;
 

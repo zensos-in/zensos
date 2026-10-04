@@ -144,7 +144,23 @@ async function handlePaymentCaptured(payment) {
       return;
     }
 
-    console.warn(`[payment.captured] No ParentOrder or DeliverySubscription found for ID: ${razorpayOrderId}`);
+    // Check if this payment belongs to a Subscription purchase
+    const Subscription = require("../models/Subscription");
+    const subscriptionDoc = await Subscription.findOne({ orderId: razorpayOrderId });
+    if (subscriptionDoc) {
+      console.log(`[payment.captured] Found Subscription order: ${razorpayOrderId}`);
+      if (subscriptionDoc.status !== "ACTIVE") {
+        const seller = await Seller.findById(subscriptionDoc.seller);
+        if (seller) {
+          const { activateSubscriptionRecord } = require("./subscriptionRoutes");
+          await activateSubscriptionRecord(subscriptionDoc, seller, razorpayPaymentId);
+          console.log(`[payment.captured] Activated Subscription for seller: ${seller._id}`);
+        }
+      }
+      return;
+    }
+
+    console.warn(`[payment.captured] No ParentOrder, DeliverySubscription or Subscription found for ID: ${razorpayOrderId}`);
     return;
   }
 

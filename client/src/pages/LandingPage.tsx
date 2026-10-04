@@ -5,6 +5,7 @@ import registerYourStore from "../assets/Register Your Store.png";
 import addProductsImage from "../assets/Add Products & Product Catelog image.png";
 import valueAddedServicesImage from "../assets/Value-added-services1.jpg";
 import orders from "../assets/orders.png";
+import { ComplimentaryOffer } from "../components/offers/ComplimentaryOffer";
 
 // ─── Intersection observer hook for scroll animations ───────────────────────
 function useInView(threshold = 0.15) {
@@ -63,14 +64,22 @@ export function LandingPage() {
   }, [location]);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [openPlan, setOpenPlan] = useState<string | null>(null);
+  const [openPlans, setOpenPlans] = useState<Record<string, boolean>>({});
+  const [pricingCycle, setPricingCycle] = useState<"monthly" | "quarterly">("monthly");
+
+  const togglePlanFeatures = (planName: string) => {
+    setOpenPlans((prev) => ({
+      ...prev,
+      [planName]: !prev[planName],
+    }));
+  };
   // const [email, setEmail] = useState("");
   // const [subscribed, setSubscribed] = useState(false);
 
   const featuresSection = useInView();
   const howSection = useInView();
   const comparisonSection = useInView();
-  const upcomingSection = useInView();
+  // const upcomingSection = useInView();
   // const statsSection = useInView();
   const communitySection = useInView();
   const pricingSection = useInView();
@@ -530,7 +539,7 @@ export function LandingPage() {
       </section>
 
       {/* ════════════════════ UPCOMING FEATURES ════════════════════ */}
-      <section id="upcoming" className="py-10 sm:py-14" style={{ background: "#fdfbf7" }}>
+      {/* <section id="upcoming" className="py-10 sm:py-14" style={{ background: "#fdfbf7" }}>
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div ref={upcomingSection.ref}
             className={`text-center mb-10 transition-all duration-700 ${upcomingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
@@ -542,9 +551,9 @@ export function LandingPage() {
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl text-[#0b183f]">
               Upcoming <span style={{ color: "#ff751f" }}>Features</span>
             </h2>
-            {/* <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">
-              We are constantly building tools to help Shankara Online Solutions and your brand grow. Here are the plugins and integrations coming next.
-            </p> */}
+            // <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">
+            //   We are constantly building tools to help Shankara Online Solutions and your brand grow. Here are the plugins and integrations coming next.
+            // </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -554,24 +563,24 @@ export function LandingPage() {
                 logo: (
                   <div className="h-14 w-14 rounded-2xl flex items-center justify-center bg-[#E31E24] text-white shrink-0">
                     <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      {/* Back Wheel */}
+                      // Back Wheel
                       <circle cx="6" cy="18" r="2.5" />
-                      {/* Front Wheel */}
+                      // Front Wheel
                       <circle cx="18" cy="18" r="2.5" />
-                      {/* Scooter Body & Floorboard */}
+                      // Scooter Body & Floorboard
                       <path d="M6 18h4.5a1 1 0 001-1v-2.5h3.5l1.5 3.5" />
-                      {/* Steering Column & Handlebars */}
+                      // Steering Column & Handlebars
                       <path d="M16.5 14l1.5-6h-2.5" />
-                      {/* Delivery Box */}
+                      // Delivery Box
                       <rect x="2.5" y="9.5" width="4.5" height="4.5" rx="0.5" fill="white" stroke="white" strokeWidth="1" />
-                      {/* Delivery Rider */}
-                      {/* Helmet / Head */}
+                      // Delivery Rider
+                      // Helmet / Head
                       <circle cx="12" cy="6.5" r="1.5" fill="white" />
-                      {/* Body leaning forward */}
+                      // Body leaning forward
                       <path d="M9.5 13c.3-2.5 1.2-4.5 2.5-5l3 2" />
-                      {/* Rider Leg */}
+                      // Rider Leg
                       <path d="M12 12.5v3.5" />
-                      {/* Motion / Speed Lines */}
+                      // Motion / Speed Lines
                       <path d="M2 5.5h-1" strokeWidth="1.5" />
                       <path d="M1.5 7.5h-1.5" strokeWidth="1.5" />
                     </svg>
@@ -660,7 +669,7 @@ export function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ════════════════════ STATS ════════════════════ */}
       {/* <section className="py-20 sm:py-24" style={{ background: "linear-gradient(135deg,#0b183f 0%,#0f2157 100%)" }}>
@@ -705,6 +714,37 @@ export function LandingPage() {
               Simple, Transparent<br /><span style={{ color: "#ff751f" }}>Pricing</span>
             </h2>
             <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">No hidden fees. No commission. Pay only for the plan that fits your business.</p>
+
+            {/* Billing Cycle Switcher */}
+            <div className="mt-7 flex items-center justify-center">
+              <div className="inline-flex p-1.5 rounded-2xl bg-white border border-orange-200/60 shadow-sm text-xs sm:text-sm font-bold">
+                <button
+                  type="button"
+                  onClick={() => setPricingCycle("monthly")}
+                  className={`px-4 py-2 rounded-xl transition-all ${
+                    pricingCycle === "monthly"
+                      ? "bg-[#0b183f] text-white shadow-sm font-extrabold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Monthly Billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPricingCycle("quarterly")}
+                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                    pricingCycle === "quarterly"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md font-extrabold"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span>Quarterly (3 Months)</span>
+                  <span className="text-[10px] bg-white text-orange-600 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                    🎁 Complimentary Offer
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* 15 Days Free Trial Banner Card */}
@@ -771,8 +811,8 @@ export function LandingPage() {
               {
                 name: "Starter",
                 subtitle: "For sellers just getting started",
-                price: "₹1,299",
-                strikePrice: "₹999",
+                basePrice: 999,
+                originalPrice: 1299,
                 color: "#6366f1",
                 features: [
                   { label: "List up to 10 products" },
@@ -790,8 +830,8 @@ export function LandingPage() {
               {
                 name: "Growth",
                 subtitle: "For sellers ready to scale",
-                price: "₹1,799",
-                strikePrice: "₹1,499",
+                basePrice: 1499,
+                originalPrice: 1799,
                 color: "#ff751f",
                 features: [
                   { label: "List up to 20 products" },
@@ -812,8 +852,8 @@ export function LandingPage() {
               {
                 name: "Business",
                 subtitle: "For established sellers",
-                price: "₹2,799",
-                strikePrice: "₹2,499",
+                basePrice: 2499,
+                originalPrice: 2799,
                 color: "#10b981",
                 features: [
                   { label: "List up to 30 products" },
@@ -833,73 +873,111 @@ export function LandingPage() {
                 ],
                 cta: "Go Business", popular: false,
               },
-            ].map(({ name, subtitle, price, strikePrice, color, features, cta, popular }, i) => (
-              <div key={name}
-                className={`relative rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"} ${popular ? "ring-2 shadow-xl" : "shadow-md"}`}
-                style={{
-                  background: popular ? `linear-gradient(145deg,#0b183f,#0f2157)` : "rgba(255,255,255,0.9)",
-                  border: popular ? `2px solid ${color}` : "1px solid rgba(255,117,31,0.1)",
-                  transitionDelay: `${i * 100}ms`,
-                  ...(popular ? { boxShadow: `0 20px 60px rgba(255,117,31,0.3)` } : {}),
-                }}>
-                {popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-black text-white"
-                    style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
-                    ✦ RECOMMENDED
+            ].map(({ name, subtitle, basePrice, originalPrice, color, features, cta, popular }, i) => {
+              const months = pricingCycle === "quarterly" ? 3 : 1;
+              const displayStrike = `₹${(basePrice * months).toLocaleString("en-IN")}`;
+              const displayOriginal = `₹${(originalPrice * months).toLocaleString("en-IN")}`;
+              const isComplimentaryEligible = pricingCycle === "quarterly" && (name === "Growth" || name === "Business");
+
+              return (
+                <div key={name}
+                  className={`relative rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${pricingSection.inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"} ${popular || isComplimentaryEligible ? "ring-2 shadow-xl" : "shadow-md"}`}
+                  style={{
+                    background: popular ? `linear-gradient(145deg,#0b183f,#0f2157)` : "rgba(255,255,255,0.9)",
+                    border: isComplimentaryEligible ? "2px solid #ff751f" : popular ? `2px solid ${color}` : "1px solid rgba(255,117,31,0.1)",
+                    transitionDelay: `${i * 100}ms`,
+                    ...(popular || isComplimentaryEligible ? { boxShadow: `0 20px 60px rgba(255,117,31,0.3)` } : {}),
+                  }}>
+                  {isComplimentaryEligible ? (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-xs font-black text-white whitespace-nowrap shadow-lg"
+                      style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
+                      🎁 COMPLIMENTARY OFFER UNLOCKED
+                    </div>
+                  ) : popular ? (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-black text-white"
+                      style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}>
+                      ✦ RECOMMENDED
+                    </div>
+                  ) : null}
+                  <div className="mb-1">
+                    <p className="text-lg font-black uppercase tracking-widest" style={{ color: popular ? "#fff" : "#0b183f" }}>{name}</p>
+                    <p className="text-xs font-semibold mt-0.5 mb-4" style={{ color: popular ? "rgba(255,255,255,0.55)" : "#94a3b8" }}>{subtitle}</p>
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-4xl font-black" style={{ color: popular ? "#fff" : "#0b183f" }}>{displayStrike}</span>
+                      <span className="text-base font-semibold line-through opacity-50" style={{ color: popular ? "#fff" : "#0b183f" }}>{displayOriginal}</span>
+                      <span className="text-xs font-semibold" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>
+                        + 18% GST {pricingCycle === "quarterly" ? "/3 Months" : "/Monthly"}
+                      </span>
+                    </div>
+
+                    {/* Complimentary Offer Callout in card */}
+                    {isComplimentaryEligible && (
+                      <div className="mt-3 mb-2 rounded-xl p-3 bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-500/30 text-xs">
+                        <p className="font-bold text-orange-400">
+                          🎉 Includes Complimentary Offer:
+                        </p>
+                        <p className="text-slate-300 mt-0.5 leading-snug">
+                          • 2 Feature Reels on ZENSOS Instagram<br />
+                          • ₹500 Meta Ad Campaign Boost
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Handling charge note */}
+                    <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
+                      style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
+                      +3% per transaction (Payment Handling Charges)
+                    </p>
                   </div>
-                )}
-                <div className="mb-1">
-                  <p className="text-lg font-black uppercase tracking-widest" style={{ color: popular ? "#fff" : "#0b183f" }}>{name}</p>
-                  <p className="text-xs font-semibold mt-0.5 mb-4" style={{ color: popular ? "rgba(255,255,255,0.55)" : "#94a3b8" }}>{subtitle}</p>
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-4xl font-black" style={{ color: popular ? "#fff" : "#0b183f" }}>{strikePrice}</span>
-                    <span className="text-base font-semibold line-through opacity-50" style={{ color: popular ? "#fff" : "#0b183f" }}>{price}</span>
-                    <span className="text-xs font-semibold" style={{ color: popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}>+ 18% GST &nbsp;/Monthly</span>
-                  </div>
-                  {/* Handling charge note */}
-                  <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
-                    style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
-                    +3% per transaction (Payment Handling Charges)
-                  </p>
+
+                  {/* View Features accordion toggle */}
+                  <button
+                    onClick={() => togglePlanFeatures(name)}
+                    className="flex items-center gap-1.5 mb-3 text-sm font-bold"
+                    style={{ color: popular ? "#ff9a5c" : "#ff751f", background: "none", border: "none", padding: 0 }}>
+                    <span>{openPlans[name] ? "Hide Features" : "View Features"}</span>
+                    <svg
+                      style={{ transform: openPlans[name] ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}
+                      width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+
+                  {/* Collapsible features list */}
+                  {openPlans[name] && (
+                    <ul className="mb-6 space-y-2.5 overflow-hidden" style={{ animation: "fadeSlideDown 0.25s ease" }}>
+                      {features.map(({ label, comingSoon }) => (
+                        <li key={label} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
+                          <span>
+                            {label}
+                            {comingSoon && (
+                              <span className="ml-1.5 text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <button onClick={() => navigate(`/login?tab=register&plan=${name.toUpperCase()}&billingCycle=${pricingCycle}`)}
+                    className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 ${popular || isComplimentaryEligible ? "text-white" : ""}`}
+                    style={popular || isComplimentaryEligible ? { background: `linear-gradient(135deg,#ff751f,#ff4500)`, boxShadow: "0 8px 20px rgba(255,117,31,0.4)" } : { background: `${color}18`, color }}>
+                    {cta} ({pricingCycle === "quarterly" ? "3 Months" : "1 Month"}) →
+                  </button>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* View Features accordion toggle */}
-                <button
-                  onClick={() => setOpenPlan(openPlan === name ? null : name)}
-                  className="flex items-center gap-1.5 mb-3 text-sm font-bold"
-                  style={{ color: popular ? "#ff9a5c" : "#ff751f", background: "none", border: "none", padding: 0 }}>
-                  <span>{openPlan === name ? "Hide Features" : "View Features"}</span>
-                  <svg
-                    style={{ transform: openPlan === name ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}
-                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-
-                {/* Collapsible features list */}
-                {openPlan === name && (
-                  <ul className="mb-6 space-y-2.5 overflow-hidden" style={{ animation: "fadeSlideDown 0.25s ease" }}>
-                    {features.map(({ label, comingSoon }) => (
-                      <li key={label} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
-                        <span>
-                          {label}
-                          {comingSoon && (
-                            <span className="ml-1.5 text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <button onClick={() => navigate(`/login?tab=register&plan=${name.toUpperCase()}`)}
-                  className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 ${popular ? "text-white" : ""}`}
-                  style={popular ? { background: `linear-gradient(135deg,#ff751f,#ff4500)`, boxShadow: "0 8px 20px rgba(255,117,31,0.4)" } : { background: `${color}18`, color }}>
-                  {cta} →
-                </button>
-              </div>
-            ))}
+          {/* Complimentary Offer / Partner Spotlight */}
+          <div className="mt-12 sm:mt-14">
+            <ComplimentaryOffer
+              onGetOffer={() => {
+                setPricingCycle("quarterly");
+                navigate("/login?tab=register&plan=GROWTH&billingCycle=quarterly");
+              }}
+            />
           </div>
         </div>
       </section>

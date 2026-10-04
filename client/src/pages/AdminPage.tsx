@@ -12,7 +12,7 @@ import type { Seller, LinkedAccountOnboardingStatus } from "../types";
 type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
 type ApprovalStatusFilter = "all" | ApprovalStatus;
 type SortBy = "latest" | "oldest" | "business" | "expiring_soon";
-type AdminTab = "sellers" | "subscriptions" | "revenue" | "leads";
+type AdminTab = "sellers" | "subscriptions" | "offers" | "revenue" | "leads";
 
 type RegistrationLead = { _id: string; email: string; phone: string; createdAt: string };
 
@@ -52,6 +52,26 @@ function addonStatusBadgeClass(status?: string) {
   if (s === "PAYMENT_PENDING") return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
   if (s === "EXPIRED" || s === "CANCELLED") return "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
   return "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+}
+
+function offerStatusBadgeClass(status?: string) {
+  const s = status || "pending_assets";
+  if (s === "completed") return "bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-700";
+  if (s === "ad_running") return "bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-700";
+  if (s === "reels_published") return "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700";
+  if (s === "in_production") return "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-700";
+  if (s === "assets_submitted") return "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-700";
+  return "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700";
+}
+
+function offerStatusLabel(status?: string) {
+  const s = status || "pending_assets";
+  if (s === "completed") return "Completed";
+  if (s === "ad_running") return "Meta Ad Running";
+  if (s === "reels_published") return "Reels Published";
+  if (s === "in_production") return "In Production";
+  if (s === "assets_submitted") return "Assets Submitted";
+  return "Pending Assets";
 }
 
 function getSellerSubscriptionMeta(seller: Seller) {
@@ -646,6 +666,20 @@ export function AdminPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [emailSendingId, setEmailSendingId] = useState<string | null>(null);
+  const [partnerOffers, setPartnerOffers] = useState<Seller[]>([]);
+  const [partnerOffersLoading, setPartnerOffersLoading] = useState(false);
+  const [offerStatusFilter, setOfferStatusFilter] = useState<string>("all");
+  const [selectedOfferSeller, setSelectedOfferSeller] = useState<Seller | null>(null);
+  const [offerSaving, setOfferSaving] = useState(false);
+  const [offerEditForm, setOfferEditForm] = useState({
+    status: "pending_assets",
+    reel1Url: "",
+    reel2Url: "",
+    metaAdCampaignId: "",
+    metaAdSpend: 500,
+    metaAdNotes: "",
+    additionalNotes: "",
+  });
   const modalScrollRef = useRef<HTMLDivElement>(null);
 
   // Reset modal scroll to top whenever a new seller is opened
@@ -694,6 +728,61 @@ export function AdminPage() {
     }
   }
 
+  async function loadPartnerOffers() {
+    if (!token) return;
+    setPartnerOffersLoading(true);
+    try {
+      const response = await api.get<{ offers: Seller[]; total: number }>("/admin/complimentary-offers", {
+        headers: authHeaders,
+      });
+      setPartnerOffers(response.data.offers || []);
+    } catch {
+      setError("Unable to fetch partner spotlight offers.");
+    } finally {
+      setPartnerOffersLoading(false);
+    }
+  }
+
+  function openOfferEdit(seller: Seller) {
+    setSelectedOfferSeller(seller);
+    const d = seller.complimentaryOfferDetails || {};
+    setOfferEditForm({
+      status: d.status || "pending_assets",
+      reel1Url: d.reel1Url || "",
+      reel2Url: d.reel2Url || "",
+      metaAdCampaignId: d.metaAdCampaignId || "",
+      metaAdSpend: d.metaAdSpend || 500,
+      metaAdNotes: d.metaAdNotes || "",
+      additionalNotes: d.additionalNotes || "",
+    });
+  }
+
+  async function handleSaveOfferDetails(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedOfferSeller || !token) return;
+    setOfferSaving(true);
+    try {
+      const response = await api.patch<{ message: string; seller: Seller }>(
+        `/admin/complimentary-offers/${selectedOfferSeller._id}`,
+        offerEditForm,
+        { headers: authHeaders }
+      );
+      setSuccess("Partner Spotlight Offer fulfillment updated.");
+      setPartnerOffers((prev) =>
+        prev.map((s) => (s._id === selectedOfferSeller._id ? response.data.seller : s))
+      );
+      setSelectedOfferSeller(null);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Unable to update offer details.");
+      } else {
+        setError("Unable to update offer details.");
+      }
+    } finally {
+      setOfferSaving(false);
+    }
+  }
+
   useEffect(() => {
     void loadSellers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -702,6 +791,8 @@ export function AdminPage() {
   useEffect(() => {
     if (token && adminTab === "subscriptions") {
       void loadAllSellersForSubscriptions();
+    } else if (token && adminTab === "offers") {
+      void loadPartnerOffers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, adminTab]);
@@ -1224,6 +1315,8 @@ export function AdminPage() {
               ? "Moderation Queue"
               : adminTab === "subscriptions"
               ? "Subscription Manager"
+              : adminTab === "offers"
+              ? "Partner Spotlight Offers"
               : adminTab === "leads"
               ? "Registration Leads"
               : "Revenue Console"}
@@ -1233,6 +1326,8 @@ export function AdminPage() {
               ? t("admin.title", "Seller Approvals")
               : adminTab === "subscriptions"
               ? "Seller Subscriptions & Add-ons"
+              : adminTab === "offers"
+              ? "Partner Spotlight Offers (2 Reels + ₹500 Ads)"
               : adminTab === "leads"
               ? "Registration Leads"
               : "Platform Revenue"}
@@ -1242,6 +1337,8 @@ export function AdminPage() {
               ? "Search, review and approve seller onboarding requests quickly."
               : adminTab === "subscriptions"
               ? "Track active seller plans, expiration dates, remaining validities, and delivery partner add-ons."
+              : adminTab === "offers"
+              ? "Manage promotional complimentary offer fulfillment (Instagram Reels & ₹500 Meta Ads) for Growth/Business quarterly subscribers."
               : adminTab === "leads"
               ? "View contacts captured when a seller continues past the registration contact step."
               : "Manage commission, platform revenue, settlement retries, and audit logs."}
@@ -1257,6 +1354,7 @@ export function AdminPage() {
         {[
           { key: "sellers", label: "Seller Approvals", icon: "orders" },
           { key: "subscriptions", label: "Subscriptions & Add-ons", icon: "earnings" },
+          { key: "offers", label: "Partner Offers", icon: "sparkles" },
           { key: "leads", label: "Registration Leads", icon: "register" },
           { key: "revenue", label: "Platform Revenue", icon: "reports" },
         ].map((item) => (
@@ -1835,6 +1933,472 @@ export function AdminPage() {
           </div>
         </div>
       ) : null}
+
+      {/* ─── TAB: PARTNER SPOTLIGHT OFFERS ─── */}
+      {adminTab === "offers" ? (
+        <div className="space-y-4">
+          {/* Summary Stat Cards */}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: "Total Offer Claims",
+                value: partnerOffers.length,
+                note: "Eligible quarterly Growth/Business sellers",
+                icon: "sparkles",
+              },
+              {
+                label: "Awaiting Assets",
+                value: partnerOffers.filter(
+                  (s) => (s.complimentaryOfferDetails?.status || "pending_assets") === "pending_assets"
+                ).length,
+                note: "Sellers yet to submit photos & USPs",
+                icon: "pending",
+              },
+              {
+                label: "In Review / Production",
+                value: partnerOffers.filter((s) =>
+                  ["assets_submitted", "in_production"].includes(
+                    s.complimentaryOfferDetails?.status || ""
+                  )
+                ).length,
+                note: "Scripting & editing 2 Reels",
+                icon: "orders",
+              },
+              {
+                label: "Reels / Ads Live",
+                value: partnerOffers.filter((s) =>
+                  ["reels_published", "ad_running", "completed"].includes(
+                    s.complimentaryOfferDetails?.status || ""
+                  )
+                ).length,
+                note: "Published or campaign running",
+                icon: "active",
+              },
+            ].map((item) => (
+              <Card key={item.label} className="rounded-[26px] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.note}</p>
+                  </div>
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 text-teal-700 shadow-sm dark:border-teal-800 dark:bg-teal-950 dark:text-teal-200">
+                    <AppIcon
+                      name={item.icon as Parameters<typeof AppIcon>[0]["name"]}
+                      className="text-[26px]"
+                    />
+                  </span>
+                </div>
+                <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                  {item.value}
+                </p>
+              </Card>
+            ))}
+          </div>
+
+          {/* Filter Bar */}
+          <Card className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-3">
+              <InputField
+                label="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Business, handle, phone, email"
+                hint="Filter partner offer claims"
+              />
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Fulfillment Status
+                </span>
+                <select
+                  value={offerStatusFilter}
+                  onChange={(e) => setOfferStatusFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">All Fulfillment Stages</option>
+                  <option value="pending_assets">Pending Assets</option>
+                  <option value="assets_submitted">Assets Submitted</option>
+                  <option value="in_production">In Production</option>
+                  <option value="reels_published">Reels Published</option>
+                  <option value="ad_running">Meta Ad Running</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
+              <div className="flex items-end">
+                <Button
+                  variant="secondary"
+                  onClick={() => void loadPartnerOffers()}
+                  loading={partnerOffersLoading}
+                  className="w-full py-2.5"
+                >
+                  <AppIcon name="refresh" className="text-[13px]" />
+                  Refresh Offer List
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Table (Desktop) */}
+          <Card className="hidden p-0 md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800/80">
+                  <tr className="text-xs uppercase text-slate-500">
+                    <th className="px-4 py-3">Business</th>
+                    <th className="px-4 py-3">Plan / Cycle</th>
+                    <th className="px-4 py-3">Brand Handle & Assets</th>
+                    <th className="px-4 py-3">Fulfillment Status</th>
+                    <th className="px-4 py-3">Reels & Ad Progress</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {partnerOffersLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                        Loading partner offers...
+                      </td>
+                    </tr>
+                  ) : partnerOffers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                        No partner spotlight offers found.
+                      </td>
+                    </tr>
+                  ) : (
+                    partnerOffers
+                      .filter((s) => {
+                        const status = s.complimentaryOfferDetails?.status || "pending_assets";
+                        if (offerStatusFilter !== "all" && status !== offerStatusFilter) return false;
+                        if (search) {
+                          const q = search.toLowerCase();
+                          return (
+                            s.businessName?.toLowerCase().includes(q) ||
+                            s.slug?.toLowerCase().includes(q) ||
+                            s.phone?.toLowerCase().includes(q) ||
+                            s.complimentaryOfferDetails?.socialHandle?.toLowerCase().includes(q)
+                          );
+                        }
+                        return true;
+                      })
+                      .map((seller) => {
+                        const d = seller.complimentaryOfferDetails || {};
+                        const status = d.status || "pending_assets";
+                        return (
+                          <tr
+                            key={seller._id}
+                            className="transition hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+                          >
+                            <td className="px-4 py-3.5">
+                              <p className="font-bold text-slate-900 dark:text-slate-100">
+                                {seller.businessName}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                /{seller.slug} · {seller.phone}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`inline-block rounded-full border px-2 py-0.5 text-xs font-bold capitalize ${planBadgeClass(
+                                  seller.currentPlan
+                                )}`}
+                              >
+                                {seller.currentPlan}
+                              </span>
+                              <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                                {seller.billingCycle || "QUARTERLY"}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                                {d.socialHandle || <span className="text-slate-400">No handle</span>}
+                              </p>
+                              <div className="mt-1 flex items-center gap-1">
+                                {(d.productImages || []).slice(0, 3).map((img, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={img}
+                                    alt="thumb"
+                                    className="h-6 w-6 rounded object-cover border border-slate-200"
+                                  />
+                                ))}
+                                {(d.productImages || []).length > 3 && (
+                                  <span className="text-[10px] text-slate-400 font-bold">
+                                    +{(d.productImages || []).length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${offerStatusBadgeClass(
+                                  status
+                                )}`}
+                              >
+                                {offerStatusLabel(status)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-xs">
+                              {d.reel1Url || d.reel2Url ? (
+                                <div className="space-y-0.5">
+                                  {d.reel1Url && (
+                                    <a
+                                      href={d.reel1Url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="block font-semibold text-teal-600 hover:underline"
+                                    >
+                                      Reel #1 ↗
+                                    </a>
+                                  )}
+                                  {d.reel2Url && (
+                                    <a
+                                      href={d.reel2Url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="block font-semibold text-teal-600 hover:underline"
+                                    >
+                                      Reel #2 ↗
+                                    </a>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">Not published</span>
+                              )}
+                              {d.metaAdCampaignId && (
+                                <p className="mt-1 text-[11px] text-slate-500">
+                                  Ad: {d.metaAdCampaignId} (₹{d.metaAdSpend || 500})
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3.5 text-right">
+                              <Button
+                                variant="secondary"
+                                onClick={() => openOfferEdit(seller)}
+                                className="font-semibold text-xs px-2.5 py-1"
+                              >
+                                <AppIcon name="edit" className="text-[12px]" />
+                                Manage
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Mobile Cards */}
+          <div className="space-y-3 md:hidden">
+            {partnerOffers
+              .filter((s) => {
+                const status = s.complimentaryOfferDetails?.status || "pending_assets";
+                if (offerStatusFilter !== "all" && status !== offerStatusFilter) return false;
+                return true;
+              })
+              .map((seller) => {
+                const d = seller.complimentaryOfferDetails || {};
+                const status = d.status || "pending_assets";
+                return (
+                  <Card key={seller._id} className="space-y-3 rounded-2xl p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-slate-100">
+                          {seller.businessName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {seller.phone} · {d.socialHandle || "No handle"}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-xs font-bold ${offerStatusBadgeClass(
+                          status
+                        )}`}
+                      >
+                        {offerStatusLabel(status)}
+                      </span>
+                    </div>
+
+                    <Button
+                      variant="secondary"
+                      onClick={() => openOfferEdit(seller)}
+                      className="w-full text-xs font-semibold px-2.5 py-1.5"
+                    >
+                      <AppIcon name="edit" className="text-[12px]" /> Manage Offer Fulfillment
+                    </Button>
+                  </Card>
+                );
+              })}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Offer Fulfillment Management Modal */}
+      {selectedOfferSeller && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:p-4">
+          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-slate-800">
+              <div>
+                <h3 className="font-heading text-lg font-bold text-slate-900 dark:text-slate-100">
+                  Manage Offer: {selectedOfferSeller.businessName}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Plan: {selectedOfferSeller.currentPlan} ({selectedOfferSeller.billingCycle || "QUARTERLY"}) · {selectedOfferSeller.phone}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOfferSeller(null)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+              >
+                <AppIcon name="close" className="text-[18px]" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+              {/* Submitted Assets Card */}
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-4 dark:border-teal-900/60 dark:bg-teal-950/20 space-y-2">
+                <p className="font-bold uppercase tracking-wider text-teal-900 dark:text-teal-200">
+                  Submitted Brand Assets
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Instagram Handle:</span>{" "}
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                      {selectedOfferSeller.complimentaryOfferDetails?.socialHandle || "Not provided"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Target Audience:</span>{" "}
+                    <span className="text-slate-900 dark:text-slate-100">
+                      {selectedOfferSeller.complimentaryOfferDetails?.targetAudience || "General"}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedOfferSeller.complimentaryOfferDetails?.uspHighlights && (
+                  <div>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">USPs / Storyline:</span>
+                    <p className="mt-0.5 rounded-lg bg-white p-2 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                      {selectedOfferSeller.complimentaryOfferDetails.uspHighlights}
+                    </p>
+                  </div>
+                )}
+
+                {selectedOfferSeller.complimentaryOfferDetails?.additionalNotes && (
+                  <div>
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Seller Notes:</span>
+                    <p className="mt-0.5 rounded-lg bg-white p-2 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                      {selectedOfferSeller.complimentaryOfferDetails.additionalNotes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Images */}
+                <div className="pt-1">
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">Uploaded Photos:</span>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {(selectedOfferSeller.complimentaryOfferDetails?.productImages || []).length === 0 ? (
+                      <span className="text-slate-400">No images submitted yet.</span>
+                    ) : (
+                      selectedOfferSeller.complimentaryOfferDetails?.productImages?.map((img, i) => (
+                        <a
+                          key={i}
+                          href={img}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative h-16 w-16 overflow-hidden rounded-xl border border-slate-200"
+                        >
+                          <img src={img} alt="asset" className="h-full w-full object-cover group-hover:scale-105 transition" />
+                        </a>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fulfillment Update Form */}
+              <form onSubmit={handleSaveOfferDetails} id="offer-edit-form" className="space-y-3 pt-2">
+                <label className="block space-y-1">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                    Fulfillment Status
+                  </span>
+                  <select
+                    value={offerEditForm.status}
+                    onChange={(e) => setOfferEditForm({ ...offerEditForm, status: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 outline-none focus:border-teal-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  >
+                    <option value="pending_assets">Awaiting Brand Assets</option>
+                    <option value="assets_submitted">Assets Submitted · Under Review</option>
+                    <option value="in_production">In Production · Scripting/Editing Reels</option>
+                    <option value="reels_published">2 Reels Live on Instagram</option>
+                    <option value="ad_running">₹500 Meta Ad Campaign Live</option>
+                    <option value="completed">Offer Completed</option>
+                  </select>
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InputField
+                    label="Reel #1 Instagram URL"
+                    placeholder="https://www.instagram.com/reel/..."
+                    value={offerEditForm.reel1Url}
+                    onChange={(e) => setOfferEditForm({ ...offerEditForm, reel1Url: e.target.value })}
+                  />
+                  <InputField
+                    label="Reel #2 Instagram URL"
+                    placeholder="https://www.instagram.com/reel/..."
+                    value={offerEditForm.reel2Url}
+                    onChange={(e) => setOfferEditForm({ ...offerEditForm, reel2Url: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InputField
+                    label="Meta Ad Campaign ID"
+                    placeholder="e.g. act_123456789"
+                    value={offerEditForm.metaAdCampaignId}
+                    onChange={(e) => setOfferEditForm({ ...offerEditForm, metaAdCampaignId: e.target.value })}
+                  />
+                  <InputField
+                    label="Meta Ad Spend (₹)"
+                    type="number"
+                    value={String(offerEditForm.metaAdSpend)}
+                    onChange={(e) => setOfferEditForm({ ...offerEditForm, metaAdSpend: Number(e.target.value) || 500 })}
+                  />
+                </div>
+
+                <InputField
+                  label="Internal Notes / Ad Notes"
+                  placeholder="Notes for marketing team..."
+                  value={offerEditForm.metaAdNotes}
+                  onChange={(e) => setOfferEditForm({ ...offerEditForm, metaAdNotes: e.target.value })}
+                />
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-3 dark:border-slate-800">
+              <Button variant="secondary" onClick={() => setSelectedOfferSeller(null)} disabled={offerSaving}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                form="offer-edit-form"
+                loading={offerSaving}
+                disabled={offerSaving}
+              >
+                <AppIcon name="check" className="text-[14px]" /> Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── TAB 3: PLATFORM REVENUE ─── */}
       {adminTab === "revenue" ? (

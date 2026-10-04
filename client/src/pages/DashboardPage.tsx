@@ -13,6 +13,7 @@ import { useToast } from "../context/ToastContext";
 import { SubscriptionExpiredModal } from "../components/SubscriptionExpiredModal";
 import { SubscriptionReminderBanner } from "../components/SubscriptionReminderBanner";
 import { DashboardSubscriptionWidget } from "../components/DashboardSubscriptionWidget";
+import { ComplimentaryOfferWidget } from "../components/dashboard/ComplimentaryOfferWidget";
 import { PricingDrawer } from "../components/PricingDrawer";
 import { ShippingTab } from "../components/ShippingTab";
 import { ShipmentTrackingModal } from "../components/ShipmentTrackingModal";
@@ -1574,6 +1575,13 @@ export function DashboardPage() {
       {tab === "dashboard" && (
         <div className="space-y-4">
           <DashboardSubscriptionWidget />
+          <ComplimentaryOfferWidget
+            complimentaryOfferActive={seller?.complimentaryOfferActive}
+            initialDetails={seller?.complimentaryOfferDetails}
+            onUpdated={() => {
+              void refreshProfile();
+            }}
+          />
           
           {/* Row 1 — stat cards */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

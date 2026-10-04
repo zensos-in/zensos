@@ -205,6 +205,9 @@ export function LoginPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>(
     searchParams.get("plan")?.toUpperCase() || "TRIAL"
   );
+  const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "QUARTERLY">(
+    searchParams.get("billingCycle")?.toUpperCase() === "QUARTERLY" ? "QUARTERLY" : "MONTHLY"
+  );
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
@@ -471,7 +474,11 @@ export function LoginPage() {
               subscriptionId: string;
               planType: string;
               keyId: string;
-            }>("/subscriptions/purchase", { planType: selectedPlan });
+            }>("/subscriptions/purchase", {
+              planType: selectedPlan,
+              billingCycle,
+              durationMonths: billingCycle === "QUARTERLY" ? 3 : 1,
+            });
             const { orderId, amountPaise, currency, subscriptionId, keyId } = purchaseRes.data;
 
             // Helper: complete registration after payment
@@ -1102,15 +1109,51 @@ export function LoginPage() {
                 )}
                 {mode === "register" && registerSection === "plan" && (
                   <div className="sm:col-span-2 space-y-4">
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">Choose your subscription plan</p>
-                      <p className="text-xs text-slate-500 mt-0.5">You can upgrade or change your plan anytime from the dashboard.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">Choose your subscription plan</p>
+                        <p className="text-xs text-slate-500 mt-0.5">You can upgrade or change your plan anytime from the dashboard.</p>
+                      </div>
+
+                      {/* Billing Cycle Switcher */}
+                      <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold w-fit">
+                        <button
+                          type="button"
+                          onClick={() => setBillingCycle("MONTHLY")}
+                          className={`px-3 py-1 rounded-lg transition-all ${
+                            billingCycle === "MONTHLY"
+                              ? "bg-white text-slate-900 shadow-sm font-extrabold"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          Monthly
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBillingCycle("QUARTERLY")}
+                          className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1 ${
+                            billingCycle === "QUARTERLY"
+                              ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm font-extrabold"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          <span>Quarterly (3 Mo)</span>
+                          <span className="text-[9px] bg-white text-orange-600 px-1 py-0.2 rounded-full font-black">
+                            🎁 OFFER
+                          </span>
+                        </button>
+                      </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {["TRIAL", "STARTER", "GROWTH", "BUSINESS"].map((planName) => {
                         const meta = PLAN_META[planName];
                         const isSelected = selectedPlan === planName;
                         const isPaid = planName !== "TRIAL";
+                        const months = billingCycle === "QUARTERLY" ? 3 : 1;
+                        const monthlyBase = planName === "STARTER" ? 999 : planName === "GROWTH" ? 1499 : planName === "BUSINESS" ? 2499 : 0;
+                        const displayPrice = isPaid ? `₹${(monthlyBase * months).toLocaleString("en-IN")}${months > 1 ? "/3 mo" : "/mo"}` : "Free";
+                        const isComplimentaryEligible = billingCycle === "QUARTERLY" && (planName === "GROWTH" || planName === "BUSINESS");
+
                         return (
                           <label
                             key={planName}
@@ -1141,7 +1184,7 @@ export function LoginPage() {
                                   className="text-sm font-black"
                                   style={{ color: meta.color }}
                                 >
-                                  {meta.price}
+                                  {displayPrice}
                                 </span>
                                 {isPaid && (
                                   <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
@@ -1150,6 +1193,15 @@ export function LoginPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Complimentary Offer Callout */}
+                            {isComplimentaryEligible && (
+                              <div className="mt-2 rounded-lg p-2 bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-400/40 text-[11px]">
+                                <span className="font-bold text-orange-700">🎁 Includes Complimentary Offer:</span>{" "}
+                                <span className="text-slate-600">2 Brand Reels + ₹500 Meta Ad Campaign</span>
+                              </div>
+                            )}
+
                             {/* Features */}
                             <ul className="mt-3 space-y-1">
                               {meta.features.map((f) => (
@@ -1179,10 +1231,10 @@ export function LoginPage() {
                       <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                         <span className="mt-0.5 text-lg">💳</span>
                         <div>
-                          <p className="text-xs font-bold text-amber-800">Payment required to activate</p>
+                          <p className="text-xs font-bold text-amber-800">Payment required to activate ({billingCycle === "QUARTERLY" ? "Quarterly · 3 Months" : "Monthly · 1 Month"})</p>
                           <p className="mt-0.5 text-[11px] text-amber-700">
                             After OTP verification, a secure Razorpay checkout will open to complete your{" "}
-                            <strong>{selectedPlan}</strong> plan payment ({PLAN_META[selectedPlan]?.price} + 18% GST). Your store will be created once payment is confirmed.
+                            <strong>{selectedPlan}</strong> plan payment ({billingCycle === "QUARTERLY" ? "3 months upfront" : "1 month"} + 18% GST). Your store will be created once payment is confirmed.
                           </p>
                         </div>
                       </div>

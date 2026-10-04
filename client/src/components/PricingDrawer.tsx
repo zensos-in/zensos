@@ -53,7 +53,6 @@ const PLANS = [
       "Trust Badge",
     ],
     comingSoon: [
-      "Instagram Reels Integration",
       "Coupon Code Integration",
     ],
   },
@@ -81,9 +80,6 @@ const PLANS = [
       "Trust Badge",
     ],
     comingSoon: [
-      "Instagram Reels Integration",
-      "Coupon Code Integration",
-      "Affiliate Program Integration",
     ],
   },
 ];
@@ -111,13 +107,16 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
   const { seller } = useAuth();
   const { purchaseSubscription, verifyPurchase, loading } = useSubscription();
   const [processingPlan, setProcessingPlan] = useState<PlanType | null>(null);
+  const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "QUARTERLY">("MONTHLY");
 
   if (!open || !seller) return null;
+
+  const months = billingCycle === "QUARTERLY" ? 3 : 1;
 
   const handlePurchase = async (planKey: PlanType) => {
     setProcessingPlan(planKey);
     try {
-      const purchaseRes = await purchaseSubscription(planKey);
+      const purchaseRes = await purchaseSubscription(planKey, billingCycle, months);
       if (!purchaseRes || !purchaseRes.orderId) {
         alert("Failed to create subscription order. Please try again.");
         setProcessingPlan(null);
@@ -221,7 +220,7 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
         >
           {/* Drawer Header */}
           <div
-            className="flex items-center justify-between px-7 py-5 shrink-0 border-b border-slate-100 dark:border-slate-800"
+            className="flex flex-col sm:flex-row sm:items-center justify-between px-7 py-5 shrink-0 border-b border-slate-100 dark:border-slate-800 gap-4"
             style={{ background: "#fff7f0" }}
           >
             <div>
@@ -240,14 +239,46 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                 No hidden fees. No commission. Pay only for the plan that fits your business.
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all shadow-sm border border-slate-200 shrink-0 ml-4"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+
+            <div className="flex items-center gap-3">
+              {/* Billing Cycle Switcher */}
+              <div className="inline-flex p-1 rounded-2xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300/60 dark:border-slate-700 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle("MONTHLY")}
+                  className={`px-3 py-1.5 rounded-xl transition-all ${
+                    billingCycle === "MONTHLY"
+                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm font-extrabold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  Monthly (1 Mo)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle("QUARTERLY")}
+                  className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                    billingCycle === "QUARTERLY"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm font-extrabold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <span>Quarterly (3 Mo)</span>
+                  <span className="text-[10px] bg-white text-orange-600 px-1.5 py-0.2 rounded-full font-black">
+                    🎁 OFFER
+                  </span>
+                </button>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all shadow-sm border border-slate-200 shrink-0"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Scrollable pricing cards */}
@@ -256,122 +287,153 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
             style={{ background: "#fff7f0" }}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-              {PLANS.map((plan, i) => (
-                <div
-                  key={plan.label}
-                  className="relative rounded-3xl p-7 flex flex-col"
-                  style={{
-                    background: plan.popular
-                      ? "linear-gradient(145deg,#0b183f,#0f2157)"
-                      : "rgba(255,255,255,0.95)",
-                    border: plan.popular
-                      ? `2px solid ${plan.color}`
-                      : "1px solid rgba(255,117,31,0.1)",
-                    boxShadow: plan.popular
-                      ? `0 20px 60px rgba(255,117,31,0.28)`
-                      : "0 4px 16px rgba(0,0,0,0.06)",
-                    animation: `slideInFromRight ${0.38 + i * 0.08}s cubic-bezier(0.4,0,0.2,1) forwards`,
-                  }}
-                >
-                  {/* Recommended badge */}
-                  {plan.popular && (
-                    <div
-                      className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-black text-white whitespace-nowrap"
-                      style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
-                    >
-                      ✦ RECOMMENDED
-                    </div>
-                  )}
+              {PLANS.map((plan, i) => {
+                const base = plan.baseAmount * months;
+                const gst = ((base * 18) / 100).toFixed(2);
+                const total = `₹${(base + parseFloat(gst)).toFixed(2)}`;
+                const displayStrike = `₹${(plan.baseAmount * months).toLocaleString("en-IN")}`;
+                const displayOriginal = `₹${(parseInt(plan.price.replace(/[^\d]/g, "")) * months).toLocaleString("en-IN")}`;
+                const isComplimentaryActive = billingCycle === "QUARTERLY" && (plan.planKey === "GROWTH" || plan.planKey === "BUSINESS");
 
-                  {/* Plan name + subtitle */}
-                  <p
-                    className="text-base font-black uppercase tracking-widest mb-0.5"
-                    style={{ color: plan.popular ? "#fff" : "#0b183f" }}
-                  >
-                    {plan.label}
-                  </p>
-                  <p
-                    className="text-xs font-semibold mb-4"
-                    style={{ color: plan.popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}
-                  >
-                    {plan.subtitle}
-                  </p>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2 flex-wrap mb-1">
-                    <span className="text-4xl font-black" style={{ color: plan.popular ? "#fff" : "#0b183f" }}>
-                      {plan.strikePrice}
-                    </span>
-                    <span
-                      className="text-sm font-semibold line-through opacity-40"
-                      style={{ color: plan.popular ? "#fff" : "#0b183f" }}
-                    >
-                      {plan.price}
-                    </span>
-                    <span
-                      className="text-xs font-semibold"
-                      style={{ color: plan.popular ? "rgba(255,255,255,0.7)" : "#64748b" }}
-                    >
-                      + 18% GST /mo
-                    </span>
-                  </div>
-                  <p
-                    className="text-xs font-medium mb-3"
-                    style={{ color: plan.popular ? "rgba(255,255,255,0.85)" : "#64748b" }}
-                  >
-                    Total: <span className="font-bold" style={{ color: plan.popular ? "#ff9a5c" : "#0b183f" }}>{plan.totalPrice}</span>{" "}
-                    <span className="opacity-80">({plan.strikePrice} + ₹{plan.gstAmount} GST)</span>
-                  </p>
-
-                  {/* Handling charge */}
-                  <p
-                    className="text-xs font-semibold rounded-lg px-3 py-1.5 inline-block mb-4 w-fit"
+                return (
+                  <div
+                    key={plan.label}
+                    className="relative rounded-3xl p-7 flex flex-col"
                     style={{
-                      background: plan.popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)",
-                      color: plan.popular ? "#ff9a5c" : "#ff751f",
+                      background: plan.popular
+                        ? "linear-gradient(145deg,#0b183f,#0f2157)"
+                        : "rgba(255,255,255,0.95)",
+                      border: isComplimentaryActive
+                        ? "2px solid #ff751f"
+                        : plan.popular
+                        ? `2px solid ${plan.color}`
+                        : "1px solid rgba(255,117,31,0.1)",
+                      boxShadow: plan.popular || isComplimentaryActive
+                        ? `0 20px 60px rgba(255,117,31,0.28)`
+                        : "0 4px 16px rgba(0,0,0,0.06)",
+                      animation: `slideInFromRight ${0.38 + i * 0.08}s cubic-bezier(0.4,0,0.2,1) forwards`,
                     }}
                   >
-                    +3% per transaction (Payment Handling Charges)
-                  </p>
+                    {/* Recommended / Complimentary Badge */}
+                    {isComplimentaryActive ? (
+                      <div
+                        className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-xs font-black text-white whitespace-nowrap shadow-lg flex items-center gap-1"
+                        style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                      >
+                        <span>🎁 COMPLIMENTARY OFFER UNLOCKED</span>
+                      </div>
+                    ) : plan.popular ? (
+                      <div
+                        className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-black text-white whitespace-nowrap"
+                        style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                      >
+                        ✦ RECOMMENDED
+                      </div>
+                    ) : null}
 
-                  {/* Features — always visible */}
-                  <ul className="mb-4 space-y-1.5">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
-                        {f}
-                      </li>
-                    ))}
-                    {plan.comingSoon.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
-                        {f}
-                        <span className="text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Plan name + subtitle */}
+                    <p
+                      className="text-base font-black uppercase tracking-widest mb-0.5"
+                      style={{ color: plan.popular ? "#fff" : "#0b183f" }}
+                    >
+                      {plan.label}
+                    </p>
+                    <p
+                      className="text-xs font-semibold mb-4"
+                      style={{ color: plan.popular ? "rgba(255,255,255,0.5)" : "#94a3b8" }}
+                    >
+                      {plan.subtitle}
+                    </p>
 
-                  <div className="flex-1" />
+                    {/* Price */}
+                    <div className="flex items-baseline gap-2 flex-wrap mb-1">
+                      <span className="text-4xl font-black" style={{ color: plan.popular ? "#fff" : "#0b183f" }}>
+                        {displayStrike}
+                      </span>
+                      <span
+                        className="text-sm font-semibold line-through opacity-40"
+                        style={{ color: plan.popular ? "#fff" : "#0b183f" }}
+                      >
+                        {displayOriginal}
+                      </span>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: plan.popular ? "rgba(255,255,255,0.7)" : "#64748b" }}
+                      >
+                        + 18% GST {billingCycle === "QUARTERLY" ? "/3 mo" : "/mo"}
+                      </span>
+                    </div>
+                    <p
+                      className="text-xs font-medium mb-3"
+                      style={{ color: plan.popular ? "rgba(255,255,255,0.85)" : "#64748b" }}
+                    >
+                      Total: <span className="font-bold" style={{ color: plan.popular ? "#ff9a5c" : "#0b183f" }}>{total}</span>{" "}
+                      <span className="opacity-80">({displayStrike} + ₹{gst} GST)</span>
+                    </p>
 
-                  {/* CTA button */}
-                  <button
-                    onClick={() => handlePurchase(plan.planKey)}
-                    disabled={!!processingPlan || loading}
-                    className="w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-                    style={
-                      plan.popular
-                        ? { background: "linear-gradient(135deg,#ff751f,#ff4500)", color: "#fff", boxShadow: "0 8px 20px rgba(255,117,31,0.4)" }
-                        : { background: `${plan.color}18`, color: plan.color }
-                    }
-                  >
-                    {processingPlan === plan.planKey
-                      ? "Processing..."
-                      : seller.currentPlan === plan.planKey && seller.subscriptionStatus === "ACTIVE"
-                      ? "Renew Current Plan →"
-                      : `${plan.cta} →`}
-                  </button>
-                </div>
-              ))}
+                    {/* Promotional Offer Callout when quarterly */}
+                    {isComplimentaryActive && (
+                      <div className="mb-4 rounded-xl p-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/40 text-xs">
+                        <p className="font-bold text-orange-400">
+                          🎉 Partner Spotlight Offer Included:
+                        </p>
+                        <p className="text-slate-200 mt-0.5 leading-snug">
+                          • 2 Brand Feature Reels on Instagram<br />
+                          • ₹500 Meta Ad Campaign Boost
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Handling charge */}
+                    <p
+                      className="text-xs font-semibold rounded-lg px-3 py-1.5 inline-block mb-4 w-fit"
+                      style={{
+                        background: plan.popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)",
+                        color: plan.popular ? "#ff9a5c" : "#ff751f",
+                      }}
+                    >
+                      +3% per transaction (Payment Handling Charges)
+                    </p>
+
+                    {/* Features — always visible */}
+                    <ul className="mb-4 space-y-1.5">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
+                          {f}
+                        </li>
+                      ))}
+                      {plan.comingSoon.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
+                          {f}
+                          <span className="text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="flex-1" />
+
+                    {/* CTA button */}
+                    <button
+                      onClick={() => handlePurchase(plan.planKey)}
+                      disabled={!!processingPlan || loading}
+                      className="w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                      style={
+                        plan.popular || isComplimentaryActive
+                          ? { background: "linear-gradient(135deg,#ff751f,#ff4500)", color: "#fff", boxShadow: "0 8px 20px rgba(255,117,31,0.4)" }
+                          : { background: `${plan.color}18`, color: plan.color }
+                      }
+                    >
+                      {processingPlan === plan.planKey
+                        ? "Processing..."
+                        : seller.currentPlan === plan.planKey && seller.subscriptionStatus === "ACTIVE"
+                        ? `Renew Current Plan (${billingCycle === "QUARTERLY" ? "3 Months" : "1 Month"}) →`
+                        : `${plan.cta} (${billingCycle === "QUARTERLY" ? "3 Months" : "1 Month"}) →`}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
