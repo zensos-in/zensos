@@ -824,6 +824,7 @@ export function LandingPage() {
                   { label: "Real-time Store Analytics" },
                   { label: "Email Support" },
                   { label: "Trust Badge" },
+                  { label: "Delivery Partner Integration" },
                 ],
                 cta: "Get Started", popular: false,
               },
@@ -843,9 +844,7 @@ export function LandingPage() {
                   { label: "Real-time Store Analytics" },
                   { label: "Email and Call Support" },
                   { label: "Trust Badge" },
-                  { label: "Delivery Partner Integration", comingSoon: true },
-                  { label: "Instagram Reels Integration", comingSoon: true },
-                  { label: "Coupon Code Integration", comingSoon: true },
+                  { label: "Delivery Partner Integration" },
                 ],
                 cta: "Start Growing", popular: true,
               },
@@ -865,11 +864,8 @@ export function LandingPage() {
                   { label: "Real-time Store Analytics" },
                   { label: "Priority Support on Call" },
                   { label: "Trust Badge" },
-                  { label: "Delivery Partner Integration", comingSoon: true },
-                  { label: "Instagram Reels Integration", comingSoon: true },
-                  { label: "Coupon Code Integration", comingSoon: true },
-                  { label: "Affiliate Program Integration", comingSoon: true },
-                  { label: "Google Reviews Integration", comingSoon: true },
+                  { label: "Delivery Partner Integration" },
+                  { label: "Affiliate Program Integration" },
                 ],
                 cta: "Go Business", popular: false,
               },
@@ -947,14 +943,14 @@ export function LandingPage() {
                   {/* Collapsible features list */}
                   {openPlans[name] && (
                     <ul className="mb-6 space-y-2.5 overflow-hidden" style={{ animation: "fadeSlideDown 0.25s ease" }}>
-                      {features.map(({ label, comingSoon }) => (
+                      {features.map(({ label }) => (
                         <li key={label} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
                           <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
                           <span>
                             {label}
-                            {comingSoon && (
+                            {/* {comingSoon && (
                               <span className="ml-1.5 text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
-                            )}
+                            )} */}
                           </span>
                         </li>
                       ))}
