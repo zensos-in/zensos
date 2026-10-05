@@ -54,7 +54,8 @@ type AppIconName =
   | "truck"
   | "shipping"
   | "payments"
-  | "inventory";
+  | "inventory"
+  | "sparkles";
 
 type IconProps = {
   className?: string;
@@ -448,6 +449,12 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
       <path d="M12 22V12" />
     </IconBase>
   ),
+  sparkles: ({ className }) => (
+    <IconBase className={className}>
+      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />
+      <path d="M5 3v4M3 5h4M19 17v4M17 19h4" />
+    </IconBase>
+  ),
 };
 
 type AppIconProps = {
@@ -457,5 +464,6 @@ type AppIconProps = {
 
 export function AppIcon({ name, className = "" }: AppIconProps) {
   const Icon = iconMap[name];
+  if (!Icon) return null;
   return <Icon className={className} />;
 }
