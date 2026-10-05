@@ -722,24 +722,71 @@ export function PublicStorePage() {
   useEffect(() => {
     if (!seller) return;
 
-    // 1. Dynamic Meta Title
+    // 1. Dynamic Meta Title with Vendor Details
     const previousTitle = document.title;
-    document.title = seller.businessName ? seller.businessName : "Zensos";
+    const storeTitle = seller.businessName
+      ? (seller.businessCategory ? `${seller.businessName} - ${seller.businessCategory}` : `${seller.businessName} - Online Store`)
+      : "Online Store";
+    document.title = storeTitle;
 
-    // 2. Dynamic Meta Description
-    let metaDesc = document.querySelector<HTMLMetaElement>("meta[name='description']");
-    const previousDesc = metaDesc?.getAttribute("content") || "";
-    if (!metaDesc) {
-      metaDesc = document.createElement("meta");
-      metaDesc.name = "description";
-      document.head.appendChild(metaDesc);
+    // 2. Dynamic Meta Description with Vendor Details
+    const descriptionText = seller.businessName
+      ? `Shop online from ${seller.businessName}${seller.businessCategory ? ` for ${seller.businessCategory.toLowerCase()}` : ""}.${seller.categories && seller.categories.length > 0 ? ` Explore ${seller.categories.slice(0, 4).join(", ")}.` : ""} Order directly with fast delivery and secure checkout.`
+      : "Order directly from our online store with fast delivery and secure checkout.";
+
+    const cleanupTags: (() => void)[] = [];
+
+    const setMetaTag = (attrName: "name" | "property", key: string, content: string) => {
+      let el = document.querySelector<HTMLMetaElement>(`meta[${attrName}='${key}']`);
+      const prev = el?.getAttribute("content");
+      const existed = !!el;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attrName, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", content);
+      cleanupTags.push(() => {
+        if (!existed && el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        } else if (el && prev !== null && prev !== undefined) {
+          el.setAttribute("content", prev);
+        }
+      });
+    };
+
+    // Standard description
+    setMetaTag("name", "description", descriptionText);
+
+    // Open Graph Tags (for WhatsApp, Facebook, iMessage, LinkedIn, etc.)
+    setMetaTag("property", "og:title", storeTitle);
+    setMetaTag("property", "og:description", descriptionText);
+    setMetaTag("property", "og:site_name", seller.businessName || "Online Store");
+    setMetaTag("property", "og:type", "website");
+    setMetaTag("property", "og:url", window.location.href);
+
+    // Vendor Image for Link Previews
+    const rawImage = seller.businessLogo || seller.banners?.[0]?.imageUrl || seller.profileImageUrl || "";
+    if (rawImage) {
+      const normalizedImg = normalizeImageUrl(rawImage);
+      let absoluteImg = normalizedImg;
+      try {
+        absoluteImg = new URL(normalizedImg, window.location.origin).href;
+      } catch {
+        absoluteImg = normalizedImg;
+      }
+      setMetaTag("property", "og:image", absoluteImg);
+      setMetaTag("name", "twitter:image", absoluteImg);
+      setMetaTag("name", "twitter:card", "summary_large_image");
+    } else {
+      setMetaTag("name", "twitter:card", "summary");
     }
-    const descriptionText = seller.businessName 
-      ? `Welcome to ${seller.businessName}${seller.businessCategory ? ` - ${seller.businessCategory}` : ""}.`
-      : "Store powered by Zensos";
-    metaDesc.setAttribute("content", descriptionText);
 
-    // 3. Dynamic Favicon (fallback to businessLogo if favicon is not set, otherwise Zensos)
+    // Twitter Card Tags
+    setMetaTag("name", "twitter:title", storeTitle);
+    setMetaTag("name", "twitter:description", descriptionText);
+
+    // 3. Dynamic Favicon (vendor favicon -> vendor logo -> default)
     let faviconElement = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     const previousFavicon = faviconElement?.getAttribute("href") || DEFAULT_APP_FAVICON;
     if (!faviconElement) {
@@ -754,7 +801,7 @@ export function PublicStorePage() {
 
     return () => {
       document.title = previousTitle;
-      if (metaDesc) metaDesc.setAttribute("content", previousDesc);
+      cleanupTags.forEach((cleanup) => cleanup());
       if (faviconElement) faviconElement.setAttribute("href", previousFavicon);
     };
   }, [seller]);
