@@ -22,6 +22,11 @@ const {
   deductInventoryForOrder,
   restockInventoryForOrder,
 } = require("../utils/inventoryService");
+const {
+  recordOrderProductReports,
+  updateOrderProductReportsStatus,
+  getSellerSalesReport,
+} = require("../utils/reportService");
 
 const router = express.Router();
 const validStatuses = ["pending", "paid", "delivered", "cancelled"];
@@ -508,6 +513,7 @@ router.post("/", async (req, res) => {
       });
 
       createdSubOrders.push(subOrder);
+      await recordOrderProductReports(subOrder);
 
       // Embed a Route transfer for sellers with an active Razorpay linked account.
       // Notes carry the sub_order_id so the transfer.processed webhook can reconcile.
@@ -654,6 +660,7 @@ router.post("/verify-payment", async (req, res) => {
       if (subOrder.paymentStatus !== "paid" && subOrder.paymentStatus !== "delivered") {
         subOrder.paymentStatus = "paid";
         await subOrder.save();
+        await updateOrderProductReportsStatus(subOrder._id, "paid");
       }
       updatedOrders.push({ _id: subOrder._id, paymentStatus: subOrder.paymentStatus });
 
@@ -731,62 +738,17 @@ router.get("/my/report", auth, async (req, res) => {
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         return res.status(400).json({ message: "Invalid startDate or endDate" });
       }
-      dateFilter = { createdAt: { $gte: start, $lte: end } };
+      dateFilter = { orderCreatedAt: { $gte: start, $lte: end } };
     } else {
       const days = Math.max(1, Number(req.query.days) || 30);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      dateFilter = { createdAt: { $gte: since } };
+      dateFilter = { orderCreatedAt: { $gte: since } };
     }
 
-    const orders = await Order.find({
-      seller: req.sellerId,
-      ...dateFilter,
-      paymentStatus: { $ne: "cancelled" },
-    })
-      .populate("product", "title price")
-      .populate("items.product", "title price");
-
-    const productMap = {};
-    let totalRevenue = 0;
-
-    for (const order of orders) {
-      const orderItems = Array.isArray(order.items) && order.items.length > 0
-        ? order.items
-        : [{
-            product: order.product,
-            productTitle: order.product?.title || "",
-            quantity: order.quantity,
-            lineTotal: order.amount,
-          }];
-
-      for (const item of orderItems) {
-        const key = item.product?._id?.toString() || item.product?.toString?.();
-        if (!key) continue;
-        if (!productMap[key]) {
-          productMap[key] = {
-            productId: key,
-            title: item.productTitle || item.product?.title || "Untitled product",
-            unitsSold: 0,
-            revenue: 0,
-          };
-        }
-        productMap[key].unitsSold += item.quantity || 0;
-        productMap[key].revenue += item.lineTotal || 0;
-      }
-
-      totalRevenue += order.amount;
-    }
-
-    const topProducts = Object.values(productMap).sort(
-      (a, b) => b.unitsSold - a.unitsSold
-    );
-
-    return res.json({
-      totalOrders: orders.length,
-      totalRevenue,
-      topProducts,
-    });
+    const reportData = await getSellerSalesReport(req.sellerId, dateFilter);
+    return res.json(reportData);
   } catch (error) {
+    console.error("[my/report error]:", error);
     return res.status(500).json({ message: "Unable to generate report" });
   }
 });
@@ -1159,6 +1121,7 @@ router.patch("/:orderId/status", auth, async (req, res) => {
     const previousStatus = order.paymentStatus;
     order.paymentStatus = status;
     await order.save();
+    await updateOrderProductReportsStatus(order._id, status);
 
     if (previousStatus !== "cancelled" && status === "cancelled") {
       await restockInventoryForOrder(order);

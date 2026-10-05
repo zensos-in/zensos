@@ -45,6 +45,16 @@ function sanitizeSubjectLine(value = "", maxLength = 80) {
   return String(value).replace(/[\r\n]+/g, " ").trim().slice(0, maxLength);
 }
 
+function getSender(displayName = "Zensos") {
+  const customFrom = String(process.env.SMTP_FROM || "").trim();
+  if (customFrom) {
+    // If SMTP_FROM contains quotes around name or is raw, strip inverted commas around the display name
+    return customFrom.replace(/^["'‘'“"]([^"'‘'“"]+)["'‘'“"]\s*(<.+>)$/, "$1 $2");
+  }
+  const smtpUser = String(process.env.SMTP_USER || "").trim();
+  return `${displayName} <${smtpUser}>`;
+}
+
 function getOtpEmailContent({ purpose, intent = "", businessName = "", productTitle = "" }) {
   const safeBusiness = escapeHtml(businessName);
   const safeProduct = escapeHtml(productTitle);
@@ -461,8 +471,7 @@ async function sendOtpEmail(toEmail, otp, options = {}) {
   const plainGreeting = businessName ? `Hi ${businessName},` : "Hello,";
   const greeting = businessName ? `Hi ${escapeHtml(businessName)},` : "Hello,";
   const content = getOtpEmailContent({ purpose, intent, businessName, productTitle });
-  const smtpUser = String(process.env.SMTP_USER || "").trim();
-  const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+  const sender = getSender("Zensos");
 
   if (!isSmtpConfigured()) {
     console.log(`\n==================================================`);
@@ -508,8 +517,7 @@ async function sendOrderConfirmationEmail(toEmail, { parentOrder, orders }) {
   try {
     const transporter = getTransporter();
     const sellerName = orders[0]?.seller?.businessName || "your order";
-    const smtpUser = String(process.env.SMTP_USER || "").trim();
-    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+    const sender = getSender("Zensos");
 
     await transporter.sendMail({
       from: sender,
@@ -536,8 +544,7 @@ async function sendShippingNotificationEmail(toEmail, { order, shipment, seller,
     const transporter = getTransporter();
     const sellerName = seller?.businessName || order?.seller?.businessName || "your order";
     const displayOrderId = order?.customOrderId || String(order?._id || parentOrder?._id || "").slice(-8).toUpperCase();
-    const smtpUser = String(process.env.SMTP_USER || "").trim();
-    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+    const sender = getSender("Zensos");
 
     await transporter.sendMail({
       from: sender,
@@ -562,12 +569,11 @@ async function sendContactEmail({ name, email, phone, message }) {
 
   try {
     const transporter = getTransporter();
-    const smtpUser = String(process.env.SMTP_USER || "").trim();
-    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+    const sender = getSender("Zensos");
 
     await transporter.sendMail({
       from: sender,
-      replyTo: `"${escapeHtml(name)}" <${email}>`,
+      replyTo: `${sanitizeSubjectLine(name)} <${email}>`,
       to: "naik@shankaraonline.com",
       subject: `Enquiry from ${sanitizeSubjectLine(name)} - ZENSOS`,
       text: `Enquiry on Website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`,
@@ -598,8 +604,7 @@ async function sendSubscriptionReminderEmail({ email, businessName, planName, st
   try {
     const transporter = getTransporter();
     const safeBusiness = escapeHtml(businessName);
-    const smtpUser = String(process.env.SMTP_USER || "").trim();
-    const sender = process.env.SMTP_FROM || `"Zensos" <${smtpUser}>`;
+    const sender = getSender("Zensos");
 
     const isExpired = status === "EXPIRED";
     const subject = isExpired
@@ -653,8 +658,7 @@ async function sendOutOfStockAlert({ email, businessName, productTitle, variantT
     const safeBusiness = escapeHtml(businessName || "Seller");
     const safeProduct = escapeHtml(productTitle || "Product");
     const safeVariant = variantTitle ? escapeHtml(variantTitle) : "";
-    const smtpUser = String(process.env.SMTP_USER || "").trim();
-    const sender = process.env.SMTP_FROM || `"Zensos Alert" <${smtpUser}>`;
+    const sender = getSender("Zensos Alert");
     const targetUrl = dashboardUrl || `${process.env.CLIENT_URL || "https://zensos.in"}/login`;
 
     const itemDescription = safeVariant ? `${safeProduct} (${safeVariant})` : safeProduct;

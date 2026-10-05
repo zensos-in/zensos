@@ -16,6 +16,22 @@ const deliverySubscriptionSchema = new mongoose.Schema(
       type: Number,
       default: 200,
     },
+    baseAmount: {
+      type: Number,
+      default: 200,
+    },
+    gstPercentage: {
+      type: Number,
+      default: 18,
+    },
+    gstAmount: {
+      type: Number,
+      default: 36,
+    },
+    totalAmount: {
+      type: Number,
+      default: 236,
+    },
     currency: {
       type: String,
       default: "INR",

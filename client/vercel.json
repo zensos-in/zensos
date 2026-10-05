@@ -4,6 +4,17 @@
     {
       "source": "/api/:path*",
       "destination": "https://zensos-yphn.vercel.app/api/:path*"
+    },
+    {
+      "source": "/store/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|Pinterest|SkypeUriPreview).*"
+        }
+      ],
+      "destination": "https://zensos-yphn.vercel.app/api/store/preview/:slug"
     }
   ],
   "routes": [

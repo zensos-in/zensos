@@ -21,6 +21,7 @@ const {
   recordVendorTransferLedger,
 } = require("../utils/settlement");
 const { deductInventoryForOrder } = require("../utils/inventoryService");
+const { updateOrderProductReportsStatus } = require("../utils/reportService");
 
 const router = express.Router();
 
@@ -170,6 +171,7 @@ async function handlePaymentCaptured(payment) {
       if (subOrder.paymentStatus !== "paid") {
         subOrder.paymentStatus = "paid";
         await subOrder.save();
+        await updateOrderProductReportsStatus(subOrder._id, "paid");
       }
       // Skip sub-orders whose transfer is already handled by order-level Route embed
       if (subOrder.transferStatus !== "pending" && subOrder.transferStatus !== "processed") {
@@ -187,6 +189,7 @@ async function handlePaymentCaptured(payment) {
   for (const subOrder of parentOrder.subOrders) {
     subOrder.paymentStatus = "paid";
     await subOrder.save();
+    await updateOrderProductReportsStatus(subOrder._id, "paid");
     await deductInventoryForOrder(subOrder);
     // Sub-orders with transferStatus "pending" have their Route transfer embedded in the
     // Razorpay order — Razorpay auto-fires the split on capture and the transfer.processed
@@ -213,6 +216,7 @@ async function handlePaymentFailed(payment) {
     subOrder.paymentStatus = "cancelled";
     subOrder.transferStatus = "untransferred";
     await subOrder.save();
+    await updateOrderProductReportsStatus(subOrder._id, "cancelled");
   }
 }
 

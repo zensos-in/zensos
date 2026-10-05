@@ -6,6 +6,7 @@ const socialLinkSchema = new mongoose.Schema(
   {
     platform: { type: String, trim: true },
     url: { type: String, trim: true },
+    title: { type: String, trim: true, default: "" },
   },
   { _id: false }
 );
@@ -50,7 +51,6 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-      index: true,
     },
     businessEmail: {
       type: String,
@@ -63,7 +63,6 @@ const sellerSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-      index: true,
     },
     upiId: {
       type: String,

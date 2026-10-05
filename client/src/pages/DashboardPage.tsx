@@ -440,6 +440,7 @@ export function DashboardPage() {
   const [dragOverBannerIndex, setDragOverBannerIndex] = useState<number | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(seller?.socialLinks || []);
   const [newSocialPlatform, setNewSocialPlatform] = useState("Instagram");
+  const [newSocialTitle, setNewSocialTitle] = useState("");
   const [newSocialUrl, setNewSocialUrl] = useState("");
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [isPublishingStore, setIsPublishingStore] = useState(false);
@@ -1969,10 +1970,12 @@ export function DashboardPage() {
               </div>
               {/* Social Links */}
               <div className="pt-1 space-y-2">
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide dark:text-slate-400">Social Links</p>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide dark:text-slate-400">Social Links & Custom Buttons</p>
                 {socialLinks.map((s, i) => (
                   <div key={i} className="relative flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-2 pr-10 text-sm sm:flex-row sm:items-center sm:gap-2 sm:pr-2 dark:border-slate-700 dark:bg-slate-800/60">
-                    <span className="font-semibold text-slate-700 w-full sm:w-24 shrink-0 dark:text-slate-300">{s.platform}</span>
+                    <span className="font-semibold text-slate-700 w-full sm:w-32 shrink-0 dark:text-slate-300">
+                      {s.platform === "Other" && s.title ? `${s.title} (Button)` : s.platform}
+                    </span>
                     <span className="flex-1 min-w-0 text-slate-500 truncate dark:text-slate-400">{s.url}</span>
                     <button
                       onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
@@ -1983,15 +1986,45 @@ export function DashboardPage() {
                     </button>
                   </div>
                 ))}
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <select className="w-full rounded-lg border border-slate-200 px-2 pr-10 py-2 text-sm outline-none bg-white sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" value={newSocialPlatform} onChange={e => setNewSocialPlatform(e.target.value)}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    className="w-full rounded-lg border border-slate-200 px-2 pr-8 py-2 text-sm outline-none bg-white sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    value={newSocialPlatform}
+                    onChange={e => setNewSocialPlatform(e.target.value)}
+                  >
                     {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
                   </select>
-                  <input className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500" placeholder="https://..." value={newSocialUrl} onChange={e => setNewSocialUrl(e.target.value)} />
+                  {newSocialPlatform === "Other" && (
+                    <input
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500 sm:w-44"
+                      placeholder="Button Title (e.g. Book, Blog)"
+                      value={newSocialTitle}
+                      onChange={e => setNewSocialTitle(e.target.value)}
+                    />
+                  )}
+                  <input
+                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                    placeholder="https://..."
+                    value={newSocialUrl}
+                    onChange={e => setNewSocialUrl(e.target.value)}
+                  />
                   <button
-                    onClick={() => { if (newSocialUrl.trim()) { setSocialLinks(prev => [...prev, { platform: newSocialPlatform, url: newSocialUrl.trim() }]); setNewSocialUrl(""); } }}
-                    className="rounded-lg bg-[#ff751f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
-                  >Add</button>
+                    type="button"
+                    onClick={() => {
+                      if (newSocialUrl.trim()) {
+                        const title = newSocialPlatform === "Other" ? (newSocialTitle.trim() || "Custom Link") : "";
+                        setSocialLinks(prev => [
+                          ...prev,
+                          { platform: newSocialPlatform, title, url: newSocialUrl.trim() },
+                        ]);
+                        setNewSocialUrl("");
+                        setNewSocialTitle("");
+                      }
+                    }}
+                    className="rounded-lg bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition shrink-0"
+                  >
+                    Add
+                  </button>
                 </div>
               </div>
             </div>
@@ -3956,7 +3989,14 @@ export function DashboardPage() {
 
 
       {/* Shipping / Delivery Partner */}
-      {tab === "shipping" && <ShippingTab />}
+      {tab === "shipping" && (
+        <ShippingTab
+          orders={orders}
+          onOrderStatusChange={handleOrderStatus}
+          onRefreshOrders={loadData}
+          onViewOrder={handleViewOrder}
+        />
+      )}
 
       {/* Reports */}
       {tab === "reports" && (

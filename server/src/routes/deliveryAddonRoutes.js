@@ -7,7 +7,10 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-const DELIVERY_ADDON_PRICE = 200; // Flat ₹200 charge
+const DELIVERY_ADDON_PRICE = 200; // Base ₹200 charge
+const GST_PERCENTAGE = 18;
+const GST_AMOUNT = Math.round(((DELIVERY_ADDON_PRICE * GST_PERCENTAGE) / 100) * 100) / 100; // ₹36
+const TOTAL_ADDON_AMOUNT = Math.round((DELIVERY_ADDON_PRICE + GST_AMOUNT) * 100) / 100; // ₹236
 
 // ─── GET /api/delivery-addon/status ──────────────────────────────────────────
 router.get("/status", auth, async (req, res) => {
@@ -53,6 +56,10 @@ router.get("/status", auth, async (req, res) => {
         courierPreference: seller.courierPreference || "BEST_AVAILABLE",
       },
       addonPrice: DELIVERY_ADDON_PRICE,
+      baseAmount: DELIVERY_ADDON_PRICE,
+      gstPercentage: GST_PERCENTAGE,
+      gstAmount: GST_AMOUNT,
+      totalAmount: TOTAL_ADDON_AMOUNT,
       isAddonActive,
       addonDetails: latestAddonDoc,
     });
@@ -89,7 +96,10 @@ router.post("/create-payment", auth, async (req, res) => {
       });
     }
 
-    const amountPaise = DELIVERY_ADDON_PRICE * 100;
+    const baseAmount = DELIVERY_ADDON_PRICE;
+    const gstAmount = GST_AMOUNT;
+    const totalAmount = TOTAL_ADDON_AMOUNT;
+    const amountPaise = Math.round(totalAmount * 100); // 236 * 100 = 23600 paise
     const isMock = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID === "rzp_test_mock_id";
     let orderId = `mock_addon_order_${Date.now()}`;
 
@@ -101,6 +111,10 @@ router.post("/create-payment", auth, async (req, res) => {
         notes: {
           sellerId: seller._id.toString(),
           addonType: "DELIVERY_PARTNER",
+          baseAmount: String(baseAmount),
+          gstPercentage: String(GST_PERCENTAGE),
+          gstAmount: String(gstAmount),
+          totalAmount: String(totalAmount),
         },
       };
       const order = await razorpay.orders.create(options);
@@ -111,7 +125,11 @@ router.post("/create-payment", auth, async (req, res) => {
     const addonDoc = await DeliverySubscription.create({
       seller: seller._id,
       addonType: "DELIVERY_PARTNER",
-      price: DELIVERY_ADDON_PRICE,
+      price: totalAmount,
+      baseAmount,
+      gstPercentage: GST_PERCENTAGE,
+      gstAmount,
+      totalAmount,
       currency: "INR",
       status: "PAYMENT_PENDING",
       orderId,
@@ -124,11 +142,15 @@ router.post("/create-payment", auth, async (req, res) => {
       currency: "INR",
       addonSubscriptionId: addonDoc._id,
       keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_mock_id",
-      price: DELIVERY_ADDON_PRICE,
+      price: totalAmount,
+      baseAmount,
+      gstPercentage: GST_PERCENTAGE,
+      gstAmount,
+      totalAmount,
     });
   } catch (error) {
     console.error("[POST /delivery-addon/create-payment error]", error);
-    return res.status(500).json({ message: "Unable to initiate ₹200 Delivery Add-on purchase" });
+    return res.status(500).json({ message: "Unable to initiate ₹200 + 18% GST Delivery Add-on purchase" });
   }
 });
 

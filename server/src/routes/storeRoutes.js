@@ -12,6 +12,7 @@ const { deleteR2Objects } = require("../utils/r2Storage");
 const { deleteLinkedAccount } = require("../utils/razorpayLinkedAccount");
 
 const { getStoreAccessState } = require("../utils/trialService");
+const { isSocialCrawler, renderStorePreviewHtml } = require("../utils/storePreviewHelper");
 
 const router = express.Router();
 
@@ -89,6 +90,20 @@ function renameCategoryTags(tags = [], fromCategory, toCategory) {
   );
 }
 
+// ─── GET /store/preview/:sellerSlug — Server rendered meta preview ────────
+router.get("/preview/:sellerSlug", async (req, res) => {
+  try {
+    const seller = await Seller.findOne({ slug: req.params.sellerSlug }).select("-otp -otpExpiry");
+    if (!seller) {
+      return res.status(404).send("Store not found");
+    }
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(renderStorePreviewHtml(seller));
+  } catch (error) {
+    return res.status(500).send("Unable to render preview");
+  }
+});
+
 // ─── GET /store/public/:sellerSlug — Full store config (no auth) ──────────
 router.get("/public/:sellerSlug", async (req, res) => {
   try {
@@ -103,6 +118,12 @@ router.get("/public/:sellerSlug", async (req, res) => {
     const trialState = getStoreAccessState(seller);
     if (!seller.storePublished || seller.approvalStatus !== "approved" || !trialState.hasAccess) {
       return res.status(404).json({ message: "Store not found" });
+    }
+
+    const userAgent = req.headers["user-agent"] || "";
+    if (isSocialCrawler(userAgent)) {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.send(renderStorePreviewHtml(seller));
     }
 
     return res.json({ seller: withPolicyDefaults(seller) });

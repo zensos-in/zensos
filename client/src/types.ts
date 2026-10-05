@@ -14,6 +14,7 @@ export type PaymentMethod = "prepaid" | "cod";
 export interface SocialLink {
   platform: string;
   url: string;
+  title?: string;
 }
 
 export interface Banner {
