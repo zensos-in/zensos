@@ -79,7 +79,7 @@ router.get("/appointments", adminAuth, async (req, res) => {
   try {
     const [appointments, total] = await Promise.all([
       Appointment.find()
-        .select("name email phone status notes createdAt")
+        .select("name email phone preferredDate preferredTime status notes createdAt")
         .sort({ createdAt: -1, _id: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -93,7 +93,7 @@ router.get("/appointments", adminAuth, async (req, res) => {
       limit,
     });
   } catch (_error) {
-    return res.status(500).json({ message: "Unable to fetch booked appointments" });
+    return res.status(500).json({ message: "Unable to fetch booked demos" });
   }
 });
 

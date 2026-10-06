@@ -743,30 +743,36 @@ export function LandingPage() {
             <p className="mt-4 text-lg text-slate-500 max-w-3xl mx-auto">No hidden fees. No commission. Pay only for the plan that fits your business.</p>
 
             {/* Billing Cycle Switcher */}
-            <div className="mt-7 flex items-center justify-center">
-              <div className="inline-flex p-1.5 rounded-2xl bg-white border border-orange-200/60 shadow-sm text-xs sm:text-sm font-bold">
+            <div className="mt-6 sm:mt-7 flex items-center justify-center px-2">
+              <div className="flex w-full max-w-lg sm:w-auto p-1.5 rounded-2xl bg-white border border-orange-200/80 shadow-sm text-xs sm:text-sm font-bold items-center">
                 <button
                   type="button"
                   onClick={() => setPricingCycle("monthly")}
-                  className={`px-4 py-2 rounded-xl transition-all ${
+                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2.5 rounded-xl transition-all text-center justify-center flex items-center whitespace-nowrap ${
                     pricingCycle === "monthly"
                       ? "bg-[#0b183f] text-white shadow-sm font-extrabold"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  Monthly Billing
+                  <span>Monthly Billing</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPricingCycle("quarterly")}
-                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2.5 rounded-xl transition-all flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5 text-center ${
                     pricingCycle === "quarterly"
                       ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md font-extrabold"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <span>Quarterly (3 Months)</span>
-                  <span className="text-[10px] bg-white text-orange-600 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                  <span className="whitespace-nowrap">Quarterly (3 Months)</span>
+                  <span
+                    className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider whitespace-nowrap transition-colors ${
+                      pricingCycle === "quarterly"
+                        ? "bg-white text-orange-600 shadow-sm"
+                        : "bg-orange-100 text-orange-700"
+                    }`}
+                  >
                     🎁 Complimentary Offer
                   </span>
                 </button>
@@ -969,11 +975,25 @@ export function LandingPage() {
 
                     {/* Complimentary Offer Callout in card */}
                     {isComplimentaryEligible && (
-                      <div className="mt-3 mb-2 rounded-xl p-3 bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-500/30 text-xs">
-                        <p className="font-bold text-orange-400">
+                      <div
+                        className="mt-3 mb-2 rounded-xl p-3 text-xs border"
+                        style={{
+                          background: popular
+                            ? "linear-gradient(to right, rgba(255, 117, 31, 0.15), rgba(245, 158, 11, 0.15))"
+                            : "linear-gradient(to right, rgba(255, 117, 31, 0.12), rgba(254, 243, 199, 0.7))",
+                          borderColor: popular ? "rgba(255, 117, 31, 0.35)" : "rgba(255, 117, 31, 0.35)",
+                        }}
+                      >
+                        <p
+                          className="font-bold text-xs"
+                          style={{ color: popular ? "#ff9a5c" : "#c2410c" }}
+                        >
                           🎉 Includes Complimentary Offer:
                         </p>
-                        <p className="text-slate-300 mt-0.5 leading-snug">
+                        <p
+                          className="mt-1 leading-snug font-semibold"
+                          style={{ color: popular ? "#f1f5f9" : "#1e293b" }}
+                        >
                           • 2 Co-branding Reels on ZENSOS Instagram<br />
                           • ₹500 worth Meta Ad Campaign Boost
                         </p>
@@ -1012,32 +1032,6 @@ export function LandingPage() {
                         ))}
                       </ul>
 
-                      {/* Add On Feature */}
-                      {addOnFeature && (
-                        <div
-                          className="rounded-xl p-3 border"
-                          style={{
-                            background: popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
-                            borderColor: popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
-                          }}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm"
-                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
-                            >
-                              Add On Feature
-                            </span>
-                            <span className="text-xs sm:text-sm font-bold" style={{ color: popular ? "#fff" : "#0b183f" }}>
-                              {addOnFeature.title}
-                            </span>
-                          </div>
-                          <p className="text-[11px] leading-relaxed pl-1" style={{ color: popular ? "rgba(255,255,255,0.65)" : "#64748b" }}>
-                            {addOnFeature.subtitle}
-                          </p>
-                        </div>
-                      )}
-
                       {/* Extra features for Business */}
                       {extraFeatures && extraFeatures.length > 0 && (
                         <ul className="space-y-2 pt-1 border-t" style={{ borderColor: popular ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)" }}>
@@ -1048,6 +1042,32 @@ export function LandingPage() {
                             </li>
                           ))}
                         </ul>
+                      )}
+
+                      {/* Add On Feature */}
+                      {addOnFeature && (
+                        <div
+                          className="rounded-xl p-3 border my-2"
+                          style={{
+                            background: popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
+                            borderColor: popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
+                          }}
+                        >
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span
+                              className="shrink-0 text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full text-white shadow-sm"
+                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                            >
+                              Add On Feature
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold leading-snug" style={{ color: popular ? "#fff" : "#0b183f" }}>
+                              {addOnFeature.title}
+                            </span>
+                          </div>
+                          <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: popular ? "rgba(255,255,255,0.75)" : "#475569" }}>
+                            {addOnFeature.subtitle}
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}

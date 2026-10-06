@@ -400,11 +400,25 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
 
                     {/* Promotional Offer Callout when quarterly */}
                     {isComplimentaryActive && (
-                      <div className="mb-4 rounded-xl p-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/40 text-xs">
-                        <p className="font-bold text-orange-400">
+                      <div
+                        className="mb-4 rounded-xl p-3 text-xs border"
+                        style={{
+                          background: plan.popular
+                            ? "linear-gradient(to right, rgba(255, 117, 31, 0.2), rgba(245, 158, 11, 0.2))"
+                            : "linear-gradient(to right, rgba(255, 117, 31, 0.12), rgba(254, 243, 199, 0.7))",
+                          borderColor: plan.popular ? "rgba(255, 117, 31, 0.4)" : "rgba(255, 117, 31, 0.35)",
+                        }}
+                      >
+                        <p
+                          className="font-bold text-xs"
+                          style={{ color: plan.popular ? "#ff9a5c" : "#c2410c" }}
+                        >
                           🎉 Includes Complimentary Offer:
                         </p>
-                        <p className="text-slate-200 mt-0.5 leading-snug">
+                        <p
+                          className="mt-1 leading-snug font-semibold"
+                          style={{ color: plan.popular ? "#f1f5f9" : "#1e293b" }}
+                        >
                           • 2 Co-branding Reels on ZENSOS Instagram<br />
                           • ₹500 worth Meta Ad Campaign Boost
                         </p>
@@ -433,32 +447,6 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                         ))}
                       </ul>
 
-                      {/* Add On Feature */}
-                      {plan.addOnFeature && (
-                        <div
-                          className="rounded-xl p-2.5 border my-2.5"
-                          style={{
-                            background: plan.popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
-                            borderColor: plan.popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
-                          }}
-                        >
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span
-                              className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm"
-                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
-                            >
-                              Add On Feature
-                            </span>
-                            <span className="text-xs font-bold" style={{ color: plan.popular ? "#fff" : "#0b183f" }}>
-                              {plan.addOnFeature.title}
-                            </span>
-                          </div>
-                          <p className="text-[11px] leading-snug pl-1" style={{ color: plan.popular ? "rgba(255,255,255,0.65)" : "#64748b" }}>
-                            {plan.addOnFeature.subtitle}
-                          </p>
-                        </div>
-                      )}
-
                       {/* Extra features for Business */}
                       {plan.extraFeatures && plan.extraFeatures.length > 0 && (
                         <ul className="space-y-1.5 pt-1.5 border-t" style={{ borderColor: plan.popular ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)" }}>
@@ -469,6 +457,32 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                             </li>
                           ))}
                         </ul>
+                      )}
+
+                      {/* Add On Feature */}
+                      {plan.addOnFeature && (
+                        <div
+                          className="rounded-xl p-2.5 border my-2.5"
+                          style={{
+                            background: plan.popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
+                            borderColor: plan.popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
+                          }}
+                        >
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span
+                              className="shrink-0 text-[9px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm"
+                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                            >
+                              Add On Feature
+                            </span>
+                            <span className="text-xs font-bold leading-snug" style={{ color: plan.popular ? "#fff" : "#0b183f" }}>
+                              {plan.addOnFeature.title}
+                            </span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed" style={{ color: plan.popular ? "rgba(255,255,255,0.75)" : "#475569" }}>
+                            {plan.addOnFeature.subtitle}
+                          </p>
+                        </div>
                       )}
 
                       {plan.comingSoon.map((f) => (

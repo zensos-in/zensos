@@ -7,7 +7,7 @@ const router = express.Router();
 // POST /api/appointments — Public booking endpoint
 router.post("/", async (req, res) => {
   try {
-    const { name, phone, email } = req.body || {};
+    const { name, phone, email, preferredDate, preferredTime } = req.body || {};
 
     if (!name || typeof name !== "string" || !name.trim()) {
       return res.status(400).json({ message: "Name is required." });
@@ -29,6 +29,8 @@ router.post("/", async (req, res) => {
     const safeName = name.trim().slice(0, 100);
     const safePhone = phone.trim().slice(0, 30);
     const safeEmail = email.trim().toLowerCase().slice(0, 254);
+    const safeDate = typeof preferredDate === "string" ? preferredDate.trim().slice(0, 50) : "";
+    const safeTime = typeof preferredTime === "string" ? preferredTime.trim().slice(0, 50) : "";
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(safeEmail)) {
@@ -39,6 +41,8 @@ router.post("/", async (req, res) => {
       name: safeName,
       phone: safePhone,
       email: safeEmail,
+      preferredDate: safeDate,
+      preferredTime: safeTime,
     });
 
     await appointment.save();
@@ -48,6 +52,8 @@ router.post("/", async (req, res) => {
       name: safeName,
       phone: safePhone,
       email: safeEmail,
+      preferredDate: safeDate,
+      preferredTime: safeTime,
       createdAt: appointment.createdAt,
     }).catch((err) => {
       console.error("[Appointment Route] Email notification failed:", err?.message || err);
@@ -61,6 +67,8 @@ router.post("/", async (req, res) => {
         name: safeName,
         email: safeEmail,
         phone: safePhone,
+        preferredDate: safeDate,
+        preferredTime: safeTime,
         createdAt: appointment.createdAt,
       },
     });

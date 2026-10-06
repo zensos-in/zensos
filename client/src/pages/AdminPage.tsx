@@ -15,7 +15,17 @@ type SortBy = "latest" | "oldest" | "business" | "expiring_soon";
 type AdminTab = "sellers" | "subscriptions" | "offers" | "revenue" | "leads";
 
 type RegistrationLead = { _id: string; email: string; phone: string; createdAt: string };
-type BookedAppointment = { _id: string; name: string; email: string; phone: string; status?: string; notes?: string; createdAt: string };
+type BookedAppointment = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  status?: string;
+  notes?: string;
+  createdAt: string;
+};
 
 type PlanFilter = "all" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS" | "NONE";
 type SubscriptionStatusFilter = "all" | "ACTIVE" | "EXPIRED" | "PENDING" | "NONE";
@@ -1465,37 +1475,38 @@ export function AdminPage() {
             </div>
           </Card>
 
-          {/* Booked Appointments */}
+          {/* Booked Demos */}
           <Card className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-bold uppercase text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-300">
-                  <span>📅</span> Appointments
+                  <span>📅</span> Demo Requests
                 </div>
-                <h2 className="mt-1 font-heading text-lg font-bold text-slate-900 dark:text-slate-100">Booked Appointments</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{appointmentTotal} booked appointment{appointmentTotal === 1 ? "" : "s"} from landing page</p>
+                <h2 className="mt-1 font-heading text-lg font-bold text-slate-900 dark:text-slate-100">Booked Demos</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{appointmentTotal} booked demo request{appointmentTotal === 1 ? "" : "s"} from landing page</p>
               </div>
               <Button variant="secondary" onClick={() => setAppointmentsRefresh((count) => count + 1)} disabled={appointmentsLoading}>
-                <AppIcon name="refresh" className="text-[13px]" /> Refresh appointments
+                <AppIcon name="refresh" className="text-[13px]" /> Refresh demos
               </Button>
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="min-w-full min-w-[680px] text-left text-sm">
+              <table className="min-w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80">
                   <tr>
                     <th className="px-4 py-3">Name</th>
                     <th className="px-4 py-3">Phone</th>
                     <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Preferred Demo Slot</th>
                     <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Booked At</th>
+                    <th className="px-4 py-3">Requested On</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {appointmentsLoading ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading booked appointments...</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading booked demo requests...</td></tr>
                   ) : appointments.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No booked appointments found.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No booked demo requests found.</td></tr>
                   ) : appointments.map((app) => (
                     <tr key={app._id} className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{app.name}</td>
@@ -1504,6 +1515,25 @@ export function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                         <a href={`mailto:${app.email}`} className="text-sky-600 hover:underline dark:text-sky-400">{app.email}</a>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        {app.preferredDate || app.preferredTime ? (
+                          <div className="space-y-1">
+                            {app.preferredDate && (
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                                <span>📅</span>
+                                <span>{app.preferredDate}</span>
+                              </div>
+                            )}
+                            {app.preferredTime && (
+                              <span className="inline-block rounded-md bg-orange-100/90 px-2 py-0.5 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                                ⏰ {app.preferredTime}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Flexible</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <select

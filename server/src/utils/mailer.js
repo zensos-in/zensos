@@ -698,9 +698,9 @@ async function sendOutOfStockAlert({ email, businessName, productTitle, variantT
   }
 }
 
-async function sendAppointmentNotificationEmail({ name, email, phone, createdAt }) {
+async function sendAppointmentNotificationEmail({ name, email, phone, preferredDate, preferredTime, createdAt }) {
   if (!isSmtpConfigured()) {
-    console.log(`[mailer DEMO MODE] Demo thank-you email for ${name} to ${email} (${phone})`);
+    console.log(`[mailer DEMO MODE] Demo thank-you email for ${name} to ${email} (${phone}) - Date: ${preferredDate || "N/A"}, Time: ${preferredTime || "N/A"}`);
     return;
   }
 
@@ -708,6 +708,8 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
     const transporter = getTransporter();
     const sender = getSender("ZENSOS");
     const safeName = escapeHtml(name);
+    const safeDate = preferredDate ? escapeHtml(preferredDate) : "Flexible / To be confirmed";
+    const safeTime = preferredTime ? escapeHtml(preferredTime) : "Flexible";
     const dateFormatted = new Date(createdAt || Date.now()).toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short",
@@ -727,6 +729,8 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
         `- Name: ${name}`,
         `- Phone: ${phone}`,
         `- Email: ${email}`,
+        `- Preferred Date: ${preferredDate || "Flexible / To be confirmed"}`,
+        `- Preferred Time: ${preferredTime || "Flexible"}`,
         `- Requested On: ${dateFormatted}`,
         ``,
         `If you have any questions in the meantime, feel free to reply directly to this email.`,
@@ -770,6 +774,14 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
               <tr>
                 <td style="padding: 4px 0; color: #64748b;"><strong>Email:</strong></td>
                 <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${escapeHtml(email)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748b;"><strong>Preferred Date:</strong></td>
+                <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${safeDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748b;"><strong>Preferred Slot:</strong></td>
+                <td style="padding: 4px 0; color: #ea580c; font-weight: 700;">${safeTime}</td>
               </tr>
               <tr>
                 <td style="padding: 4px 0; color: #64748b;"><strong>Requested On:</strong></td>

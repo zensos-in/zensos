@@ -116,9 +116,9 @@ const PLAN_META: Record<string, { price: string; amountPaise: number; color: str
       "Real-time Store Analytics",
       "Trust Badge",
       "Priority Support on Call",
-      "Delivery Partner Integration",
       "Instagram Reels Integration",
       "Coupon Code Integration",
+      "Delivery Partner Integration",
     ],
   },
 };

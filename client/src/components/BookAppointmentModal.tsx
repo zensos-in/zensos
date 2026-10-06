@@ -10,9 +10,14 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Today formatted as YYYY-MM-DD for min date
+  const todayStr = new Date().toISOString().split("T")[0];
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -25,6 +30,8 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
       setName("");
       setPhone("");
       setEmail("");
+      setPreferredDate("");
+      setPreferredTime("");
       setError(null);
       setIsSuccess(false);
     }
@@ -53,6 +60,8 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
     const trimmedName = name.trim();
     const trimmedPhone = phone.trim();
     const trimmedEmail = email.trim();
+    const trimmedDate = preferredDate.trim();
+    const trimmedTime = preferredTime.trim();
 
     if (!trimmedName) {
       setError("Please enter your name.");
@@ -86,12 +95,24 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
       return;
     }
 
+    if (!trimmedDate) {
+      setError("Please select a preferred date for the demo.");
+      return;
+    }
+
+    if (!trimmedTime) {
+      setError("Please select a preferred time slot.");
+      return;
+    }
+
     try {
       setLoading(true);
       await api.post("/appointments", {
         name: trimmedName,
         phone: trimmedPhone,
         email: trimmedEmail,
+        preferredDate: trimmedDate,
+        preferredTime: trimmedTime,
       });
       setIsSuccess(true);
     } catch (err: any) {
@@ -159,9 +180,23 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
             </p>
 
             <div className="mt-4 rounded-2xl bg-orange-50/80 p-3.5 text-left border border-orange-100 dark:bg-slate-800/80 dark:border-slate-700">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Next Steps</p>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Our team will reach out to you via <strong className="text-slate-800 dark:text-slate-200">{phone}</strong> or <strong className="text-slate-800 dark:text-slate-200">{email}</strong> within 24 business hours to confirm your scheduled time and walk you through the platform.
+              <p className="text-[11px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Scheduled Demo Details</p>
+              <div className="mt-1.5 space-y-1 text-xs text-slate-700 dark:text-slate-300">
+                {preferredDate && (
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">📅 Date:</span>
+                    <strong className="text-slate-900 dark:text-slate-100">{preferredDate}</strong>
+                  </p>
+                )}
+                {preferredTime && (
+                  <p className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">⏰ Slot:</span>
+                    <strong className="text-orange-600 dark:text-orange-400">{preferredTime}</strong>
+                  </p>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-orange-100 dark:border-slate-700 pt-2">
+                Our team will reach out to you via <strong className="text-slate-800 dark:text-slate-200">{phone}</strong> or <strong className="text-slate-800 dark:text-slate-200">{email}</strong> to host your personalized walkthrough.
               </p>
             </div>
 
@@ -189,7 +224,7 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
                 Book a Demo
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                Talk to our e-commerce specialists for a live product demo and rapid onboarding.
+                Talk to our e-commerce specialists for a live product demo and faster onboarding.
               </p>
             </div>
 
@@ -229,50 +264,114 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
                 </div>
               </div>
 
-              {/* Phone Number */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                  Phone Number <span className="text-orange-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
+              {/* Phone & Email Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Phone Number */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Phone Number <span className="text-orange-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      disabled={loading}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
+                    />
                   </div>
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. 9876543210"
-                    disabled={loading}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
-                  />
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Email Address <span className="text-orange-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. name@example.com"
+                      disabled={loading}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Email ID */}
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                  Email Address <span className="text-orange-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
+              {/* Preferred Date & Time Slot Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Preferred Date */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Preferred Date <span className="text-orange-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                    </div>
+                    <input
+                      type="date"
+                      required
+                      min={todayStr}
+                      value={preferredDate}
+                      onChange={(e) => setPreferredDate(e.target.value)}
+                      disabled={loading}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
+                    />
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. name@example.com"
-                    disabled={loading}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
-                  />
+                </div>
+
+                {/* Preferred Time Slot */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Preferred Time <span className="text-orange-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </div>
+                    <select
+                      required
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      disabled={loading}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-3.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-900"
+                    >
+                      <option value="">Select Time Slot</option>
+                      <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
+                      <option value="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</option>
+                      <option value="12:00 PM - 01:00 PM">12:00 PM - 01:00 PM</option>
+                      <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM</option>
+                      <option value="03:00 PM - 04:00 PM">03:00 PM - 04:00 PM</option>
+                      <option value="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</option>
+                      <option value="05:00 PM - 06:00 PM">05:00 PM - 06:00 PM</option>
+                      <option value="06:00 PM - 07:00 PM">06:00 PM - 07:00 PM</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
