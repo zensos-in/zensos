@@ -19,14 +19,23 @@ const PLANS = [
     features: [
       "List up to 10 products",
       "Up to 2 store banners",
+      "Unlimited product categories",
+      "Up to 5 variants per product",
+      "Flexible Inventory Management",
+      "Option to add enquiry form",
       "Printable PDF of order copy",
       "Payment Gateway Integration",
       "Settlement in T+2 days",
       "Free ZENSOS subdomain",
       "Real-time Store Analytics",
-      "Email Support",
       "Trust Badge",
+      "Email Support",
     ],
+    addOnFeature: {
+      title: "Delivery Partner Integration",
+      subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+    },
+    extraFeatures: [] as string[],
     comingSoon: [] as string[],
   },
   {
@@ -44,17 +53,24 @@ const PLANS = [
     features: [
       "List up to 20 products",
       "Up to 3 store banners",
+      "Unlimited product categories",
+      "Up to 8 variants per product",
+      "Flexible Inventory Management",
+      "Option to add enquiry form",
       "Printable PDF of order copy",
       "Payment Gateway Integration",
       "Settlement in T+2 days",
       "Free ZENSOS subdomain",
       "Real-time Store Analytics",
-      "Email and Call Support",
       "Trust Badge",
+      "Email and Call Support",
     ],
-    comingSoon: [
-      "Coupon Code Integration",
-    ],
+    addOnFeature: {
+      title: "Delivery Partner Integration",
+      subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+    },
+    extraFeatures: [] as string[],
+    comingSoon: [] as string[],
   },
   {
     label: "Business",
@@ -71,16 +87,27 @@ const PLANS = [
     features: [
       "List up to 30 products",
       "Up to 5 store banners",
+      "Unlimited product categories",
+      "Up to 10 variants per product",
+      "Flexible Inventory Management",
+      "Option to add enquiry form",
       "Printable PDF of order copy",
       "Payment Gateway Integration",
       "Settlement in T+2 days",
       "Free ZENSOS subdomain",
       "Real-time Store Analytics",
-      "Priority Support on Call",
       "Trust Badge",
+      "Priority Support on Call",
     ],
-    comingSoon: [
+    addOnFeature: {
+      title: "Delivery Partner Integration",
+      subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+    },
+    extraFeatures: [
+      "Instagram Reels Integration",
+      "Coupon Code Integration",
     ],
+    comingSoon: [] as string[],
   },
 ];
 
@@ -212,8 +239,8 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
           className="absolute flex flex-col bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden"
           style={{
             width: "min(1200px, calc(100vw - 40px))",
-            height: "700px",
-            top: "max(20px, calc(50vh - 350px))",
+            height: "min(780px, calc(100vh - 40px))",
+            top: "max(20px, calc(50vh - 390px))",
             left: "max(20px, calc(50vw - 600px))",
             animation: "slideInFromRight 0.38s cubic-bezier(0.4,0,0.2,1) forwards",
           }}
@@ -375,11 +402,11 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                     {isComplimentaryActive && (
                       <div className="mb-4 rounded-xl p-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/40 text-xs">
                         <p className="font-bold text-orange-400">
-                          🎉 Partner Spotlight Offer Included:
+                          🎉 Includes Complimentary Offer:
                         </p>
                         <p className="text-slate-200 mt-0.5 leading-snug">
-                          • 2 Brand Feature Reels on Instagram<br />
-                          • ₹500 Meta Ad Campaign Boost
+                          • 2 Co-branding Reels on ZENSOS Instagram<br />
+                          • ₹500 worth Meta Ad Campaign Boost
                         </p>
                       </div>
                     )}
@@ -392,25 +419,66 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
                         color: plan.popular ? "#ff9a5c" : "#ff751f",
                       }}
                     >
-                      +3% per transaction (Payment Handling Charges)
+                      3% platform payment handling charges
                     </p>
 
                     {/* Features — always visible */}
-                    <ul className="mb-4 space-y-1.5">
-                      {plan.features.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
-                          {f}
-                        </li>
-                      ))}
+                    <div className="mb-4 space-y-2 text-left">
+                      <ul className="space-y-1.5">
+                        {plan.features.map((f) => (
+                          <li key={f} className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.85)" : "#475569" }}>
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Add On Feature */}
+                      {plan.addOnFeature && (
+                        <div
+                          className="rounded-xl p-2.5 border my-2.5"
+                          style={{
+                            background: plan.popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
+                            borderColor: plan.popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
+                          }}
+                        >
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span
+                              className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm"
+                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                            >
+                              Add On Feature
+                            </span>
+                            <span className="text-xs font-bold" style={{ color: plan.popular ? "#fff" : "#0b183f" }}>
+                              {plan.addOnFeature.title}
+                            </span>
+                          </div>
+                          <p className="text-[11px] leading-snug pl-1" style={{ color: plan.popular ? "rgba(255,255,255,0.65)" : "#64748b" }}>
+                            {plan.addOnFeature.subtitle}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Extra features for Business */}
+                      {plan.extraFeatures && plan.extraFeatures.length > 0 && (
+                        <ul className="space-y-1.5 pt-1.5 border-t" style={{ borderColor: plan.popular ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)" }}>
+                          {plan.extraFeatures.map((f) => (
+                            <li key={f} className="flex items-center gap-2 text-xs sm:text-sm font-semibold" style={{ color: plan.popular ? "rgba(255,255,255,0.95)" : "#1e293b" }}>
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
+                              <span>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
                       {plan.comingSoon.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
+                        <li key={f} className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: plan.popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
                           <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: plan.color }}>✓</span>
-                          {f}
+                          <span>{f}</span>
                           <span className="text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
                         </li>
                       ))}
-                    </ul>
+                    </div>
 
                     <div className="flex-1" />
 

@@ -24,7 +24,7 @@ export function DashboardSubscriptionWidget() {
         <div className="flex items-center gap-2">
           {seller.complimentaryOfferActive && (
             <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50">
-              🎁 Partner Spotlight Offer Active
+              🎁 Complimentary Offer Active
             </span>
           )}
           <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${seller.subscriptionStatus === "ACTIVE"

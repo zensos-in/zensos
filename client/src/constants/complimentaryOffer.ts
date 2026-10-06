@@ -32,12 +32,12 @@ export interface ComplimentaryOfferConfig {
 export const COMPLIMENTARY_OFFER_CONFIG: ComplimentaryOfferConfig = {
   enabled: true,
   title: "Complimentary Offer",
-  subtitle: "Partner Spotlight Offer",
-  badgeText: "LIMITED OFFER",
+  subtitle: "Partner Co-branding",
+  badgeText: "LIMITED PERIOD OFFER",
   sellerLimit: 30,
-  sellerLimitLabel: "For first 30 sellers",
+  sellerLimitLabel: "For First 30 Sellers",
   promotionalMessage:
-    "Sign-up for Growth plan or Business plan for a minimum of 3 months and get complimentary offer of 2 reels and INR 500 worth Meta Ad campaign for your brand!",
+    "Sign-up for Growth plan or Business plan for a minimum of 3 months and get 2 co-branding reels and INR 500 worth Meta Ad campaign for your brand!",
   qualifyingNote:
     "Applicable exclusively to qualifying quarterly subscriptions (3-month minimum commitment) on Growth and Business plans.",
   eligiblePlans: ["GROWTH", "BUSINESS"],
@@ -48,18 +48,18 @@ export const COMPLIMENTARY_OFFER_CONFIG: ComplimentaryOfferConfig = {
   benefits: [
     {
       id: "benefit-reels",
-      title: "2 Brand Feature Reels on ZENSOS Instagram handle",
+      title: "2 Co-branding reels on ZENSOS Instagram",
       description:
-        "We will deliver 2 shoutout reels on the official Instagram handle of ZENSOS during your subscription period.",
+        "We will deliver 2 co-branding reels on the official Instagram handle of ZENSOS during your subscription period.",
     },
     {
       id: "benefit-ads",
-      title: "Ad campaign on Facebook and Instagram worth INR 500",
+      title: "Meta Ad Campaign worth INR 500",
       description:
-        "We help your brand reach a wider audience, maximize awareness and store visits by running a Meta Ad campaign with INR 500 for the reels we create for your brand on ZENSOS.",
+        "We help your brand reach a wider audience, maximize awareness and store visits by running a Meta Ad campaign worth INR 500 for the reels we create for your brand on ZENSOS.",
     },
   ],
-  modalTitle: "Terms & Conditions: Zensos Partner Spotlight Offer",
+  modalTitle: "Terms & Conditions: Zensos Complimentary Offer",
   terms: [
     {
       number: 1,
@@ -71,7 +71,7 @@ export const COMPLIMENTARY_OFFER_CONFIG: ComplimentaryOfferConfig = {
       number: 2,
       title: "Content Ownership & Placement",
       content:
-        "The 2 complimentary Reels will be produced by Zensos and published exclusively on the official Zensos Instagram handle. This is a brand feature/shoutout on our platform, not a custom video production or influencer marketing service. We do not provide raw video files or content for clients to post on their own personal or business social media accounts.",
+        "The 2 co-branding Reels will be produced by Zensos and published on the official Zensos Instagram handle. This is a co-branding feature on our platform, not a custom video production or influencer marketing service. We do not provide raw video files or content for clients to post on their own personal or business social media accounts.",
     },
     {
       number: 3,

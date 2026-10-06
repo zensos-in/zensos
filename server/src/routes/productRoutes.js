@@ -18,13 +18,13 @@ const router = express.Router();
 const PRODUCT_TITLE_MAX_LENGTH = 60;
 
 function getPlanLimits(planType) {
-  switch (planType) {
-    case "BUSINESS": return { maxProducts: 30, maxBanners: 5 };
-    case "GROWTH": return { maxProducts: 20, maxBanners: 3 };
-    case "STARTER": return { maxProducts: 10, maxBanners: 2 };
+  switch ((planType || "").toUpperCase()) {
+    case "BUSINESS": return { maxProducts: 30, maxBanners: 5, maxVariants: 10 };
+    case "GROWTH": return { maxProducts: 20, maxBanners: 3, maxVariants: 8 };
+    case "STARTER": return { maxProducts: 10, maxBanners: 2, maxVariants: 5 };
     case "TRIAL":
     default:
-      return { maxProducts: 10, maxBanners: 2 };
+      return { maxProducts: 10, maxBanners: 2, maxVariants: 5 };
   }
 }
 

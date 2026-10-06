@@ -76,19 +76,19 @@ const FAQ_DATA: FAQSection[] = [
       },
       {
         q: "What is the handling charge on each transaction, and why is it charged?",
-        a: "Every online payment gateway in India charges a processing fee to accept payments securely and this isn't unique to ZENSOS. To keep things simple, we bundle the payment gateway's routing fee, transaction fee, and applicable GST into one flat 1% platform handling charge per transaction, deducted before settlement. You don't need to calculate anything separately — the amount you see is the amount you'll receive, minus 1%.",
+        a: "Every online payment gateway in India charges a processing fee to accept payments securely and this isn't unique to ZENSOS. To keep things simple, we bundle the payment gateway's routing fee, transaction fee, and applicable GST into one flat 3% platform payment handling charge per transaction, deducted before settlement. You don't need to calculate anything separately — the amount you see is the amount you'll receive, minus 3%.",
       },
       {
         q: "Do you charge commission on my sales?",
-        a: "No. ZENSOS does not take a commission or a cut of your revenue as a marketplace would. The only charge on each order is the flat 1% handling charge, which covers secure payment processing and not a share of your business.",
+        a: "No. ZENSOS does not take a commission or a cut of your revenue as a marketplace would. The only charge on each order is the 3% platform payment handling charge, which covers secure payment processing and not a share of your business.",
       },
       {
         q: "Are there any hidden or setup fees?",
-        a: "No setup fee. You pay your monthly (or quarterly or annual) subscription plus the 1% handling charge per transaction — nothing else.",
+        a: "No setup fee. You pay your monthly (or quarterly) subscription plus the 3% platform payment handling charge per transaction — nothing else.",
       },
       {
         q: "Can I change, upgrade, downgrade, or cancel my plan anytime?",
-        a: "Yes, you can upgrade, downgrade, or cancel your plan anytime from your seller dashboard. If you're on a quarterly or yearly plan, your store stays active until the end of the period you've already paid for, but the amount already paid is non-refundable for cancellations or downgrades made mid-cycle.",
+        a: "Yes, you can upgrade, downgrade, or cancel your plan anytime from your seller dashboard. If you're on a quarterly plan, your store stays active until the end of the period you've already paid for, but the amount already paid is non-refundable for cancellations or downgrades made mid-cycle.",
       },
     ],
   },
@@ -110,7 +110,7 @@ const FAQ_DATA: FAQSection[] = [
       },
       {
         q: "Can I customize how my storefront looks?",
-        a: "Yes. You can add up to 5 store banners to showcase your brand, offers, or bestsellers, and mark specific products as \"Recommended\" so they're featured at the top of your storefront. But, you cannot change the design or the UI/UX of your store.",
+        a: "Yes. You can add up to 2 store banners on Starter, up to 3 on Growth, and up to 5 on Business to showcase your brand, offers, or bestsellers, and mark specific products as \"Recommended\" so they're featured at the top of your storefront. But, you cannot change the design or the UI/UX of your store.",
       },
       {
         q: "Can I set my own privacy policy, return & refund policy, and terms of use?",
@@ -128,15 +128,15 @@ const FAQ_DATA: FAQSection[] = [
       },
       {
         q: "Does ZENSOS manage my inventory for me?",
-        a: "No, ZENSOS doesn't currently include built-in inventory management. You'll need to track your stock levels separately and update your listings accordingly.",
+        a: "Yes! ZENSOS includes Flexible Inventory Management. You can track stock levels per product or at the variant level, and your store automatically reflects real-time stock availability.",
       },
       {
         q: "Does ZENSOS handle shipping and delivery of my orders?",
-        a: "No, delivery and logistics aren't currently managed by ZENSOS. You'll need to arrange shipping through your own courier or delivery partner. Delivery partner integrations are planned for higher-tier plans in the future.",
+        a: "ZENSOS provides Delivery Partner Integration with 4 delivery partner options along with a Self/Manual Delivery option, allowing you full flexibility in fulfilling your customer orders.",
       },
       {
         q: "Are there other integrations coming to ZENSOS?",
-        a: "Yes! We're continuously adding to the platform. Planned integrations include delivery partner connections, an affiliate partner program, Google Reviews, Instagram Reels, trust badges, coupon codes and Google Analytics, so you can keep building credibility and reach as your store grows.",
+        a: "Yes! We're continuously adding to the platform. Integrations include delivery partner connections, Instagram Reels, Coupon Code integration, trust badges, and analytics, so you can keep building credibility and reach as your store grows.",
       },
     ],
   },

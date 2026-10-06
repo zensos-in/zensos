@@ -126,7 +126,7 @@ export function ComplimentaryOffer({
             <div className="rounded-2xl p-4 sm:p-5 bg-white/5 border border-white/10 backdrop-blur-md">
               <div className="flex items-center justify-between mb-3 px-1">
                 <span className="text-xs font-black uppercase tracking-wider text-orange-400">
-                  Included Benefits
+                  Offer Includes
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium">
                   Click to view details

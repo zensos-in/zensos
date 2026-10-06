@@ -773,13 +773,17 @@ export function LandingPage() {
                   {[
                     "List up to 10 products",
                     "Up to 2 store banners",
+                    "Unlimited product categories",
+                    "Up to 5 variants per product",
+                    "Flexible Inventory Management",
+                    "Option to add enquiry form",
                     "Printable PDF of order copy",
                     "Payment Gateway Integration",
                     "Settlement in T+2 days",
                     "Free ZENSOS subdomain",
                     "Real-time Store Analytics",
-                    "Email Support",
                     "Trust Badge",
+                    "Email Support",
                   ].map((feat) => (
                     <div key={feat} className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700">
                       <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#6366f1" }}>✓</span>
@@ -817,16 +821,25 @@ export function LandingPage() {
                 features: [
                   { label: "List up to 10 products" },
                   { label: "Up to 2 store banners" },
+                  { label: "Unlimited product categories" },
+                  { label: "Up to 5 variants per product" },
+                  { label: "Flexible Inventory Management" },
+                  { label: "Option to add enquiry form" },
                   { label: "Printable PDF of order copy" },
                   { label: "Payment Gateway Integration" },
                   { label: "Settlement in T+2 days" },
                   { label: "Free ZENSOS subdomain" },
                   { label: "Real-time Store Analytics" },
-                  { label: "Email Support" },
                   { label: "Trust Badge" },
-                  { label: "Delivery Partner Integration" },
+                  { label: "Email Support" },
                 ],
-                cta: "Get Started", popular: false,
+                addOnFeature: {
+                  title: "Delivery Partner Integration",
+                  subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+                },
+                extraFeatures: [] as { label: string }[],
+                cta: "Get Started",
+                popular: false,
               },
               {
                 name: "Growth",
@@ -837,16 +850,25 @@ export function LandingPage() {
                 features: [
                   { label: "List up to 20 products" },
                   { label: "Up to 3 store banners" },
+                  { label: "Unlimited product categories" },
+                  { label: "Up to 8 variants per product" },
+                  { label: "Flexible Inventory Management" },
+                  { label: "Option to add enquiry form" },
                   { label: "Printable PDF of order copy" },
                   { label: "Payment Gateway Integration" },
                   { label: "Settlement in T+2 days" },
                   { label: "Free ZENSOS subdomain" },
                   { label: "Real-time Store Analytics" },
-                  { label: "Email and Call Support" },
                   { label: "Trust Badge" },
-                  { label: "Delivery Partner Integration" },
+                  { label: "Email and Call Support" },
                 ],
-                cta: "Start Growing", popular: true,
+                addOnFeature: {
+                  title: "Delivery Partner Integration",
+                  subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+                },
+                extraFeatures: [] as { label: string }[],
+                cta: "Start Growing",
+                popular: true,
               },
               {
                 name: "Business",
@@ -857,19 +879,30 @@ export function LandingPage() {
                 features: [
                   { label: "List up to 30 products" },
                   { label: "Up to 5 store banners" },
+                  { label: "Unlimited product categories" },
+                  { label: "Up to 10 variants per product" },
+                  { label: "Flexible Inventory Management" },
+                  { label: "Option to add enquiry form" },
                   { label: "Printable PDF of order copy" },
                   { label: "Payment Gateway Integration" },
                   { label: "Settlement in T+2 days" },
                   { label: "Free ZENSOS subdomain" },
                   { label: "Real-time Store Analytics" },
-                  { label: "Priority Support on Call" },
                   { label: "Trust Badge" },
-                  { label: "Delivery Partner Integration" },
-                  { label: "Affiliate Program Integration" },
+                  { label: "Priority Support on Call" },
                 ],
-                cta: "Go Business", popular: false,
+                addOnFeature: {
+                  title: "Delivery Partner Integration",
+                  subtitle: "(4 options of delivery partner integration + an option of Self/Manual Delivery)",
+                },
+                extraFeatures: [
+                  { label: "Instagram Reels Integration" },
+                  { label: "Coupon Code Integration" },
+                ],
+                cta: "Go Business",
+                popular: false,
               },
-            ].map(({ name, subtitle, basePrice, originalPrice, color, features, cta, popular }, i) => {
+            ].map(({ name, subtitle, basePrice, originalPrice, color, features, addOnFeature, extraFeatures, cta, popular }, i) => {
               const months = pricingCycle === "quarterly" ? 3 : 1;
               const displayStrike = `₹${(basePrice * months).toLocaleString("en-IN")}`;
               const displayOriginal = `₹${(originalPrice * months).toLocaleString("en-IN")}`;
@@ -895,7 +928,7 @@ export function LandingPage() {
                       ✦ RECOMMENDED
                     </div>
                   ) : null}
-                  <div className="mb-1">
+                  <div className="mb-1 text-left">
                     <p className="text-lg font-black uppercase tracking-widest" style={{ color: popular ? "#fff" : "#0b183f" }}>{name}</p>
                     <p className="text-xs font-semibold mt-0.5 mb-4" style={{ color: popular ? "rgba(255,255,255,0.55)" : "#94a3b8" }}>{subtitle}</p>
                     {/* Price */}
@@ -914,8 +947,8 @@ export function LandingPage() {
                           🎉 Includes Complimentary Offer:
                         </p>
                         <p className="text-slate-300 mt-0.5 leading-snug">
-                          • 2 Feature Reels on ZENSOS Instagram<br />
-                          • ₹500 Meta Ad Campaign Boost
+                          • 2 Co-branding Reels on ZENSOS Instagram<br />
+                          • ₹500 worth Meta Ad Campaign Boost
                         </p>
                       </div>
                     )}
@@ -923,7 +956,7 @@ export function LandingPage() {
                     {/* Handling charge note */}
                     <p className="mt-2 mb-5 text-xs font-semibold rounded-lg px-3 py-1.5 inline-block"
                       style={{ background: popular ? "rgba(255,117,31,0.18)" : "rgba(255,117,31,0.08)", color: popular ? "#ff9a5c" : "#ff751f" }}>
-                      +3% per transaction (Payment Handling Charges)
+                      3% platform payment handling charges
                     </p>
                   </div>
 
@@ -942,19 +975,54 @@ export function LandingPage() {
 
                   {/* Collapsible features list */}
                   {openPlans[name] && (
-                    <ul className="mb-6 space-y-2.5 overflow-hidden" style={{ animation: "fadeSlideDown 0.25s ease" }}>
-                      {features.map(({ label }) => (
-                        <li key={label} className="flex items-center gap-3 text-sm" style={{ color: popular ? "rgba(255,255,255,0.8)" : "#475569" }}>
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: color }}>✓</span>
-                          <span>
-                            {label}
-                            {/* {comingSoon && (
-                              <span className="ml-1.5 text-xs font-bold" style={{ color: "#ff751f" }}>(Coming Soon)</span>
-                            )} */}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mb-6 space-y-3 overflow-hidden text-left" style={{ animation: "fadeSlideDown 0.25s ease" }}>
+                      <ul className="space-y-2">
+                        {features.map(({ label }) => (
+                          <li key={label} className="flex items-center gap-2.5 text-xs sm:text-sm" style={{ color: popular ? "rgba(255,255,255,0.85)" : "#475569" }}>
+                            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: color }}>✓</span>
+                            <span>{label}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Add On Feature */}
+                      {addOnFeature && (
+                        <div
+                          className="rounded-xl p-3 border"
+                          style={{
+                            background: popular ? "rgba(255,255,255,0.06)" : "rgba(255,117,31,0.05)",
+                            borderColor: popular ? "rgba(255,255,255,0.15)" : "rgba(255,117,31,0.2)",
+                          }}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full text-white shadow-sm"
+                              style={{ background: "linear-gradient(135deg,#ff751f,#ff4500)" }}
+                            >
+                              Add On Feature
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold" style={{ color: popular ? "#fff" : "#0b183f" }}>
+                              {addOnFeature.title}
+                            </span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed pl-1" style={{ color: popular ? "rgba(255,255,255,0.65)" : "#64748b" }}>
+                            {addOnFeature.subtitle}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Extra features for Business */}
+                      {extraFeatures && extraFeatures.length > 0 && (
+                        <ul className="space-y-2 pt-1 border-t" style={{ borderColor: popular ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)" }}>
+                          {extraFeatures.map(({ label }) => (
+                            <li key={label} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold" style={{ color: popular ? "rgba(255,255,255,0.95)" : "#1e293b" }}>
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: color }}>✓</span>
+                              <span>{label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   )}
                   <button onClick={() => navigate(`/login?tab=register&plan=${name.toUpperCase()}&billingCycle=${pricingCycle}`)}
                     className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-105 ${popular || isComplimentaryEligible ? "text-white" : ""}`}

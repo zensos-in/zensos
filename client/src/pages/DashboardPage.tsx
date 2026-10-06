@@ -91,16 +91,16 @@ const ORDER_STATUSES: OrderStatus[] = ["pending", "paid", "delivered", "cancelle
 
 const SOCIAL_PLATFORMS = ["Instagram", "Facebook", "Twitter/X", "YouTube", "LinkedIn", "Website", "Google Location", "Other"];
 
-function getPlanLimits(planType?: string): { maxProducts: number; maxBanners: number } {
+function getPlanLimits(planType?: string): { maxProducts: number; maxBanners: number; maxVariants: number } {
   switch (planType) {
     case "BUSINESS":
-      return { maxProducts: 30, maxBanners: 5 };
+      return { maxProducts: 30, maxBanners: 5, maxVariants: 10 };
     case "GROWTH":
-      return { maxProducts: 20, maxBanners: 3 };
+      return { maxProducts: 20, maxBanners: 3, maxVariants: 8 };
     case "STARTER":
     case "TRIAL":
     default:
-      return { maxProducts: 10, maxBanners: 2 };
+      return { maxProducts: 10, maxBanners: 2, maxVariants: 5 };
   }
 }
 
@@ -356,7 +356,7 @@ export function DashboardPage() {
   const { showError, showSuccess } = useToast();
 
   const planLimits = useMemo(() => getPlanLimits(seller?.currentPlan), [seller?.currentPlan]);
-  const { maxProducts, maxBanners } = planLimits;
+  const { maxProducts, maxBanners, maxVariants } = planLimits;
 
   const [tab, setTab] = useState<Tab>("dashboard");
   const [products, setProducts] = useState<Product[]>([]);
@@ -2565,11 +2565,17 @@ export function DashboardPage() {
                       </div>
                     </div>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", stock: "", isActive: true }] }))}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
-                  >+ Add Variant</button>
+                  {productForm.variants.length < maxVariants ? (
+                    <button
+                      type="button"
+                      onClick={() => setProductForm(p => ({ ...p, variants: [...p.variants, { label: "", uom: "", amount: "", mrp: "", stock: "", isActive: true }] }))}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition"
+                    >+ Add Variant ({productForm.variants.length}/{maxVariants})</button>
+                  ) : (
+                    <p className="text-xs font-semibold text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200">
+                      ⚠️ Maximum {maxVariants} variants reached for your current plan.
+                    </p>
+                  )}
                 </div>
               </div>
 
