@@ -98,7 +98,7 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
       console.error("Appointment booking error:", err);
       setError(
         err?.response?.data?.message ||
-          "Failed to book an appointment. Please check your network and try again."
+          "Failed to book a demo. Please check your network and try again."
       );
     } finally {
       setLoading(false);
@@ -134,7 +134,7 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
           onClick={onClose}
           disabled={loading}
           className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800 disabled:opacity-50 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-          aria-label="Close appointment popup"
+          aria-label="Close demo popup"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -152,16 +152,16 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
             </div>
 
             <h3 id="appointment-modal-title" className="text-xl font-black text-slate-900 dark:text-white">
-              Appointment Booked!
+              Demo Booked!
             </h3>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-              Thank you, <strong className="text-slate-800 dark:text-slate-100">{name}</strong>. We've received your appointment request.
+              Thank you, <strong className="text-slate-800 dark:text-slate-100">{name}</strong>. We've received your demo request.
             </p>
 
             <div className="mt-4 rounded-2xl bg-orange-50/80 p-3.5 text-left border border-orange-100 dark:bg-slate-800/80 dark:border-slate-700">
               <p className="text-[11px] font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">Next Steps</p>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Our team will reach out to you via <strong className="text-slate-800 dark:text-slate-200">{phone}</strong> or <strong className="text-slate-800 dark:text-slate-200">{email}</strong> within 24 business hours to confirm your scheduled time and discuss your store setup.
+                Our team will reach out to you via <strong className="text-slate-800 dark:text-slate-200">{phone}</strong> or <strong className="text-slate-800 dark:text-slate-200">{email}</strong> within 24 business hours to confirm your scheduled time and walk you through the platform.
               </p>
             </div>
 
@@ -183,13 +183,13 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
             <div className="mb-4 pr-7">
               <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider"
                 style={{ background: "rgba(255, 117, 31, 0.12)", color: "#ff751f" }}>
-                <span>📅</span> Direct Consultation
+                <span>📅</span> Live Walkthrough
               </div>
               <h2 id="appointment-modal-title" className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                Book an Appointment
+                Book a Demo
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                Talk to our e-commerce specialists to get personalized store guidance and rapid onboarding.
+                Talk to our e-commerce specialists for a live product demo and rapid onboarding.
               </p>
             </div>
 
@@ -301,11 +301,11 @@ export function BookAppointmentModal({ isOpen, onClose }: BookAppointmentModalPr
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    <span>Submitting Appointment...</span>
+                    <span>Booking Demo...</span>
                   </>
                 ) : (
                   <>
-                    <span>Submit &amp; Book Appointment</span>
+                    <span>Book a Demo</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>

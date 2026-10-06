@@ -55,7 +55,7 @@ router.post("/", async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Appointment booked successfully.",
+      message: "Demo booked successfully.",
       appointment: {
         id: appointment._id,
         name: safeName,
@@ -65,8 +65,8 @@ router.post("/", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Book appointment error:", error);
-    return res.status(500).json({ message: "Unable to book appointment. Please try again later." });
+    console.error("Book demo error:", error);
+    return res.status(500).json({ message: "Unable to book demo. Please try again later." });
   }
 });
 

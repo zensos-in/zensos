@@ -700,7 +700,7 @@ async function sendOutOfStockAlert({ email, businessName, productTitle, variantT
 
 async function sendAppointmentNotificationEmail({ name, email, phone, createdAt }) {
   if (!isSmtpConfigured()) {
-    console.log(`[mailer DEMO MODE] Appointment thank-you email for ${name} to ${email} (${phone})`);
+    console.log(`[mailer DEMO MODE] Demo thank-you email for ${name} to ${email} (${phone})`);
     return;
   }
 
@@ -716,18 +716,18 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
     await transporter.sendMail({
       from: sender,
       to: email,
-      subject: `Thank you for booking an appointment with ZENSOS!`,
+      subject: `Thank you for booking a demo with ZENSOS!`,
       text: [
         `Hi ${name},`,
         ``,
-        `Thank you for booking an appointment with ZENSOS. We have received your request!`,
-        `Our team will reach out to you shortly on ${phone} or via email to confirm your preferred time and discuss your online store setup.`,
+        `Thank you for booking a demo with ZENSOS. We have received your request!`,
+        `Our team will reach out to you shortly on ${phone} or via email to confirm your preferred time and walk you through your online store setup.`,
         ``,
-        `Appointment Details:`,
+        `Demo Details:`,
         `- Name: ${name}`,
         `- Phone: ${phone}`,
         `- Email: ${email}`,
-        `- Booked On: ${dateFormatted}`,
+        `- Requested On: ${dateFormatted}`,
         ``,
         `If you have any questions in the meantime, feel free to reply directly to this email.`,
         ``,
@@ -739,11 +739,11 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: auto; padding: 32px 24px; border: 1px solid #fed7aa; border-radius: 18px; background: #ffffff;">
           <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 24px; font-weight: 800; color: #ff751f; letter-spacing: -0.5px;">ZENSOS</span>
-            <span style="background: #fff7ed; color: #ea580c; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; border: 1px solid #ffedd5; text-transform: uppercase; letter-spacing: 0.05em;">Appointment Confirmed</span>
+            <span style="background: #fff7ed; color: #ea580c; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; border: 1px solid #ffedd5; text-transform: uppercase; letter-spacing: 0.05em;">Demo Confirmed</span>
           </div>
 
           <h1 style="color: #0b183f; font-size: 22px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">
-            Thank you for booking an appointment!
+            Thank you for booking a demo!
           </h1>
 
           <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
@@ -751,12 +751,12 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
           </p>
 
           <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
-            We have successfully received your appointment request. <strong>Our team will reach out to you shortly</strong> to schedule your personalized demo, discuss your business goals, and guide you through launching your online store.
+            We have successfully received your demo request. <strong>Our team will reach out to you shortly</strong> to schedule your personalized demo, discuss your business goals, and guide you through launching your online store.
           </p>
 
           <div style="background: #fff7f0; border: 1px solid #fed7aa; border-radius: 14px; padding: 18px; margin-bottom: 24px;">
             <p style="margin: 0 0 10px; color: #c2410c; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-              Your Request Summary
+              Your Demo Request Summary
             </p>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <tr>
@@ -796,9 +796,9 @@ async function sendAppointmentNotificationEmail({ name, email, phone, createdAt 
         "X-Auto-Response-Suppress": "OOF, AutoReply",
       },
     });
-    console.log(`[mailer] Appointment thank-you email sent successfully to ${email}`);
+    console.log(`[mailer] Demo thank-you email sent successfully to ${email}`);
   } catch (err) {
-    console.error(`[mailer] Failed to send appointment thank-you email to ${email}:`, err?.message || err);
+    console.error(`[mailer] Failed to send demo thank-you email to ${email}:`, err?.message || err);
   }
 }
 

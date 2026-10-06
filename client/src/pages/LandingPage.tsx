@@ -241,15 +241,20 @@ export function LandingPage() {
                 Start for Free
                 <svg className="transition-transform group-hover:translate-x-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
-                            <button onClick={() => scrollTo("pricing")}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
-                style={{ borderColor: "rgba(255,255,255,0.25)" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                Get Started
+                            <button
+                onClick={() => scrollTo("pricing")}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10 sm:w-auto cursor-pointer"
+                style={{ borderColor: "rgba(255,255,255,0.25)" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                  <line x1="7" y1="7" x2="7.01" y2="7" />
+                </svg>
+                View Pricing
               </button>
             </div>
 
-            {/* Book an Appointment Button */}
+            {/* Book a Demo Button */}
             <div className="mt-4 flex flex-col items-center sm:flex-row lg:justify-start">
               <button
                 type="button"
@@ -265,7 +270,7 @@ export function LandingPage() {
                 <svg className="h-5 w-5 text-orange-400 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>Book an Appointment</span>
+                <span>Book a Demo</span>
               </button>
             </div>
 
