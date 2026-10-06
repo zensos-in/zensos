@@ -9,7 +9,7 @@ const {
 const router = express.Router();
 
 // Folders that are safe to allow without authentication (registration uploads)
-const PUBLIC_ALLOWED_FOLDERS = new Set(["kyc", "uploads", "logos", "products", "banners", "favicons"]);
+const PUBLIC_ALLOWED_FOLDERS = new Set(["kyc", "uploads", "logos", "products", "banners", "favicons", "trust-badges", "badges"]);
 
 /**
  * POST /api/upload/presigned-url/public

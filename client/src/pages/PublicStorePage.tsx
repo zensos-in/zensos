@@ -2310,6 +2310,52 @@ rzp.open(); } catch (err: any) {
         </section>
       );
     })()}
+
+    {/* ════════════════════ TRUST BADGES AUTO-SCROLLING SECTION ════════════════════ */}
+    {Array.isArray(seller.trustBadges) && seller.trustBadges.some(b => Boolean(b && (typeof b === "string" ? String(b).trim() : (b as any).imageUrl?.trim()))) && (() => {
+      const validBadges: { imageUrl: string; title: string }[] = (seller.trustBadges || [])
+        .filter(b => Boolean(b && (typeof b === "string" ? String(b).trim() : (b as any).imageUrl?.trim())))
+        .map(b => (typeof b === "string" ? { imageUrl: String(b).trim(), title: "" } : { imageUrl: String((b as any).imageUrl || "").trim(), title: String((b as any).title || "").trim() }))
+        .slice(0, 10);
+
+      if (validBadges.length === 0) return null;
+
+      // Duplicate items to guarantee seamless infinite marquee loop
+      const marqueeList = validBadges.length < 4
+        ? [...validBadges, ...validBadges, ...validBadges, ...validBadges]
+        : [...validBadges, ...validBadges];
+
+      return (
+        <section className="mx-auto my-6 max-w-7xl px-3.5 sm:px-6">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-r from-white/90 via-slate-50/70 to-white/90 py-4 sm:py-5 shadow-xs backdrop-blur-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-900/80 dark:to-slate-950">
+            {/* Soft gradient edge fades */}
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-10 sm:w-16 bg-gradient-to-r from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-10 sm:w-16 bg-gradient-to-l from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
+
+            <div className="animate-trust-marquee items-center gap-8 sm:gap-14 px-4 select-none">
+              {marqueeList.map((badge, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-center shrink-0 px-2 group cursor-default transition-transform duration-200 hover:scale-105"
+                >
+                  <div className="flex h-10 sm:h-12 md:h-14 w-auto max-w-[130px] sm:max-w-[160px] md:max-w-[190px] items-center justify-center">
+                    <img
+                      src={normalizeImageUrl(badge.imageUrl)}
+                      alt="Trust Badge"
+                      className="max-h-full max-w-full object-contain filter drop-shadow-xs"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      );
+    })()}
     <footer className="space-y-3 py-4 text-center text-xs text-slate-400">
       {(seller.socialLinks?.some((s) => String(s.url || "").trim() && s.platform !== "Other") || seller.whatsappNumber || seller.callNumber) && (
         <div className="space-y-2.5">

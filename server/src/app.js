@@ -116,4 +116,15 @@ app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });
 
+// Global error handler
+app.use((err, _req, res, _next) => {
+  console.error("[Global Error Handler]:", err);
+  if (err?.message === "Not allowed by CORS") {
+    return res.status(403).json({ message: "Not allowed by CORS" });
+  }
+  return res.status(err?.status || 500).json({
+    message: err?.message || "Internal server error",
+  });
+});
+
 module.exports = app;

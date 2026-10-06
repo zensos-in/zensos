@@ -16,6 +16,7 @@ import { DashboardSubscriptionWidget } from "../components/DashboardSubscription
 import { ComplimentaryOfferWidget } from "../components/dashboard/ComplimentaryOfferWidget";
 import { PricingDrawer } from "../components/PricingDrawer";
 import { ShippingTab } from "../components/ShippingTab";
+import { TrustBadgesTab } from "../components/TrustBadgesTab";
 import { ShipmentTrackingModal } from "../components/ShipmentTrackingModal";
 import { BUSINESS_CATEGORY_OPTIONS } from "../constants/businessCategories";
 import { DEFAULT_POLICY_CONTENT } from "../constants/policyDefaults";
@@ -36,7 +37,7 @@ import {
   productMatchesCategory,
 } from "../utils/productCategories";
 
-type Tab = "dashboard" | "store" | "products" | "inventory" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
+type Tab = "dashboard" | "store" | "trustBadges" | "products" | "inventory" | "orders" | "shipping" | "reports" | "earnings" | "profile" | "policies";
 const PAN_PATTERN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 function normalizePan(value: string) {
@@ -1500,6 +1501,7 @@ export function DashboardPage() {
   const tabs: { key: Tab; label: string; icon: Parameters<typeof AppIcon>[0]["name"] }[] = [
     { key: "dashboard", label: t("nav.dashboard", "Dashboard"), icon: "dashboard" },
     { key: "store", label: t("nav.store", "Store Options"), icon: "store" },
+    { key: "trustBadges", label: t("nav.trustBadges", "Trust Badges"), icon: "badge" },
     { key: "products", label: t("nav.products", "Products"), icon: "products" },
     ...(hasInventoryProducts
       ? [{ key: "inventory" as Tab, label: "Inventory", icon: "inventory" as const }]
@@ -2334,6 +2336,16 @@ export function DashboardPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ══════════════════════════════════════ TAB: TRUST BADGES ══ */}
+      {tab === "trustBadges" && (
+        <TrustBadgesTab
+          initialBadges={seller?.trustBadges || []}
+          onSaveSuccess={() => {
+            void refreshProfile();
+          }}
+        />
       )}
 
       {/* ══════════════════════════════════════ TAB: PRODUCTS ══ */}

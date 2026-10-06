@@ -22,6 +22,11 @@ export interface Banner {
   title?: string;
 }
 
+export interface TrustBadge {
+  imageUrl: string;
+  title?: string;
+}
+
 export interface CouponCode {
   code: string;
   discountPercentage: number;
@@ -131,6 +136,7 @@ export interface Seller {
   callNumber: string;
   socialLinks: SocialLink[];
   banners: Banner[];
+  trustBadges?: TrustBadge[];
   instagramReels?: string[];
   couponCodes?: CouponCode[];
   categories: string[];

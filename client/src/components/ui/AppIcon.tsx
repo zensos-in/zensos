@@ -55,7 +55,8 @@ type AppIconName =
   | "shipping"
   | "payments"
   | "inventory"
-  | "sparkles";
+  | "sparkles"
+  | "badge";
 
 type IconProps = {
   className?: string;
@@ -453,6 +454,12 @@ const iconMap: Record<AppIconName, (props: IconProps) => ReactElement> = {
     <IconBase className={className}>
       <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />
       <path d="M5 3v4M3 5h4M19 17v4M17 19h4" />
+    </IconBase>
+  ),
+  badge: ({ className }) => (
+    <IconBase className={className}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
     </IconBase>
   ),
 };

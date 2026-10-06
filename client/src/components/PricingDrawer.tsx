@@ -247,7 +247,7 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
         >
           {/* Drawer Header */}
           <div
-            className="flex flex-col sm:flex-row sm:items-center justify-between px-7 py-5 shrink-0 border-b border-slate-100 dark:border-slate-800 gap-4"
+            className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-7 py-4 sm:py-5 shrink-0 border-b border-slate-100 dark:border-slate-800 gap-3 sm:gap-4"
             style={{ background: "#fff7f0" }}
           >
             <div>
@@ -310,7 +310,7 @@ export function PricingDrawer({ open, onClose }: PricingDrawerProps) {
 
           {/* Scrollable pricing cards */}
           <div
-            className="flex-1 overflow-y-auto px-7 py-6"
+            className="flex-1 overflow-y-auto px-4 sm:px-7 py-4 sm:py-6"
             style={{ background: "#fff7f0" }}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">

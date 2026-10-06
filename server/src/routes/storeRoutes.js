@@ -44,6 +44,7 @@ function withPolicyDefaults(sellerDoc) {
   return {
     ...seller,
     trial,
+    trustBadges: seller.trustBadges || [],
     instagramReels: isBusiness ? (seller.instagramReels || []) : [],
     couponCodes: isBusiness ? (seller.couponCodes || []) : [],
     ...getPolicyContent(seller),
@@ -195,6 +196,7 @@ router.put("/options", auth, checkSubscription, async (req, res) => {
   try {
     const {
       banners,
+      trustBadges,
       socialLinks,
       instagramReels,
       couponCodes,
@@ -227,6 +229,20 @@ router.put("/options", auth, checkSubscription, async (req, res) => {
         });
       }
       seller.banners = banners;
+    }
+    if (Array.isArray(trustBadges)) {
+      if (trustBadges.length > 10) {
+        return res.status(400).json({
+          message: "You can upload a maximum of 10 trust badges."
+        });
+      }
+      seller.trustBadges = trustBadges
+        .filter((b) => b && (typeof b === "string" ? Boolean(b.trim()) : Boolean(b.imageUrl && String(b.imageUrl).trim())))
+        .map((b) => (typeof b === "string" ? { imageUrl: b.trim(), title: "" } : {
+          imageUrl: String(b.imageUrl || "").trim(),
+          title: String(b.title || "").trim(),
+        }))
+        .slice(0, 10);
     }
     if (Array.isArray(instagramReels)) {
       if (seller.currentPlan !== "BUSINESS") {
@@ -440,6 +456,9 @@ router.post("/confirm-delete", auth, async (req, res) => {
     await Product.deleteMany({ seller: seller._id });
 
     seller.banners = [];
+    seller.trustBadges = [];
+    seller.instagramReels = [];
+    seller.couponCodes = [];
     seller.socialLinks = [];
     seller.categories = [];
     seller.deliveryMode = "always_free";

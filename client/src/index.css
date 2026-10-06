@@ -238,3 +238,23 @@ html.dark select {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Trust Badges Continuous Marquee ── */
+@keyframes trustBadgesMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-trust-marquee {
+  display: flex;
+  width: max-content;
+  animation: trustBadgesMarquee 28s linear infinite;
+}
+
+.animate-trust-marquee:hover {
+  animation-play-state: paused;
+}

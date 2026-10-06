@@ -30,6 +30,14 @@ const couponCodeSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const trustBadgeSchema = new mongoose.Schema(
+  {
+    imageUrl: { type: String, trim: true },
+    title: { type: String, trim: true, default: "" },
+  },
+  { _id: false }
+);
+
 const sellerSchema = new mongoose.Schema(
   {
     slug: {
@@ -244,6 +252,10 @@ const sellerSchema = new mongoose.Schema(
     },
     banners: {
       type: [bannerSchema],
+      default: [],
+    },
+    trustBadges: {
+      type: [trustBadgeSchema],
       default: [],
     },
     instagramReels: {
