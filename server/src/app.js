@@ -14,6 +14,7 @@ const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const deliveryAddonRoutes = require("./routes/deliveryAddonRoutes");
 const shippingRoutes = require("./routes/shippingRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 
 const app = express();
 
@@ -109,6 +110,7 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/api/upload", uploadRoutes);
 
 app.use("/api/contact", contactRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });

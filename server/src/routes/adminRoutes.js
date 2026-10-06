@@ -2,6 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const Seller = require("../models/Seller");
 const RegistrationLead = require("../models/RegistrationLead");
+const Appointment = require("../models/Appointment");
 const { ADMIN_SELLER_OMIT, toAdminSellerView } = require("../utils/adminSellerView");
 const { decryptObject } = require("../utils/encryption");
 const { sendSubscriptionReminderEmail } = require("../utils/mailer");
@@ -67,6 +68,59 @@ router.get("/registration-leads", adminAuth, async (req, res) => {
     });
   } catch (_error) {
     return res.status(500).json({ message: "Unable to fetch registration leads" });
+  }
+});
+
+router.get("/appointments", adminAuth, async (req, res) => {
+  const requestedPage = Number(req.query.page);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 1000000
+    ? requestedPage : 1;
+  const limit = 50;
+  try {
+    const [appointments, total] = await Promise.all([
+      Appointment.find()
+        .select("name email phone status notes createdAt")
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Appointment.countDocuments(),
+    ]);
+    return res.json({
+      appointments: appointments.map((item) => decryptObject(item, ["name", "email", "phone"])),
+      total,
+      page,
+      limit,
+    });
+  } catch (_error) {
+    return res.status(500).json({ message: "Unable to fetch booked appointments" });
+  }
+});
+
+router.patch("/appointments/:id/status", adminAuth, async (req, res) => {
+  try {
+    const { status, notes } = req.body || {};
+    const updateData = {};
+    if (status && ["pending", "contacted", "completed", "cancelled"].includes(status)) {
+      updateData.status = status;
+    }
+    if (typeof notes === "string") {
+      updateData.notes = notes;
+    }
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true }
+    ).lean();
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+    return res.json({
+      success: true,
+      appointment: decryptObject(appointment, ["name", "email", "phone"]),
+    });
+  } catch (_error) {
+    return res.status(500).json({ message: "Unable to update appointment status" });
   }
 });
 

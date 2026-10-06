@@ -15,6 +15,7 @@ type SortBy = "latest" | "oldest" | "business" | "expiring_soon";
 type AdminTab = "sellers" | "subscriptions" | "offers" | "revenue" | "leads";
 
 type RegistrationLead = { _id: string; email: string; phone: string; createdAt: string };
+type BookedAppointment = { _id: string; name: string; email: string; phone: string; status?: string; notes?: string; createdAt: string };
 
 type PlanFilter = "all" | "TRIAL" | "STARTER" | "GROWTH" | "BUSINESS" | "NONE";
 type SubscriptionStatusFilter = "all" | "ACTIVE" | "EXPIRED" | "PENDING" | "NONE";
@@ -645,6 +646,12 @@ export function AdminPage() {
   const [leadsRefresh, setLeadsRefresh] = useState(0);
   const [leadTotal, setLeadTotal] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(false);
+  const [appointments, setAppointments] = useState<BookedAppointment[]>([]);
+  const [appointmentPage, setAppointmentPage] = useState(1);
+  const [appointmentsRefresh, setAppointmentsRefresh] = useState(0);
+  const [appointmentTotal, setAppointmentTotal] = useState(0);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [updatingAppointmentId, setUpdatingAppointmentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingAllSellers, setLoadingAllSellers] = useState(false);
   const [submittingLogin, setSubmittingLogin] = useState(false);
@@ -816,6 +823,46 @@ export function AdminPage() {
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, adminTab, leadPage, leadsRefresh]);
+
+  useEffect(() => {
+    if (!token || adminTab !== "leads") return;
+    let active = true;
+    setAppointmentsLoading(true);
+    setAppointments([]);
+    api.get<{ appointments: BookedAppointment[]; total: number }>("/admin/appointments", {
+      params: { page: appointmentPage }, headers: authHeaders,
+    }).then((response) => {
+      if (!active) return;
+      setAppointments(response.data.appointments || []);
+      setAppointmentTotal(response.data.total || 0);
+    }).catch(() => {
+      if (active) setError("Unable to fetch booked appointments.");
+    }).finally(() => {
+      if (active) setAppointmentsLoading(false);
+    });
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, adminTab, appointmentPage, appointmentsRefresh]);
+
+  async function handleUpdateAppointmentStatus(id: string, newStatus: string) {
+    if (!token) return;
+    setUpdatingAppointmentId(id);
+    try {
+      const response = await api.patch<{ success: boolean; appointment: BookedAppointment }>(
+        `/admin/appointments/${id}/status`,
+        { status: newStatus },
+        { headers: authHeaders }
+      );
+      setAppointments((prev) =>
+        prev.map((app) => (app._id === id ? { ...app, status: response.data.appointment.status } : app))
+      );
+      setSuccess("Appointment status updated successfully.");
+    } catch {
+      setError("Failed to update appointment status.");
+    } finally {
+      setUpdatingAppointmentId(null);
+    }
+  }
 
   useEffect(() => {
     if (!token) return;
@@ -1377,41 +1424,141 @@ export function AdminPage() {
         ))}
       </div>
 
-      {/* ─── TAB 1: SELLER APPROVALS ─── */}
+      {/* ─── TAB: REGISTRATION LEADS & BOOKED APPOINTMENTS ─── */}
       {adminTab === "leads" && (
-        <Card className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-600 dark:text-slate-300">{leadTotal} captured contacts</p>
-            <Button variant="secondary" onClick={() => setLeadsRefresh((count) => count + 1)} disabled={leadsLoading}>
-              <AppIcon name="refresh" className="text-[13px]" /> Refresh list
-            </Button>
-          </div>
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80">
-                <tr><th className="px-4 py-3">Email</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Captured</th></tr>
-              </thead>
-              <tbody>
-                {leadsLoading ? (
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Loading leads...</td></tr>
-                ) : leads.length === 0 ? (
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">No registration leads found.</td></tr>
-                ) : leads.map((lead) => (
-                  <tr key={lead._id} className="border-t border-slate-200 dark:border-slate-700">
-                    <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{lead.email}</td>
-                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{lead.phone}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{new Date(lead.createdAt).toLocaleString()}</td>
+        <div className="space-y-6">
+          {/* Registration Leads */}
+          <Card className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-slate-100">Registration Leads</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{leadTotal} captured contact{leadTotal === 1 ? "" : "s"}</p>
+              </div>
+              <Button variant="secondary" onClick={() => setLeadsRefresh((count) => count + 1)} disabled={leadsLoading}>
+                <AppIcon name="refresh" className="text-[13px]" /> Refresh list
+              </Button>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80">
+                  <tr><th className="px-4 py-3">Email</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Captured</th></tr>
+                </thead>
+                <tbody>
+                  {leadsLoading ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Loading leads...</td></tr>
+                  ) : leads.length === 0 ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">No registration leads found.</td></tr>
+                  ) : leads.map((lead) => (
+                    <tr key={lead._id} className="border-t border-slate-200 dark:border-slate-700">
+                      <td className="px-4 py-3 text-slate-900 dark:text-slate-100">{lead.email}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{lead.phone}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{new Date(lead.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-end gap-3 text-sm text-slate-600 dark:text-slate-300">
+              <Button variant="secondary" disabled={leadsLoading || leadPage === 1} onClick={() => setLeadPage((page) => page - 1)}>Previous</Button>
+              <span>Page {leadPage} of {Math.max(1, Math.ceil(leadTotal / 50))}</span>
+              <Button variant="secondary" disabled={leadsLoading || leadPage * 50 >= leadTotal} onClick={() => setLeadPage((page) => page + 1)}>Next</Button>
+            </div>
+          </Card>
+
+          {/* Booked Appointments */}
+          <Card className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-bold uppercase text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/40 dark:text-orange-300">
+                  <span>📅</span> Appointments
+                </div>
+                <h2 className="mt-1 font-heading text-lg font-bold text-slate-900 dark:text-slate-100">Booked Appointments</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{appointmentTotal} booked appointment{appointmentTotal === 1 ? "" : "s"} from landing page</p>
+              </div>
+              <Button variant="secondary" onClick={() => setAppointmentsRefresh((count) => count + 1)} disabled={appointmentsLoading}>
+                <AppIcon name="refresh" className="text-[13px]" /> Refresh appointments
+              </Button>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="min-w-full min-w-[680px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800/80">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Phone</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Booked At</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-end gap-3 text-sm text-slate-600 dark:text-slate-300">
-            <Button variant="secondary" disabled={leadsLoading || leadPage === 1} onClick={() => setLeadPage((page) => page - 1)}>Previous</Button>
-            <span>Page {leadPage} of {Math.max(1, Math.ceil(leadTotal / 50))}</span>
-            <Button variant="secondary" disabled={leadsLoading || leadPage * 50 >= leadTotal} onClick={() => setLeadPage((page) => page + 1)}>Next</Button>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {appointmentsLoading ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading booked appointments...</td></tr>
+                  ) : appointments.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No booked appointments found.</td></tr>
+                  ) : appointments.map((app) => (
+                    <tr key={app._id} className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{app.name}</td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <a href={`tel:${app.phone}`} className="font-mono text-orange-600 hover:underline dark:text-orange-400">{app.phone}</a>
+                      </td>
+                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                        <a href={`mailto:${app.email}`} className="text-sky-600 hover:underline dark:text-sky-400">{app.email}</a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={app.status || "pending"}
+                          disabled={updatingAppointmentId === app._id}
+                          onChange={(e) => handleUpdateAppointmentStatus(app._id, e.target.value)}
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-sm focus:outline-none ${
+                            app.status === "completed"
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : app.status === "contacted"
+                              ? "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300"
+                              : app.status === "cancelled"
+                              ? "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                              : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                          }`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{new Date(app.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <a
+                            href={`https://wa.me/${app.phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            title="Chat on WhatsApp"
+                          >
+                            WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${app.phone}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            title="Call"
+                          >
+                            Call
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-end gap-3 text-sm text-slate-600 dark:text-slate-300">
+              <Button variant="secondary" disabled={appointmentsLoading || appointmentPage === 1} onClick={() => setAppointmentPage((page) => page - 1)}>Previous</Button>
+              <span>Page {appointmentPage} of {Math.max(1, Math.ceil(appointmentTotal / 50))}</span>
+              <Button variant="secondary" disabled={appointmentsLoading || appointmentPage * 50 >= appointmentTotal} onClick={() => setAppointmentPage((page) => page + 1)}>Next</Button>
+            </div>
+          </Card>
+        </div>
       )}
 
       {adminTab === "sellers" ? (

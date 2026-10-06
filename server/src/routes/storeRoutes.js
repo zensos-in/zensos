@@ -39,9 +39,13 @@ function withPolicyDefaults(sellerDoc) {
     remainingDays: trialState.remainingDays,
   };
 
+  const isBusiness = seller.currentPlan === "BUSINESS";
+
   return {
     ...seller,
     trial,
+    instagramReels: isBusiness ? (seller.instagramReels || []) : [],
+    couponCodes: isBusiness ? (seller.couponCodes || []) : [],
     ...getPolicyContent(seller),
   };
 }
@@ -192,6 +196,8 @@ router.put("/options", auth, checkSubscription, async (req, res) => {
     const {
       banners,
       socialLinks,
+      instagramReels,
+      couponCodes,
       whatsappNumber,
       callNumber,
       businessLogo,
@@ -221,6 +227,40 @@ router.put("/options", auth, checkSubscription, async (req, res) => {
         });
       }
       seller.banners = banners;
+    }
+    if (Array.isArray(instagramReels)) {
+      if (seller.currentPlan !== "BUSINESS") {
+        return res.status(403).json({
+          message: "Instagram Reels Integration is an exclusive feature for the Business plan (₹2499). Please upgrade your plan to access this feature."
+        });
+      }
+      seller.instagramReels = instagramReels
+        .map((link) => String(link || "").trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+    if (Array.isArray(couponCodes)) {
+      if (seller.currentPlan !== "BUSINESS") {
+        return res.status(403).json({
+          message: "Coupon Code Integration is an exclusive feature for the Business plan (₹2499). Please upgrade your plan to access this feature."
+        });
+      }
+      const seenCodes = new Set();
+      const sanitizedCoupons = [];
+      for (const c of couponCodes) {
+        const code = String(c?.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20);
+        const discountPercentage = Math.min(100, Math.max(1, Math.round(Number(c?.discountPercentage) || 0)));
+        if (code && discountPercentage > 0 && !seenCodes.has(code)) {
+          seenCodes.add(code);
+          sanitizedCoupons.push({
+            code,
+            discountPercentage,
+            active: c?.active !== false,
+          });
+        }
+        if (sanitizedCoupons.length >= 5) break;
+      }
+      seller.couponCodes = sanitizedCoupons;
     }
     if (Array.isArray(socialLinks)) seller.socialLinks = socialLinks;
     if (typeof whatsappNumber === "string")

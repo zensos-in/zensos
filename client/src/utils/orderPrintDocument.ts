@@ -112,6 +112,8 @@ export function buildOrderPrintHtml(order: Order, seller: Seller | null | undefi
     ? `<div class="note-box"><div class="section-label">Customer Note</div><p>${escapeHtml(order.note)}</p></div>`
     : "";
 
+  const itemsSubtotal = order.amount + (order.discountAmount || 0);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -380,8 +382,12 @@ export function buildOrderPrintHtml(order: Order, seller: Seller | null | undefi
     <table class="summary-table">
       <tr>
         <td>Items Subtotal</td>
-        <td>₹${order.amount}</td>
+        <td>₹${itemsSubtotal}</td>
       </tr>
+      ${order.couponCode ? `<tr>
+        <td style="color:#047857; font-weight:600;">Coupon (${escapeHtml(order.couponCode)}${order.discountPercentage ? ` · ${order.discountPercentage}% OFF` : ""})</td>
+        <td style="color:#047857; font-weight:600;">-₹${order.discountAmount || 0}</td>
+      </tr>` : ""}
       <tr>
         <td>Delivery Charge</td>
         <td>₹${order.deliveryCharge || 0}</td>

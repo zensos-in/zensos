@@ -454,8 +454,30 @@ router.post("/", async (req, res) => {
         itemRevenuePaise += lineTotalPaise;
       }
 
-      const commissionPaise = calculatePlatformFeePaise(itemRevenuePaise, platformFeePercentage);
-      const totalSubOrderPaise = itemRevenuePaise + deliveryChargePaise;
+      const inputCouponCode = String(
+        (req.body.coupons && req.body.coupons[sellerIdStr]) ||
+        req.body.couponCode ||
+        ""
+      ).trim().toUpperCase();
+
+      let discountPaise = 0;
+      let discountPercentage = 0;
+      let appliedCouponCode = "";
+
+      if (inputCouponCode && seller.currentPlan === "BUSINESS" && Array.isArray(seller.couponCodes)) {
+        const matchedCoupon = seller.couponCodes.find(
+          (c) => c.active !== false && String(c.code || "").trim().toUpperCase() === inputCouponCode
+        );
+        if (matchedCoupon && Number(matchedCoupon.discountPercentage) > 0) {
+          discountPercentage = Number(matchedCoupon.discountPercentage);
+          appliedCouponCode = matchedCoupon.code;
+          discountPaise = Math.round((itemRevenuePaise * discountPercentage) / 100);
+        }
+      }
+
+      const discountedRevenuePaise = Math.max(0, itemRevenuePaise - discountPaise);
+      const commissionPaise = calculatePlatformFeePaise(discountedRevenuePaise, platformFeePercentage);
+      const totalSubOrderPaise = discountedRevenuePaise + deliveryChargePaise;
       const vendorAmountPaise = totalSubOrderPaise - commissionPaise;
       grandTotalPaise += totalSubOrderPaise;
 
@@ -494,15 +516,18 @@ router.post("/", async (req, res) => {
         shippingCustomerName: parentOrder.shippingCustomerName,
         shippingCustomerPhone: parentOrder.shippingCustomerPhone,
         note: parentOrder.note,
-        amount: itemRevenuePaise / 100, // keep decimal representation for existing UI compatibility
+        amount: discountedRevenuePaise / 100, // keep decimal representation for existing UI compatibility
         quantity: lines.reduce((sum, l) => sum + l.quantity, 0),
         deliveryCharge: inputDeliveryCharge,
+        couponCode: appliedCouponCode,
+        discountPercentage,
+        discountAmount: discountPaise / 100,
         selectedVariants: lines[0].selectedVariants,
         paymentMethod: normalizedPaymentMethod,
         paymentStatus: "pending",
         commissionAmountPaise: commissionPaise,
         platformFeePercentage,
-        productAmountPaise: itemRevenuePaise,
+        productAmountPaise: discountedRevenuePaise,
         deliveryChargePaise,
         platformFeePaise: commissionPaise,
         grossAmountPaise: totalSubOrderPaise,
@@ -549,6 +574,31 @@ router.post("/", async (req, res) => {
         amount: grandTotalPaise / 100,
         currency: "INR",
         paymentMethod: "cod",
+        subOrders: createdSubOrders,
+      });
+    }
+
+    if (grandTotalPaise === 0) {
+      parentOrder.razorpayOrderId = `free_${parentOrder._id}`;
+      parentOrder.totalAmountPaise = 0;
+      parentOrder.paymentStatus = "paid";
+      parentOrder.subOrders = createdSubOrders.map((o) => o._id);
+      await parentOrder.save();
+
+      for (const subOrder of createdSubOrders) {
+        subOrder.paymentStatus = "paid";
+        await subOrder.save();
+        await deductInventoryForOrder(subOrder);
+        await updateOrderProductReportsStatus(subOrder._id, "paid");
+      }
+
+      await trySendOrderConfirmationForParentOrder(parentOrder._id);
+
+      return res.status(201).json({
+        parentOrderId: parentOrder._id,
+        amount: 0,
+        currency: "INR",
+        paymentMethod: "prepaid",
         subOrders: createdSubOrders,
       });
     }

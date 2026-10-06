@@ -21,6 +21,15 @@ const bannerSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const couponCodeSchema = new mongoose.Schema(
+  {
+    code: { type: String, trim: true, uppercase: true },
+    discountPercentage: { type: Number, min: 1, max: 100 },
+    active: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
 const sellerSchema = new mongoose.Schema(
   {
     slug: {
@@ -235,6 +244,14 @@ const sellerSchema = new mongoose.Schema(
     },
     banners: {
       type: [bannerSchema],
+      default: [],
+    },
+    instagramReels: {
+      type: [String],
+      default: [],
+    },
+    couponCodes: {
+      type: [couponCodeSchema],
       default: [],
     },
     categories: {

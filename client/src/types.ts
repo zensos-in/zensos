@@ -22,6 +22,12 @@ export interface Banner {
   title?: string;
 }
 
+export interface CouponCode {
+  code: string;
+  discountPercentage: number;
+  active?: boolean;
+}
+
 export interface ProductVariant {
   label: string;   // "Size", "Color", etc.
   options: string[]; // ["S","M","L"]
@@ -125,6 +131,8 @@ export interface Seller {
   callNumber: string;
   socialLinks: SocialLink[];
   banners: Banner[];
+  instagramReels?: string[];
+  couponCodes?: CouponCode[];
   categories: string[];
   deliveryMode: "always_free" | "flat_rate";
   defaultDeliveryCharge: number;
@@ -294,6 +302,9 @@ export interface Order {
   amount: number;
   quantity: number;
   deliveryCharge: number;
+  couponCode?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
   selectedVariants: Record<string, string>;
   paymentMethod: PaymentMethod;
   paymentStatus: OrderStatus;

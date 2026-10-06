@@ -27,7 +27,7 @@ import {
   type AddressParts,
   type PhoneParts,
 } from "../utils/contactFields";
-import type { Order, OrderStatus, Product, SocialLink, Banner, PaymentMode } from "../types";
+import type { Order, OrderStatus, Product, SocialLink, Banner, PaymentMode, CouponCode } from "../types";
 import { compressImage } from "../utils/imageCompressor";
 import { uploadToR2 } from "../utils/r2Uploader";
 import {
@@ -357,6 +357,7 @@ export function DashboardPage() {
 
   const planLimits = useMemo(() => getPlanLimits(seller?.currentPlan), [seller?.currentPlan]);
   const { maxProducts, maxBanners, maxVariants } = planLimits;
+  const isBusinessPlan = (seller?.currentPlan || "").toUpperCase() === "BUSINESS";
 
   const [tab, setTab] = useState<Tab>("dashboard");
   const [products, setProducts] = useState<Product[]>([]);
@@ -444,6 +445,11 @@ export function DashboardPage() {
   const [newSocialUrl, setNewSocialUrl] = useState("");
   const [isSavingStore, setIsSavingStore] = useState(false);
   const [isPublishingStore, setIsPublishingStore] = useState(false);
+  const [instagramReels, setInstagramReels] = useState<string[]>(seller?.instagramReels || []);
+  const [newReelUrl, setNewReelUrl] = useState("");
+  const [couponCodes, setCouponCodes] = useState<CouponCode[]>(seller?.couponCodes || []);
+  const [newCouponCode, setNewCouponCode] = useState("");
+  const [newCouponDiscount, setNewCouponDiscount] = useState<number>(10);
 
   // ── Categories
   const [categories, setCategories] = useState<string[]>(seller?.categories || []);
@@ -558,6 +564,8 @@ export function DashboardPage() {
     setPrivacyPolicy(seller.privacyPolicy || DEFAULT_POLICY_CONTENT.privacyPolicy);
     setReturnRefundPolicy(seller.returnRefundPolicy || DEFAULT_POLICY_CONTENT.returnRefundPolicy);
     setTermsAndConditions(seller.termsAndConditions || DEFAULT_POLICY_CONTENT.termsAndConditions);
+    setInstagramReels(seller.instagramReels || []);
+    setCouponCodes(seller.couponCodes || []);
   }, [seller]);
 
   function loadData() {
@@ -895,6 +903,8 @@ export function DashboardPage() {
         whatsappNumber: formatPhone(storeWhatsapp),
         callNumber: formatPhone(storeCall),
         banners, socialLinks, categories,
+        instagramReels: isBusinessPlan ? instagramReels.map(r => r.trim()).filter(Boolean) : undefined,
+        couponCodes: isBusinessPlan ? couponCodes : undefined,
         deliveryMode: storeDeliveryMode,
         defaultDeliveryCharge: Math.max(0, Number(storeDeliveryCharge) || 0),
         freeDeliveryThreshold: Math.max(0, Number(storeFreeDeliveryThreshold) || 0),
@@ -1857,6 +1867,291 @@ export function DashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* ── Sub-section 3: Instagram Reels (₹2499 Plan Only) ── */}
+            {isBusinessPlan && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">📸</span>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Instagram Reels</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold border ${
+                    instagramReels.length >= 5
+                      ? "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/50 dark:bg-purple-950/40 dark:text-purple-300"
+                      : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}>
+                    {instagramReels.length}/5
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Add up to 5 Instagram Reel links. These reels will play side-by-side on your public store page directly above the footer.
+                </p>
+
+                {/* List of added reels */}
+                {instagramReels.length > 0 && (
+                  <div className="space-y-2">
+                    {instagramReels.map((reelUrl, i) => (
+                      <div
+                        key={`${reelUrl}-${i}`}
+                        className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-800/60 sm:flex-row sm:items-center"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400 text-white shadow-sm">
+                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            Reel {i + 1}
+                          </p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                            {reelUrl}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-700 dark:border-purple-900/50 dark:bg-purple-950/40 dark:text-purple-300">
+                            Position {i + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setInstagramReels(prev => prev.filter((_, j) => j !== i))}
+                            className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Input with + Add button (up to max 5) */}
+                {instagramReels.length < 5 ? (
+                  <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Instagram Reel Link</span>
+                      <input
+                        type="url"
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                        placeholder="https://www.instagram.com/reel/..."
+                        value={newReelUrl}
+                        onChange={e => setNewReelUrl(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (newReelUrl.trim() && instagramReels.length < 5) {
+                              setInstagramReels(prev => [...prev, newReelUrl.trim()]);
+                              setNewReelUrl("");
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newReelUrl.trim() && instagramReels.length < 5) {
+                          setInstagramReels(prev => [...prev, newReelUrl.trim()]);
+                          setNewReelUrl("");
+                        }
+                      }}
+                      className="w-full rounded-lg bg-[#ff751f] px-3 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition"
+                    >
+                      + Add Reel Link
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-700 font-semibold text-center dark:border-purple-900/50 dark:bg-purple-950/40 dark:text-purple-300">
+                    🚫 Maximum 5 Instagram reels reached. Remove one to add another.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Sub-section: Discount Coupon Codes (₹2499 Business Plan Exclusive) ── */}
+            {isBusinessPlan && (
+              <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/60 via-orange-50/30 to-white p-4 space-y-3 dark:border-amber-900/40 dark:bg-gradient-to-br dark:from-amber-950/30 dark:via-slate-900/40 dark:to-slate-900/60">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🏷️</span>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Discount Coupon Codes</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold border ${
+                    couponCodes.length >= 5
+                      ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300"
+                      : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                  }`}>
+                    {couponCodes.length}/5
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Create up to 5 discount coupons for your store. Customers can apply these codes during checkout for instant overall bill discounts.
+                </p>
+
+                {/* List of existing coupons */}
+                {couponCodes.length > 0 && (
+                  <div className="space-y-2">
+                    {couponCodes.map((coupon, i) => (
+                      <div
+                        key={`${coupon.code}-${i}`}
+                        className="flex flex-col gap-2 rounded-xl border border-amber-200/80 bg-white p-2.5 dark:border-slate-700 dark:bg-slate-800/60 sm:flex-row sm:items-center"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-500 text-white shadow-sm font-black text-xs">
+                          {coupon.discountPercentage}%
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black tracking-wider text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                              {coupon.code}
+                            </span>
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                              coupon.active !== false
+                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200"
+                            }`}>
+                              {coupon.active !== false ? "Active" : "Paused"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {coupon.discountPercentage}% flat discount on overall cart total
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCouponCodes(prev =>
+                                prev.map((c, idx) =>
+                                  idx === i ? { ...c, active: c.active === false ? true : false } : c
+                                )
+                              );
+                            }}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-100 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          >
+                            {coupon.active !== false ? "Pause" : "Activate"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCouponCodes(prev => prev.filter((_, j) => j !== i))}
+                            className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add coupon form */}
+                {couponCodes.length < 5 ? (
+                  <div className="space-y-3 rounded-xl border border-amber-200/80 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <label className="block space-y-1">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Coupon Code</span>
+                        <input
+                          type="text"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono font-bold uppercase tracking-wider outline-none transition focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                          placeholder="e.g. FESTIVE20"
+                          value={newCouponCode}
+                          onChange={e => setNewCouponCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
+                        />
+                      </label>
+                      <label className="block space-y-1">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Discount Percentage (%)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold outline-none transition focus:border-orange-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                          placeholder="e.g. 20"
+                          value={newCouponDiscount || ""}
+                          onChange={e => {
+                            const val = Number(e.target.value);
+                            setNewCouponDiscount(Math.min(100, Math.max(1, val)));
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    {/* Quick presets & generator buttons */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>⚡ Quick discount presets:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[10, 15, 20, 25, 50].map(pct => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => setNewCouponDiscount(pct)}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                              newCouponDiscount === pct
+                                ? "bg-amber-500 text-white shadow-sm"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                            }`}
+                          >
+                            {pct}% OFF
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-700/60">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                        <span>✨ Quick Generate Code:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(() => {
+                          const base = (seller?.slug || seller?.businessName || "DEAL")
+                            .replace(/[^a-zA-Z0-9]/g, "")
+                            .toUpperCase()
+                            .slice(0, 6) || "SAVE";
+                          return [10, 20, 50].map(pct => (
+                            <button
+                              key={pct}
+                              type="button"
+                              onClick={() => {
+                                setNewCouponCode(`${base}${pct}`);
+                                setNewCouponDiscount(pct);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50/70 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100 transition dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-300"
+                            >
+                              <span>✨</span> {base}{pct} ({pct}%)
+                            </button>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={!newCouponCode.trim() || !newCouponDiscount || couponCodes.length >= 5}
+                      onClick={() => {
+                        const cleanCode = newCouponCode.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+                        if (!cleanCode) return;
+                        if (couponCodes.some(c => c.code === cleanCode)) {
+                          setError(`Coupon code '${cleanCode}' already exists.`);
+                          return;
+                        }
+                        const discount = Math.min(100, Math.max(1, Number(newCouponDiscount) || 10));
+                        setCouponCodes(prev => [...prev, { code: cleanCode, discountPercentage: discount, active: true }]);
+                        setNewCouponCode("");
+                        setSuccess(`Coupon '${cleanCode}' added. Click 'Save Store Options' below to apply changes.`);
+                      }}
+                      className="w-full rounded-lg bg-gradient-to-r from-amber-500 via-orange-500 to-[#ff751f] px-3 py-2 text-sm font-bold text-white shadow-sm hover:brightness-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      + Add Coupon Code
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 font-semibold text-center dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+                    🚫 Maximum 5 coupon codes reached. Remove or edit an existing one.
+                  </div>
+                )}
+              </div>
+            )}
           </article>
 
           {/* RIGHT CARD — Delivery + Contact & Social Links */}
@@ -3898,7 +4193,12 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="rounded-xl border border-slate-200 overflow-hidden">
-                {[{ l: "Quantity", v: viewingOrder.quantity }, { l: "Amount Total", v: `₹${viewingOrder.amount}` }, { l: "Delivery Charge", v: `₹${viewingOrder.deliveryCharge || 0}` }].map(r => (
+                {[
+                  { l: "Quantity", v: viewingOrder.quantity },
+                  { l: "Items Subtotal", v: `₹${viewingOrder.amount + (viewingOrder.discountAmount || 0)}` },
+                  ...(viewingOrder.couponCode ? [{ l: `Coupon Discount (${viewingOrder.couponCode}${viewingOrder.discountPercentage ? ` · ${viewingOrder.discountPercentage}% OFF` : ""})`, v: `-₹${viewingOrder.discountAmount || 0}` }] : []),
+                  { l: "Delivery Charge", v: `₹${viewingOrder.deliveryCharge || 0}` },
+                ].map(r => (
                   <div key={r.l} className="flex justify-between px-4 py-2.5 border-b border-slate-100">
                     <span className="text-sm text-slate-600">{r.l}</span><span className="text-sm font-semibold text-slate-800">{r.v}</span>
                   </div>

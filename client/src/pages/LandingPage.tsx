@@ -6,6 +6,7 @@ import addProductsImage from "../assets/Add Products & Product Catelog image.png
 import valueAddedServicesImage from "../assets/Value-added-services1.jpg";
 import orders from "../assets/orders.png";
 import { ComplimentaryOffer } from "../components/offers/ComplimentaryOffer";
+import { BookAppointmentModal } from "../components/BookAppointmentModal";
 
 // ─── Intersection observer hook for scroll animations ───────────────────────
 function useInView(threshold = 0.15) {
@@ -66,6 +67,7 @@ export function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openPlans, setOpenPlans] = useState<Record<string, boolean>>({});
   const [pricingCycle, setPricingCycle] = useState<"monthly" | "quarterly">("monthly");
+  const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
 
   const togglePlanFeatures = (planName: string) => {
     setOpenPlans((prev) => ({
@@ -239,11 +241,31 @@ export function LandingPage() {
                 Start for Free
                 <svg className="transition-transform group-hover:translate-x-1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </button>
-              <button onClick={() => scrollTo("pricing")}
+                            <button onClick={() => scrollTo("pricing")}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-base font-semibold text-white transition-all hover:bg-white/10 sm:w-auto"
                 style={{ borderColor: "rgba(255,255,255,0.25)" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                 Get Started
+              </button>
+            </div>
+
+            {/* Book an Appointment Button */}
+            <div className="mt-4 flex flex-col items-center sm:flex-row lg:justify-start">
+              <button
+                type="button"
+                onClick={() => setAppointmentModalOpen(true)}
+                className="group flex w-full items-center justify-center gap-2.5 rounded-2xl border px-6 py-3.5 text-sm sm:text-base font-bold text-orange-200 shadow-xl transition-all hover:scale-105 hover:border-orange-400 hover:bg-orange-500/20 hover:text-white sm:w-auto active:scale-95 cursor-pointer"
+                style={{
+                  borderColor: "rgba(255, 117, 31, 0.45)",
+                  background: "rgba(255, 117, 31, 0.12)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 4px 20px rgba(255, 117, 31, 0.2)",
+                }}
+              >
+                <svg className="h-5 w-5 text-orange-400 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Book an Appointment</span>
               </button>
             </div>
 
@@ -1305,6 +1327,8 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <BookAppointmentModal isOpen={appointmentModalOpen} onClose={() => setAppointmentModalOpen(false)} />
     </div>
   );
 }

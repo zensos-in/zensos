@@ -698,12 +698,118 @@ async function sendOutOfStockAlert({ email, businessName, productTitle, variantT
   }
 }
 
+async function sendAppointmentNotificationEmail({ name, email, phone, createdAt }) {
+  if (!isSmtpConfigured()) {
+    console.log(`[mailer DEMO MODE] Appointment thank-you email for ${name} to ${email} (${phone})`);
+    return;
+  }
+
+  try {
+    const transporter = getTransporter();
+    const sender = getSender("ZENSOS");
+    const safeName = escapeHtml(name);
+    const dateFormatted = new Date(createdAt || Date.now()).toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+    await transporter.sendMail({
+      from: sender,
+      to: email,
+      subject: `Thank you for booking an appointment with ZENSOS!`,
+      text: [
+        `Hi ${name},`,
+        ``,
+        `Thank you for booking an appointment with ZENSOS. We have received your request!`,
+        `Our team will reach out to you shortly on ${phone} or via email to confirm your preferred time and discuss your online store setup.`,
+        ``,
+        `Appointment Details:`,
+        `- Name: ${name}`,
+        `- Phone: ${phone}`,
+        `- Email: ${email}`,
+        `- Booked On: ${dateFormatted}`,
+        ``,
+        `If you have any questions in the meantime, feel free to reply directly to this email.`,
+        ``,
+        `Best regards,`,
+        `The ZENSOS Team`,
+        `https://zensos.in`,
+      ].join("\n"),
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: auto; padding: 32px 24px; border: 1px solid #fed7aa; border-radius: 18px; background: #ffffff;">
+          <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 24px; font-weight: 800; color: #ff751f; letter-spacing: -0.5px;">ZENSOS</span>
+            <span style="background: #fff7ed; color: #ea580c; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; border: 1px solid #ffedd5; text-transform: uppercase; letter-spacing: 0.05em;">Appointment Confirmed</span>
+          </div>
+
+          <h1 style="color: #0b183f; font-size: 22px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">
+            Thank you for booking an appointment!
+          </h1>
+
+          <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
+            Hi <strong>${safeName}</strong>,
+          </p>
+
+          <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+            We have successfully received your appointment request. <strong>Our team will reach out to you shortly</strong> to schedule your personalized demo, discuss your business goals, and guide you through launching your online store.
+          </p>
+
+          <div style="background: #fff7f0; border: 1px solid #fed7aa; border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+            <p style="margin: 0 0 10px; color: #c2410c; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+              Your Request Summary
+            </p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+              <tr>
+                <td style="padding: 4px 0; color: #64748b; width: 35%;"><strong>Name:</strong></td>
+                <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${safeName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748b;"><strong>Phone:</strong></td>
+                <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${escapeHtml(phone)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748b;"><strong>Email:</strong></td>
+                <td style="padding: 4px 0; color: #0f172a; font-weight: 600;">${escapeHtml(email)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 4px 0; color: #64748b;"><strong>Requested On:</strong></td>
+                <td style="padding: 4px 0; color: #64748b;">${dateFormatted}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 24px;">
+            <a href="https://zensos.in" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 28px; background: linear-gradient(135deg, #ff751f, #ff4500); color: #ffffff; text-decoration: none; font-weight: 700; border-radius: 12px; font-size: 14px; box-shadow: 0 4px 14px rgba(255, 117, 31, 0.35);">
+              Explore ZENSOS Features &rarr;
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0 16px;" />
+
+          <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5; text-align: center;">
+            Need immediate assistance? Reply directly to this email or reach us anytime at <a href="mailto:support@zensos.in" style="color: #ff751f; text-decoration: none;">support@zensos.in</a>.<br />
+            &copy; 2026 ZENSOS. All rights reserved.
+          </p>
+        </div>
+      `,
+      headers: {
+        "X-Auto-Response-Suppress": "OOF, AutoReply",
+      },
+    });
+    console.log(`[mailer] Appointment thank-you email sent successfully to ${email}`);
+  } catch (err) {
+    console.error(`[mailer] Failed to send appointment thank-you email to ${email}:`, err?.message || err);
+  }
+}
+
 module.exports = {
   sendOtpEmail,
   sendOrderConfirmationEmail,
   sendShippingNotificationEmail,
   sendContactEmail,
+  sendAppointmentNotificationEmail,
   sendSubscriptionReminderEmail,
   sendOutOfStockAlert,
 };
+
 
