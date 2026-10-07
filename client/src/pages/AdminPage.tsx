@@ -645,7 +645,7 @@ export function AdminPage() {
   const { t } = useI18n();
   const { showError, showSuccess } = useToast();
   const [token, setToken] = useState<string>(() => localStorage.getItem(ADMIN_TOKEN_KEY) || "");
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("zensos_admin");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<ApprovalStatusFilter>("all");
   const [adminTab, setAdminTab] = useState<AdminTab>("sellers");
