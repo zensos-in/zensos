@@ -258,7 +258,7 @@ function getVariantPriceKey(label: string, option: string) {
 function normalizeImageUrl(url: string) {
   const trimmed = url.trim();
   if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^(?:https?:|\/\/|data:|blob:|\/)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 }
 

@@ -60,7 +60,7 @@ const ADMIN_TOKEN_KEY = "zensos_admin_token";
 function normalizeImageUrl(url: string) {
   const trimmed = String(url || "").trim();
   if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^(?:https?:|\/\/|data:|blob:|\/)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 }
 
@@ -2320,10 +2320,10 @@ rzp.open(); } catch (err: any) {
 
       if (validBadges.length === 0) return null;
 
-      // Duplicate items to guarantee seamless infinite marquee loop
-      const marqueeList = validBadges.length < 4
-        ? [...validBadges, ...validBadges, ...validBadges, ...validBadges]
-        : [...validBadges, ...validBadges];
+      // Duplicate items to guarantee seamless infinite marquee loop across all screen sizes
+      const repeatCount = Math.max(2, Math.ceil(8 / validBadges.length));
+      const evenRepeat = repeatCount % 2 === 0 ? repeatCount : repeatCount + 1;
+      const marqueeList = Array.from({ length: evenRepeat }, () => validBadges).flat();
 
       return (
         <section className="mx-auto my-6 max-w-7xl px-3.5 sm:px-6">
@@ -2338,11 +2338,11 @@ rzp.open(); } catch (err: any) {
                   key={idx}
                   className="flex items-center justify-center shrink-0 px-2 group cursor-default transition-transform duration-200 hover:scale-105"
                 >
-                  <div className="flex h-10 sm:h-12 md:h-14 w-auto max-w-[130px] sm:max-w-[160px] md:max-w-[190px] items-center justify-center">
+                  <div className="flex h-10 sm:h-12 md:h-14 w-auto max-w-[150px] sm:max-w-[190px] md:max-w-[240px] items-center justify-center">
                     <img
                       src={normalizeImageUrl(badge.imageUrl)}
-                      alt="Trust Badge"
-                      className="max-h-full max-w-full object-contain filter drop-shadow-xs"
+                      alt={badge.title || "Trust Badge"}
+                      className="h-full w-auto max-w-full object-contain filter drop-shadow-xs"
                       loading="lazy"
                       onError={(e) => {
                         (e.target as HTMLElement).style.display = "none";
@@ -2402,16 +2402,16 @@ rzp.open(); } catch (err: any) {
           Terms & Conditions
         </button>
       </div>
-      <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3 px-4 max-w-md mx-auto">
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-3 px-4 max-w-xl mx-auto">
         <button
           type="button"
           onClick={() => setShowCustomerLogin(true)}
-          className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-slate-200/90 bg-white/95 px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:scale-95 focus:outline-none dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+          className="group inline-flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white/95 px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-md active:scale-95 focus:outline-none dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 shrink-0 whitespace-nowrap"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-colors group-hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-slate-600">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-colors group-hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-slate-600">
             <AppIcon name="orders" className="text-[14px]" />
           </span>
-          <span>View Past Orders</span>
+          <span className="whitespace-nowrap">View Past Orders</span>
         </button>
         {seller.socialLinks
           ?.filter((s) => s.platform === "Other" && String(s.url || "").trim())
@@ -2424,12 +2424,12 @@ rzp.open(); } catch (err: any) {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ff5400] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/30 hover:brightness-105 active:scale-95 focus:outline-none"
+                className="group inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#ff751f] to-[#ff5400] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/30 hover:brightness-105 active:scale-95 focus:outline-none shrink-0 whitespace-nowrap"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-white transition-colors group-hover:bg-white/30">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white transition-colors group-hover:bg-white/30">
                   <AppIcon name="link" className="text-[14px]" />
                 </span>
-                <span className="truncate max-w-[180px]">{s.title || "Custom Link"}</span>
+                <span className="truncate max-w-[200px] whitespace-nowrap">{s.title || "Custom Link"}</span>
                 <span className="text-[10px] opacity-75 font-normal">↗</span>
               </a>
             );

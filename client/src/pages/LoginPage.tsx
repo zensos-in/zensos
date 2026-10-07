@@ -123,6 +123,46 @@ const PLAN_META: Record<string, { price: string; amountPaise: number; color: str
   },
 };
 
+function getPlanPricing(planName: string, cycle: "MONTHLY" | "QUARTERLY" = "MONTHLY") {
+  if (planName === "TRIAL") {
+    return {
+      baseAmount: 0,
+      originalAmount: 0,
+      gstAmount: 0,
+      totalAmount: 0,
+      displayPrice: "Free",
+      displayOriginal: "",
+      displayCycle: "",
+      perMonthPrice: "Free",
+      totalWithGstText: "Free",
+      cycleLabel: "15-Day Free Trial",
+      isPaid: false,
+    };
+  }
+
+  const monthlyBase = planName === "STARTER" ? 999 : planName === "GROWTH" ? 1499 : planName === "BUSINESS" ? 2499 : 0;
+  const monthlyOriginal = planName === "STARTER" ? 1299 : planName === "GROWTH" ? 1799 : planName === "BUSINESS" ? 2799 : 0;
+  const months = cycle === "QUARTERLY" ? 3 : 1;
+  const baseAmount = monthlyBase * months;
+  const originalAmount = monthlyOriginal * months;
+  const gstAmount = Math.round(baseAmount * 0.18 * 100) / 100;
+  const totalAmount = baseAmount + gstAmount;
+
+  return {
+    baseAmount,
+    originalAmount,
+    gstAmount,
+    totalAmount,
+    displayPrice: `₹${baseAmount.toLocaleString("en-IN")}`,
+    displayOriginal: `₹${originalAmount.toLocaleString("en-IN")}`,
+    displayCycle: cycle === "QUARTERLY" ? "/3 mo" : "/mo",
+    perMonthPrice: `₹${monthlyBase.toLocaleString("en-IN")}/mo`,
+    totalWithGstText: `₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    cycleLabel: cycle === "QUARTERLY" ? "Quarterly (3 Months)" : "Monthly (1 Month)",
+    isPaid: true,
+  };
+}
+
 // ── Razorpay script loader ─────────────────────────────────────────────────────
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -606,7 +646,7 @@ export function LoginPage() {
               amount: amountPaise,
               currency: currency || "INR",
               name: "Zensos",
-              description: `${selectedPlan} Plan Subscription`,
+              description: `${selectedPlan} Plan (${billingCycle === "QUARTERLY" ? "Quarterly · 3 Months" : "Monthly · 1 Month"}) Subscription`,
               order_id: orderId,
               handler: async function (response: any) {
                 try {
@@ -1209,10 +1249,7 @@ export function LoginPage() {
                       {["TRIAL", "STARTER", "GROWTH", "BUSINESS"].map((planName) => {
                         const meta = PLAN_META[planName];
                         const isSelected = selectedPlan === planName;
-                        const isPaid = planName !== "TRIAL";
-                        const months = billingCycle === "QUARTERLY" ? 3 : 1;
-                        const monthlyBase = planName === "STARTER" ? 999 : planName === "GROWTH" ? 1499 : planName === "BUSINESS" ? 2499 : 0;
-                        const displayPrice = isPaid ? `₹${(monthlyBase * months).toLocaleString("en-IN")}${months > 1 ? "/3 mo" : "/mo"}` : "Free";
+                        const pricing = getPlanPricing(planName, billingCycle);
                         const isComplimentaryEligible = billingCycle === "QUARTERLY" && (planName === "GROWTH" || planName === "BUSINESS");
 
                         return (
@@ -1240,26 +1277,51 @@ export function LoginPage() {
                                 </span>
                                 <span className="text-[11px] text-slate-500 mt-0.5">{meta.subtitle}</span>
                               </div>
-                              <div className="flex flex-col items-end gap-1 shrink-0">
-                                <span
-                                  className="text-sm font-black"
-                                  style={{ color: meta.color }}
-                                >
-                                  {displayPrice}
-                                </span>
-                                {isPaid && (
-                                  <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200">
-                                    <span>🔒</span> Pay to activate
+                              <div className="flex flex-col items-end shrink-0">
+                                <div className="flex items-baseline gap-1.5">
+                                  <span
+                                    className="text-base font-black"
+                                    style={{ color: meta.color }}
+                                  >
+                                    {pricing.displayPrice}
+                                    {pricing.displayCycle && (
+                                      <span className="text-[11px] font-semibold text-slate-500">{pricing.displayCycle}</span>
+                                    )}
+                                  </span>
+                                  {pricing.isPaid && (
+                                    <span className="text-xs font-semibold line-through text-slate-400">
+                                      {pricing.displayOriginal}
+                                    </span>
+                                  )}
+                                </div>
+                                {pricing.isPaid ? (
+                                  <span className="text-[10px] font-medium text-slate-500">
+                                    + 18% GST ({pricing.totalWithGstText})
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold text-emerald-600">
+                                    No card required
                                   </span>
                                 )}
                               </div>
                             </div>
 
+                            {/* Quarterly per-month breakdown */}
+                            {billingCycle === "QUARTERLY" && pricing.isPaid && (
+                              <div className="mt-1.5 flex items-center justify-between rounded-lg bg-orange-100/60 px-2 py-1 text-[10px] text-orange-950 font-medium">
+                                <span>Billed quarterly (3 mo)</span>
+                                <span className="font-bold text-orange-700">{pricing.perMonthPrice} effective</span>
+                              </div>
+                            )}
+
                             {/* Complimentary Offer Callout */}
                             {isComplimentaryEligible && (
-                              <div className="mt-2 rounded-lg p-2 bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-400/40 text-[11px]">
+                              <div className="mt-2.5 rounded-xl p-2.5 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 border border-orange-300 text-[11px] shadow-xs">
                                 <span className="font-bold text-orange-700">🎁 Includes Complimentary Offer:</span>{" "}
-                                <span className="text-slate-600">2 Co-branding Reels on Instagram + ₹500 Meta Ad Campaign</span>
+                                <div className="mt-0.5 text-slate-600 font-medium text-[11px] leading-tight space-y-0.5">
+                                  <div>• 2 Co-branding Reels on ZENSOS Instagram</div>
+                                  <div>• ₹500 Meta Ad Campaign Boost</div>
+                                </div>
                               </div>
                             )}
 
@@ -1288,18 +1350,24 @@ export function LoginPage() {
                       })}
                     </div>
                     {/* Payment info banner for paid plans */}
-                    {isPaidPlan && (
-                      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                        <span className="mt-0.5 text-lg">💳</span>
-                        <div>
-                          <p className="text-xs font-bold text-amber-800">Payment required to activate ({billingCycle === "QUARTERLY" ? "Quarterly · 3 Months" : "Monthly · 1 Month"})</p>
-                          <p className="mt-0.5 text-[11px] text-amber-700">
-                            After OTP verification, a secure Razorpay checkout will open to complete your{" "}
-                            <strong>{selectedPlan}</strong> plan payment ({billingCycle === "QUARTERLY" ? "3 months upfront" : "1 month"} + 18% GST). Your store will be created once payment is confirmed.
-                          </p>
+                    {isPaidPlan && (() => {
+                      const currentPricing = getPlanPricing(selectedPlan, billingCycle);
+                      return (
+                        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4">
+                          <span className="mt-0.5 text-xl">💳</span>
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-amber-900">
+                              Payment required to activate — {currentPricing.cycleLabel}
+                            </p>
+                            <p className="text-xs text-amber-800 leading-relaxed">
+                              After OTP verification, a secure Razorpay checkout will open to complete your{" "}
+                              <strong>{selectedPlan}</strong> plan payment: <strong>{currentPricing.displayPrice}</strong> {currentPricing.displayCycle} + 18% GST ={" "}
+                              <strong>{currentPricing.totalWithGstText}</strong> ({billingCycle === "QUARTERLY" ? "3 months upfront" : "1 month"}). Your store will be created immediately once payment is confirmed.
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                     <p className="text-[10px] text-slate-400 text-center">Secure payments powered by Razorpay · +18% GST applicable on paid plans</p>
                   </div>
                 )}
@@ -1324,7 +1392,7 @@ export function LoginPage() {
                     >
                       {isLastRegisterSection
                         ? isPaidPlan
-                          ? <><AppIcon name="payments" className="text-[16px]" /> Send OTP &amp; Pay -&gt;</>  
+                          ? <><AppIcon name="payments" className="text-[16px]" /> Send OTP &amp; Pay {getPlanPricing(selectedPlan, billingCycle).totalWithGstText} -&gt;</>  
                           : "Send OTP ->"
                         : "Continue ->"}
                     </Button>
@@ -1353,18 +1421,21 @@ export function LoginPage() {
                 <span className="font-semibold text-slate-700">{email.trim()}</span>.
               </p>
               {/* Paid-plan payment reminder */}
-              {mode === "register" && isPaidPlan && !paymentProcessing && (
-                <div className="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <span className="mt-0.5 text-base">💳</span>
-                  <div>
-                    <p className="text-xs font-bold text-amber-800">Payment step next</p>
-                    <p className="text-[11px] text-amber-700 mt-0.5">
-                      After you verify the OTP, a secure Razorpay checkout will open for your{" "}
-                      <strong>{selectedPlan}</strong> plan ({PLAN_META[selectedPlan]?.price} + 18% GST).
-                    </p>
+              {mode === "register" && isPaidPlan && !paymentProcessing && (() => {
+                const currentPricing = getPlanPricing(selectedPlan, billingCycle);
+                return (
+                  <div className="mt-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <span className="mt-0.5 text-base">💳</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-800">Payment step next ({currentPricing.cycleLabel})</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        After you verify the OTP, a secure Razorpay checkout will open for your{" "}
+                        <strong>{selectedPlan}</strong> plan: <strong>{currentPricing.displayPrice}</strong> {currentPricing.displayCycle} + 18% GST (Total: <strong>{currentPricing.totalWithGstText}</strong>).
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               {/* Payment in progress overlay info */}
               {paymentProcessing && (
                 <div className="mt-3 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
@@ -1407,7 +1478,7 @@ export function LoginPage() {
                 >
                   {mode === "register"
                     ? isPaidPlan
-                      ? <><AppIcon name="payments" className="text-[16px]" /> Verify &amp; Pay {PLAN_META[selectedPlan]?.price}</>
+                      ? <><AppIcon name="payments" className="text-[16px]" /> Verify &amp; Pay {getPlanPricing(selectedPlan, billingCycle).totalWithGstText}</>
                       : <><AppIcon name="check" className="text-[10px]" /> Verify &amp; Create Store</>
                     : "Verify OTP"}
                 </Button>
