@@ -2283,45 +2283,67 @@ export function DashboardPage() {
                     </button>
                   </div>
                 ))}
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <select
-                    className="w-full rounded-lg border border-slate-200 px-2 pr-8 py-2 text-sm outline-none bg-white sm:w-auto dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    value={newSocialPlatform}
-                    onChange={e => setNewSocialPlatform(e.target.value)}
-                  >
-                    {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                  {newSocialPlatform === "Other" && (
+                <div className="space-y-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      className="w-full rounded-lg border border-slate-200 px-2 pr-8 py-2 text-sm outline-none bg-white sm:w-44 shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      value={newSocialPlatform}
+                      onChange={e => setNewSocialPlatform(e.target.value)}
+                    >
+                      {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                    </select>
                     <input
-                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500 sm:w-44"
-                      placeholder="Button Title (e.g. Book, Blog)"
-                      value={newSocialTitle}
-                      onChange={e => setNewSocialTitle(e.target.value)}
+                      className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="https://..."
+                      value={newSocialUrl}
+                      onChange={e => setNewSocialUrl(e.target.value)}
                     />
-                  )}
-                  <input
-                    className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
-                    placeholder="https://..."
-                    value={newSocialUrl}
-                    onChange={e => setNewSocialUrl(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newSocialUrl.trim()) {
-                        const title = newSocialPlatform === "Other" ? (newSocialTitle.trim() || "Custom Link") : "";
-                        setSocialLinks(prev => [
-                          ...prev,
-                          { platform: newSocialPlatform, title, url: newSocialUrl.trim() },
-                        ]);
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = newSocialUrl.trim();
+                        if (!url) {
+                          showError("Please enter a valid link/URL.");
+                          return;
+                        }
+                        if (newSocialPlatform === "Other") {
+                          const title = newSocialTitle.trim();
+                          if (!title) {
+                            showError("Button/Link name is mandatory for the 'Other' option.");
+                            return;
+                          }
+                          setSocialLinks(prev => [
+                            ...prev,
+                            { platform: newSocialPlatform, title, url },
+                          ]);
+                        } else {
+                          setSocialLinks(prev => [
+                            ...prev,
+                            { platform: newSocialPlatform, title: "", url },
+                          ]);
+                        }
                         setNewSocialUrl("");
                         setNewSocialTitle("");
-                      }
-                    }}
-                    className="rounded-lg bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition shrink-0"
-                  >
-                    Add
-                  </button>
+                      }}
+                      className="rounded-lg bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition shrink-0"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {newSocialPlatform === "Other" && (
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Button Name / Title <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                        placeholder="Button Title (e.g. Book, Blog, Portfolio)"
+                        value={newSocialTitle}
+                        onChange={e => setNewSocialTitle(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

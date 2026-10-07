@@ -13,9 +13,17 @@ export function generateMakeInIndiaBadge(): string {
   <defs>
     <linearGradient id="mii-bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#fffaf5"/>
     </linearGradient>
-    <linearGradient id="mii-flag" x1="0%" y1="0%" x2="0%" y2="100%">
+    <linearGradient id="mii-tricolor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FF9933"/>
+      <stop offset="40%" stop-color="#FF9933"/>
+      <stop offset="47%" stop-color="#ffffff"/>
+      <stop offset="53%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#138808"/>
+      <stop offset="100%" stop-color="#138808"/>
+    </linearGradient>
+    <linearGradient id="mii-flag-accent" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FF9933"/>
       <stop offset="50%" stop-color="#ffffff"/>
       <stop offset="100%" stop-color="#138808"/>
@@ -25,24 +33,57 @@ export function generateMakeInIndiaBadge(): string {
     </filter>
   </defs>
   
-  <rect x="2" y="2" width="236" height="66" rx="14" fill="url(#mii-bg)" stroke="#e2e8f0" stroke-width="1.5" filter="url(#mii-shadow)"/>
+  <rect x="2" y="2" width="236" height="66" rx="14" fill="url(#mii-bg)" stroke="#fed7aa" stroke-width="1.5" filter="url(#mii-shadow)"/>
   
-  <!-- Flag Stripe Accent on left -->
-  <rect x="2" y="2" width="6" height="66" rx="3" fill="url(#mii-flag)"/>
+  <!-- Left Flag Accent Stripe -->
+  <rect x="2" y="2" width="6" height="66" rx="3" fill="url(#mii-flag-accent)"/>
   
-  <!-- Emblem / Lion Icon Circle -->
-  <circle cx="38" cy="35" r="22" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
-  <g transform="translate(24, 21) scale(0.95)">
-    <!-- Chakra / Lion / Indian Emblem vector -->
-    <path d="M14.5 3C8.7 3 4 7.7 4 13.5c0 4.1 2.3 7.6 5.7 9.3l.8-2.3c-2.4-1.2-4-3.7-4-6.6 0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5c0 2.9-1.6 5.4-4 6.6l.8 2.3c3.4-1.7 5.7-5.2 5.7-9.3C25 7.7 20.3 3 14.5 3z" fill="#ea580c"/>
-    <circle cx="14.5" cy="13.5" r="4" fill="#0284c7"/>
-    <path d="M14.5 6v15M7 13.5h15M9.2 8.2l10.6 10.6M9.2 18.8 19.8 8.2" stroke="#ffffff" stroke-width="1"/>
+  <!-- Make in India Lion Badge on Left with Tricolor background -->
+  <g transform="translate(14, 11)">
+    <!-- Tricolor Flag Rounded Rectangle Container -->
+    <rect x="0" y="0" width="50" height="48" rx="10" fill="url(#mii-tricolor)" stroke="#e2e8f0" stroke-width="1"/>
+    
+    <!-- Make in India Mechanical Gear Lion Silhouette -->
+    <g transform="translate(2, 6)">
+      <!-- Tail -->
+      <path d="M6 24 C 2 22, 0 14, 2 9 C 3 7, 5 7, 5.5 9 C 4.5 12, 5 19, 9 21 Z" fill="#18181b"/>
+      <circle cx="4.5" cy="8" r="1.8" fill="#18181b"/>
+      
+      <!-- Body Profile -->
+      <path d="M7 20 C 8 16, 10 13, 13 13 C 17 12, 23 12, 27 10 C 30 9, 33 7, 36 7 C 39 7, 42 9, 43 11 C 44 13, 43 15, 41 16 C 43 17, 43 19, 41 20 C 39 21, 38 20, 37 20 C 36 23, 34 26, 32 26 L 32 31 C 32 32, 30 33, 29 33 L 27 33 C 26 33, 26 31, 27 30 L 28 26 C 26 26, 24 27, 22 27 L 22 31 C 22 32, 20 33, 19 33 L 17 33 C 16 33, 16 31, 17 30 L 18 26 C 15 26, 13 26, 12 25 L 10 30 C 10 32, 8 33, 7 33 L 5 33 C 4 33, 4 31, 5 29 L 7 22 Z" fill="#18181b"/>
+      
+      <!-- Inner Mechanical Gears / Cogs -->
+      <!-- Shoulder Gear -->
+      <g transform="translate(31, 17)">
+        <circle cx="0" cy="0" r="4.2" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="1.5, 1.2"/>
+        <circle cx="0" cy="0" r="1.8" fill="#e2e8f0"/>
+        <circle cx="0" cy="0" r="0.8" fill="#18181b"/>
+      </g>
+      
+      <!-- Torso Gear -->
+      <g transform="translate(22, 18)">
+        <circle cx="0" cy="0" r="3.8" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="1.4, 1.1"/>
+        <circle cx="0" cy="0" r="1.6" fill="#e2e8f0"/>
+        <circle cx="0" cy="0" r="0.7" fill="#18181b"/>
+      </g>
+      
+      <!-- Hip Gear -->
+      <g transform="translate(13, 18)">
+        <circle cx="0" cy="0" r="3.4" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="1.3, 1"/>
+        <circle cx="0" cy="0" r="1.4" fill="#e2e8f0"/>
+        <circle cx="0" cy="0" r="0.6" fill="#18181b"/>
+      </g>
+      
+      <!-- Mane Small Gears -->
+      <circle cx="36" cy="12" r="2" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="0.9, 0.7"/>
+      <circle cx="27" cy="13" r="1.6" fill="none" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="0.8, 0.6"/>
+    </g>
   </g>
 
   <!-- Typography -->
-  <text x="68" y="28" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="800" letter-spacing="1" fill="#ea580c">100% AUTHENTIC</text>
-  <text x="68" y="44" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="900" letter-spacing="0.5" fill="#0f172a">MAKE IN INDIA</text>
-  <text x="68" y="56" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="600" fill="#16a34a">PROUDLY LOCAL</text>
+  <text x="72" y="27" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="800" letter-spacing="0.8" fill="#ea580c">100% AUTHENTIC</text>
+  <text x="72" y="44" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="900" letter-spacing="0.5" fill="#0f172a">MAKE IN INDIA</text>
+  <text x="72" y="56" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="600" fill="#16a34a">PROUDLY LOCAL • AUTHENTIC</text>
 </svg>`;
   return svgToDataUrl(svg);
 }
