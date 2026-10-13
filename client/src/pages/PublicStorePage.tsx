@@ -1902,8 +1902,8 @@ rzp.open(); } catch (err: any) {
               </div>
             )}
 
-            <div className="border-t border-slate-200 pt-2 space-y-1">
-              <div className="flex justify-between text-sm text-slate-600">
+            <div className="border-t border-slate-200 pt-2 space-y-1 dark:border-slate-700">
+              <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                 <span>Items total</span><span>&#8377;{itemsTotal.toLocaleString("en-IN")}</span>
               </div>
               {discountAmount > 0 && appliedCoupon && (
@@ -1914,38 +1914,33 @@ rzp.open(); } catch (err: any) {
                   <span>-&#8377;{discountAmount.toLocaleString("en-IN")}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between text-sm text-slate-600">
+              <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
                 <span>
                   {seller?.deliveryMode === "flat_rate"
                     ? `Delivery charge${seller.freeDeliveryThreshold > 0 ? ` (Free above Rs. ${seller.freeDeliveryThreshold})` : ""}`
                     : "Delivery charge"}
                 </span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {deliveryCharge === 0 ? "Free" : <>&#8377;{deliveryCharge.toLocaleString("en-IN")}</>}
                 </span>
               </div>
-              <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200 text-sm">
-                <span>Total Payable</span><span>&#8377;{grandTotal.toLocaleString("en-IN")}</span>
-              </div>
-              {(() => {
-                const totalSaving = cartEntries.reduce((sum, entry) => {
-                  const matchedVariant = findMatchingVariant(entry!.product, entry!.item.variants, entry!.item.variantId);
-                  const mrp = matchedVariant?.mrp || entry!.product.mrp || 0;
-                  const price = entry!.item.unitPrice;
-                  const qty = entry!.item.quantity;
-                  return mrp > price ? sum + (mrp - price) * qty : sum;
-                }, 0);
-                if (totalSaving <= 0) return null;
-                return (
-                  <div className="flex items-center justify-between gap-2 rounded-xl bg-green-50 border border-green-200 px-3 py-2 mt-1 dark:bg-green-950/40 dark:border-green-800/60">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-green-600 dark:text-green-400 text-base">🎉</span>
-                      <span className="text-xs font-semibold text-green-700 dark:text-green-400">Your Total Saving</span>
-                    </div>
-                    <span className="text-sm font-bold text-green-700 dark:text-green-400">&#8377;{totalSaving.toLocaleString("en-IN")}</span>
+              <div className="mt-2 rounded-xl border border-slate-200/90 bg-slate-50/80 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-bold text-slate-900 dark:text-slate-100">Total Payable</span>
+                  <span className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+                    &#8377;{grandTotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                {Boolean(appliedCoupon && discountAmount > 0) && (
+                  <div className="mt-2 flex items-center justify-between border-t border-slate-200/70 pt-2 text-xs font-semibold text-emerald-600 dark:border-slate-700/70 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span>🎉</span>
+                      <span>Your Total Saving</span>
+                    </span>
+                    <span>&#8377;{discountAmount.toLocaleString("en-IN")}</span>
                   </div>
-                );
-              })()}
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -2214,97 +2209,57 @@ rzp.open(); } catch (err: any) {
 
       return (
         <section className="mx-auto my-8 max-w-7xl px-3.5 sm:px-6">
-          <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-white via-slate-50/50 to-orange-50/20 p-4 sm:p-7 shadow-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-900/50 dark:to-slate-900/30">
-            {/* Section Header */}
-            <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/70 pb-4 dark:border-slate-800">
-              <div>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10 px-3 py-1 text-xs font-bold text-pink-600 dark:text-pink-400 border border-pink-500/20">
-                  <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
-                  <span>Instagram Reels</span>
-                </div>
-                <h3 className="mt-1.5 font-heading text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  Featured Reels &amp; Product Videos
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  Watch our latest product showcases and unboxings.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                <span className="sm:hidden text-[11px] font-semibold text-slate-400">
-                  Swipe for more &rarr;
-                </span>
-                {seller.socialLinks?.find(s => s.platform === "Instagram" && s.url)?.url && (
-                  <a
-                    href={seller.socialLinks.find(s => s.platform === "Instagram" && s.url)?.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold text-pink-700 hover:bg-pink-100 dark:border-pink-900/50 dark:bg-pink-950/40 dark:text-pink-300 transition-colors shadow-sm"
+          <div className="relative">
+            <div
+              id="reels-scroll-container"
+              className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:overflow-x-visible sm:pb-0 items-start scroll-smooth"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              {activeReels.map((reelUrl, idx) => {
+                const embedUrl = getInstagramEmbedUrl(reelUrl);
+                return (
+                  <div
+                    key={idx}
+                    className="relative w-[200px] xs:w-[220px] sm:w-full shrink-0 snap-start overflow-hidden rounded-2xl bg-black shadow-lg aspect-[9/16] transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl"
                   >
-                    <span>Instagram Profile</span>
-                    <span>↗</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Reels Carousel / Multi-column container */}
-            <div className="relative">
-              <div
-                id="reels-scroll-container"
-                className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 sm:overflow-x-visible sm:pb-0 items-start scroll-smooth"
-                style={{ WebkitOverflowScrolling: "touch" }}
-              >
-                {activeReels.map((reelUrl, idx) => {
-                  const embedUrl = getInstagramEmbedUrl(reelUrl);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex flex-col w-[260px] xs:w-[280px] sm:w-auto shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-                    >
-                      <div className="relative w-full bg-slate-950 overflow-hidden rounded-t-2xl" style={{ minHeight: "440px" }}>
-                        {embedUrl ? (
-                          <iframe
-                            src={embedUrl}
-                            className="w-full h-[460px] border-0"
-                            title={`Instagram Reel ${idx + 1}`}
-                            scrolling="no"
-                            allowTransparency={true}
-                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                            allowFullScreen
-                          />
-                        ) : (
-                          <div className="flex h-[440px] w-full flex-col items-center justify-center bg-slate-900 p-4 text-center text-white">
-                            <span className="text-3xl">🎬</span>
-                            <p className="mt-2 text-xs font-semibold text-slate-300">Instagram Reel #{idx + 1}</p>
-                            <a
-                              href={reelUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-xs font-bold text-white shadow hover:opacity-90"
-                            >
-                              Watch on Instagram ↗
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/60">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Reel #{idx + 1}</span>
+                    {embedUrl ? (
+                      <>
+                        <iframe
+                          src={embedUrl}
+                          className="absolute left-1/2 border-0 pointer-events-auto"
+                          style={{
+                            top: "-65px",
+                            width: "175%",
+                            height: "750px",
+                            transform: "translateX(-50%)",
+                          }}
+                          title={`Instagram Reel ${idx + 1}`}
+                          scrolling="no"
+                          allowTransparency={true}
+                          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                        {/* Edge guards prevent hover tooltips from iframe header/footer */}
+                        <div className="pointer-events-auto absolute bottom-0 left-0 right-0 h-10 z-10 bg-transparent" />
+                        <div className="pointer-events-auto absolute top-0 left-0 right-0 h-10 z-10 bg-transparent" />
+                      </>
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center bg-slate-900 p-4 text-center text-white">
+                        <span className="text-3xl">🎬</span>
+                        <p className="mt-2 text-xs font-semibold text-slate-300">Instagram Reel #{idx + 1}</p>
                         <a
                           href={reelUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[11px] font-bold text-pink-600 hover:underline dark:text-pink-400 inline-flex items-center gap-0.5"
+                          className="mt-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-xs font-bold text-white shadow hover:opacity-90"
                         >
-                          <span>Open</span>
-                          <span>↗</span>
+                          Watch on Instagram ↗
                         </a>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -2327,11 +2282,7 @@ rzp.open(); } catch (err: any) {
 
       return (
         <section className="mx-auto my-6 max-w-7xl px-3.5 sm:px-6">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-r from-white/90 via-slate-50/70 to-white/90 py-4 sm:py-5 shadow-xs backdrop-blur-sm dark:border-slate-800 dark:from-slate-950 dark:via-slate-900/80 dark:to-slate-950">
-            {/* Soft gradient edge fades */}
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-10 sm:w-16 bg-gradient-to-r from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-10 sm:w-16 bg-gradient-to-l from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80" />
-
+          <div className="relative overflow-hidden py-3 sm:py-4">
             <div className="animate-trust-marquee items-center gap-8 sm:gap-14 px-4 select-none">
               {marqueeList.map((badge, idx) => (
                 <div
