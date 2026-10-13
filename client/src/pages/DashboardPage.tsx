@@ -2018,7 +2018,7 @@ export function DashboardPage() {
 
           </article>
 
-          {/* RIGHT CARD — Delivery + Contact & Social Links */}
+          {/* RIGHT CARD — Delivery + Coupon Codes + Contact & Social Links */}
           <article className="min-w-0 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-card space-y-4 dark:border-teal-900/35 dark:bg-gradient-to-br dark:from-slate-950 dark:to-slate-900 dark:text-slate-100">
 
             {/* ── Sub-section: Delivery ── */}
@@ -2091,124 +2091,6 @@ export function DashboardPage() {
               </label>
             </div>
 
-            {/* ── Sub-section: Contact & Social Links ── */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact & Social Links</p>
-              {/* WhatsApp + Call — side by side grid */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {/* WhatsApp */}
-                <div className="space-y-1">
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">WhatsApp Number</span>
-                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
-                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
-                      {storeWhatsapp.countryCode || "+91"}
-                    </span>
-                    <input
-                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
-                      placeholder="9876543210"
-                      value={storeWhatsapp.number}
-                      onChange={e => setStoreWhatsapp((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
-                    />
-                  </div>
-                </div>
-                {/* Call */}
-                <div className="space-y-1">
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Call Number</span>
-                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
-                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
-                      {storeCall.countryCode || "+91"}
-                    </span>
-                    <input
-                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
-                      placeholder="9876543210"
-                      value={storeCall.number}
-                      onChange={e => setStoreCall((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* Social Links */}
-              <div className="pt-1 space-y-2">
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide dark:text-slate-400">Social Links & Custom Buttons</p>
-                {socialLinks.map((s, i) => (
-                  <div key={i} className="relative flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-2 pr-10 text-sm sm:flex-row sm:items-center sm:gap-2 sm:pr-2 dark:border-slate-700 dark:bg-slate-800/60">
-                    <span className="font-semibold text-slate-700 w-full sm:w-32 shrink-0 dark:text-slate-300">
-                      {s.platform === "Other" && s.title ? `${s.title} (Button)` : s.platform}
-                    </span>
-                    <span className="flex-1 min-w-0 text-slate-500 truncate dark:text-slate-400">{s.url}</span>
-                    <button
-                      onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
-                      className="absolute top-2 right-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition sm:relative sm:top-auto sm:right-auto dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
-                      title="Remove link"
-                    >
-                      <AppIcon name="close" className="text-[14px]" />
-                    </button>
-                  </div>
-                ))}
-                <div className="space-y-2">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <select
-                      className="w-full rounded-lg border border-slate-200 px-2 pr-8 py-2 text-sm outline-none bg-white sm:w-44 shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      value={newSocialPlatform}
-                      onChange={e => setNewSocialPlatform(e.target.value)}
-                    >
-                      {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
-                    </select>
-                    <input
-                      className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
-                      placeholder="https://..."
-                      value={newSocialUrl}
-                      onChange={e => setNewSocialUrl(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = newSocialUrl.trim();
-                        if (!url) {
-                          showError("Please enter a valid link/URL.");
-                          return;
-                        }
-                        if (newSocialPlatform === "Other") {
-                          const title = newSocialTitle.trim();
-                          if (!title) {
-                            showError("Button/Link name is mandatory for the 'Other' option.");
-                            return;
-                          }
-                          setSocialLinks(prev => [
-                            ...prev,
-                            { platform: newSocialPlatform, title, url },
-                          ]);
-                        } else {
-                          setSocialLinks(prev => [
-                            ...prev,
-                            { platform: newSocialPlatform, title: "", url },
-                          ]);
-                        }
-                        setNewSocialUrl("");
-                        setNewSocialTitle("");
-                      }}
-                      className="rounded-lg bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition shrink-0"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  {newSocialPlatform === "Other" && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Button Name / Title <span className="text-rose-500 font-bold">*</span>
-                      </label>
-                      <input
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
-                        placeholder="Button Title (e.g. Book, Blog, Portfolio)"
-                        value={newSocialTitle}
-                        onChange={e => setNewSocialTitle(e.target.value)}
-                        required
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
             {/* ── Sub-section: Discount Coupon Codes (₹2499 Business Plan Exclusive) ── */}
             {isBusinessPlan && (
               <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/60 via-orange-50/30 to-white p-4 space-y-3 dark:border-amber-900/40 dark:bg-gradient-to-br dark:from-amber-950/30 dark:via-slate-900/40 dark:to-slate-900/60">
@@ -2392,6 +2274,125 @@ export function DashboardPage() {
                 )}
               </div>
             )}
+
+            {/* ── Sub-section: Contact & Social Links ── */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-700/60 dark:bg-slate-800/40">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Contact & Social Links</p>
+              {/* WhatsApp + Call — side by side grid */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* WhatsApp */}
+                <div className="space-y-1">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">WhatsApp Number</span>
+                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
+                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
+                      {storeWhatsapp.countryCode || "+91"}
+                    </span>
+                    <input
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="9876543210"
+                      value={storeWhatsapp.number}
+                      onChange={e => setStoreWhatsapp((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
+                    />
+                  </div>
+                </div>
+                {/* Call */}
+                <div className="space-y-1">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Call Number</span>
+                  <div className="flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white focus-within:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-slate-500">
+                    <span className="shrink-0 border-r border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600 select-none dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-400">
+                      {storeCall.countryCode || "+91"}
+                    </span>
+                    <input
+                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="9876543210"
+                      value={storeCall.number}
+                      onChange={e => setStoreCall((prev) => ({ ...prev, number: e.target.value.replace(/\D/g, "").slice(0, 15) }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* Social Links */}
+              <div className="pt-1 space-y-2">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide dark:text-slate-400">Social Links & Custom Buttons</p>
+                {socialLinks.map((s, i) => (
+                  <div key={i} className="relative flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-2 pr-10 text-sm sm:flex-row sm:items-center sm:gap-2 sm:pr-2 dark:border-slate-700 dark:bg-slate-800/60">
+                    <span className="font-semibold text-slate-700 w-full sm:w-32 shrink-0 dark:text-slate-300">
+                      {s.platform === "Other" && s.title ? `${s.title} (Button)` : s.platform}
+                    </span>
+                    <span className="flex-1 min-w-0 text-slate-500 truncate dark:text-slate-400">{s.url}</span>
+                    <button
+                      onClick={() => setSocialLinks(prev => prev.filter((_, j) => j !== i))}
+                      className="absolute top-2 right-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition sm:relative sm:top-auto sm:right-auto dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                      title="Remove link"
+                    >
+                      <AppIcon name="close" className="text-[14px]" />
+                    </button>
+                  </div>
+                ))}
+                <div className="space-y-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      className="w-full rounded-lg border border-slate-200 px-2 pr-8 py-2 text-sm outline-none bg-white sm:w-44 shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      value={newSocialPlatform}
+                      onChange={e => setNewSocialPlatform(e.target.value)}
+                    >
+                      {SOCIAL_PLATFORMS.map(p => <option key={p}>{p}</option>)}
+                    </select>
+                    <input
+                      className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                      placeholder="https://..."
+                      value={newSocialUrl}
+                      onChange={e => setNewSocialUrl(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = newSocialUrl.trim();
+                        if (!url) {
+                          showError("Please enter a valid link/URL.");
+                          return;
+                        }
+                        if (newSocialPlatform === "Other") {
+                          const title = newSocialTitle.trim();
+                          if (!title) {
+                            showError("Button/Link name is mandatory for the 'Other' option.");
+                            return;
+                          }
+                          setSocialLinks(prev => [
+                            ...prev,
+                            { platform: newSocialPlatform, title, url },
+                          ]);
+                        } else {
+                          setSocialLinks(prev => [
+                            ...prev,
+                            { platform: newSocialPlatform, title: "", url },
+                          ]);
+                        }
+                        setNewSocialUrl("");
+                        setNewSocialTitle("");
+                      }}
+                      className="rounded-lg bg-[#ff751f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ff8c3a] transition shrink-0"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {newSocialPlatform === "Other" && (
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Button Name / Title <span className="text-rose-500 font-bold">*</span>
+                      </label>
+                      <input
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder-slate-500"
+                        placeholder="Button Title (e.g. Book, Blog, Portfolio)"
+                        value={newSocialTitle}
+                        onChange={e => setNewSocialTitle(e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </article>
 
 
