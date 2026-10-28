@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const LAST_UPDATED = "2 July 2025";
-const CONTACT_EMAIL = "support@zensos.in";
+const CONTACT_EMAIL = "naik@shankaraonline.com";
 const PLATFORM_NAME = "Zensos";
 const PLATFORM_URL = "https://zensos.in";
 

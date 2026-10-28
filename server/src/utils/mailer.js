@@ -799,7 +799,7 @@ async function sendAppointmentNotificationEmail({ name, email, phone, preferredD
           <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 24px 0 16px;" />
 
           <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5; text-align: center;">
-            Need immediate assistance? Reply directly to this email or reach us anytime at <a href="mailto:support@zensos.in" style="color: #ff751f; text-decoration: none;">support@zensos.in</a>.<br />
+            Need immediate assistance? Reply directly to this email or reach us anytime at <a href="mailto:naik@shankaraonline.com" style="color: #ff751f; text-decoration: none;">naik@shankaraonline.com</a>.<br />
             &copy; 2026 ZENSOS. All rights reserved.
           </p>
         </div>
